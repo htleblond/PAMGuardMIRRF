@@ -171,31 +171,7 @@ public class FEPanel {
 		return fileField;
 	} */
 	
-	/**
-	 * The listener for the 'Select by search' button.
-	 */
-	class SettingsListener implements ActionListener{
-		public void actionPerformed(ActionEvent e) {
-			SourcePanel audioSourcePanel = new SourcePanel(null, "", RawDataUnit.class, false, true);
-			SourcePanel contourSourcePanel = new SourcePanel(null, "", AbstractWhistleDataUnit.class, false, true);
-			if (audioSourcePanel.getSourceCount() == 0 && contourSourcePanel.getSourceCount() == 0) {
-				SimpleErrorDialog("No Sound Acquisition or Whistle and Moan Detector modules found.\n"
-						+ "Please add one of both to the current configuration.");
-			} else if (audioSourcePanel.getSourceCount() == 0) {
-				SimpleErrorDialog("No Sound Acquisition module found.\n"
-						+ "Please add one to the current configuration.");
-		/*	} else if (contourSourcePanel.getSourceCount() == 0) {
-				SimpleErrorDialog("No Whistle and Moan Detector module found.\n"
-						+ "Please add one to the current configuration."); */
-			} else {
-				settingsDialog = new FESettingsDialog(feControl.getPamView().getGuiFrame(), feControl);
-				feControl.setSettingsDialog(settingsDialog);
-				settingsDialog.setVisible(true);
-			}
-		}
-	}
-	
-	class ReloadCSVListener implements ActionListener{
+	protected class ReloadCSVListener implements ActionListener{
 		public void actionPerformed(ActionEvent e) {
 			ArrayList<Integer> intList = new ArrayList<Integer>();
 			int csvSize = feControl.getParams().inputCSVEntries.size();
@@ -206,13 +182,14 @@ public class FEPanel {
 		}
 	}
 	
-	class ResetListener implements ActionListener{
+	protected class ResetListener implements ActionListener{
 		public void actionPerformed(ActionEvent e) {
 			resetCounters();
 		}
 	}
 	
-	public JButton getReloadCSVButton() {
+	@Deprecated
+	protected JButton getReloadCSVButton() {
 		return reloadCSVButton;
 	}
 	
@@ -236,9 +213,6 @@ public class FEPanel {
 			JOptionPane.ERROR_MESSAGE);
 	}
 	
-	/**
-	 * @return mainPanel
-	 */
 	public JComponent getComponent() {
 		return mainPanel;
 	}
