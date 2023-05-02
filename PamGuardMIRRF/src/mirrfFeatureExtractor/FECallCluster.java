@@ -2,6 +2,14 @@ package mirrfFeatureExtractor;
 
 import java.io.Serializable;
 
+/**
+ * MIRRF sorts contours into "call clusters". Any contours within the
+ * specified "join distance" should be contained in the same call cluster.
+ * <br><br>
+ * This object is meant to be placed in an FEDataUnit.
+ * @author Taylor LeBlond
+ */
+@SuppressWarnings("serial")
 public class FECallCluster implements Serializable, Cloneable {
 	
 	public String clusterID;
@@ -12,6 +20,16 @@ public class FECallCluster implements Serializable, Cloneable {
 	public int[] hfs;
 	public double[][] featureVector;
 	
+	/**
+	 * Creates a call cluster with a fixed number of contours.
+	 * <br><br>
+	 * A cluster ID should be manually assigned afterwards, and
+	 * UIDs, dates/times, durations, frequencies and feature vectors
+	 * for each individual contour should be manually assigned
+	 * afterwards as well.
+	 * @param size - Number of contours in the call cluster.
+	 * @param vectorSize - Number of features in the vector.
+	 */
 	public FECallCluster(int size, int vectorSize) {
 		this.clusterID = "";
 		this.uids = new long[size];
@@ -22,10 +40,17 @@ public class FECallCluster implements Serializable, Cloneable {
 		this.featureVector = new double[size][vectorSize];
 	}
 	
+	/**
+	 * The number of contours in the call cluster.
+	 */
 	public int getSize() {
 		return uids.length;
 	}
 	
+	/**
+	 * @return Size-2 long array containing the start and end times of
+	 * cluster in milliseconds from 1970.
+	 */
 	public long[] getStartAndEnd() {
 		long[] outp = new long[] {datetimes[0], datetimes[0]};
 		for (int i = 0; i < datetimes.length; i++) {
@@ -41,6 +66,10 @@ public class FECallCluster implements Serializable, Cloneable {
 		return outp;
 	}
 	
+	/**
+	 * @return Size-2 int array containing the lowest and highest
+	 * frequencies in the cluster.
+	 */
 	public int[] getFreqLimits() {
 		int[] outp = new int[2];
 		outp[0] = lfs[0];

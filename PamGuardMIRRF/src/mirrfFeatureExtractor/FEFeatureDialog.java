@@ -3,9 +3,6 @@ package mirrfFeatureExtractor;
 import java.awt.BorderLayout;
 import java.awt.CardLayout;
 import java.awt.Component;
-import java.awt.Dimension;
-import java.awt.FlowLayout;
-import java.awt.Frame;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
@@ -14,8 +11,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
-import java.util.HashMap;
-import java.util.HashSet;
 
 import javax.swing.ButtonGroup;
 import javax.swing.DefaultListModel;
@@ -27,135 +22,121 @@ import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
-import javax.swing.JTabbedPane;
-import javax.swing.JTable;
 import javax.swing.JTextField;
-import javax.swing.ListModel;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingConstants;
 import javax.swing.border.TitledBorder;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableModel;
-import javax.swing.table.TableRowSorter;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.PlainDocument;
 
-import PamController.PamController;
-import PamDetection.RawDataUnit;
-import spectrogramNoiseReduction.SpectrogramNoiseDialogPanel;
-import spectrogramNoiseReduction.SpectrogramNoiseSettings;
-import whistlesAndMoans.AbstractWhistleDataUnit;
-import fftManager.FFTDataBlock;
-import fftManager.FFTDataUnit;
-import PamView.dialog.GroupedSourcePanel;
 import PamView.dialog.PamDialog;
 import PamView.dialog.PamGridBagContraints;
-import PamView.dialog.SourcePanel;
-import PamguardMVC.PamDataBlock;
-import PamguardMVC.PamProcess;
-import cepstrum.CepstrumProcess;
 
+/**
+ * The dialog for choosing which features are in the vector.
+ * @author Taylor LeBlond
+ */
+@SuppressWarnings("serial")
 public class FEFeatureDialog extends PamDialog {
 	
-	private static FESettingsDialog singleInstance;
+	protected FEControl feControl;
+	protected FESettingsDialog settingsDialog;
+	protected DefaultTableModel dtmodel;
 	
-	private FEControl feControl;
-	private FESettingsDialog settingsDialog;
-	private DefaultTableModel dtmodel;
+	protected JPanel p_left;
+	protected DefaultListModel<String> dlmodel;
+	protected JList<String> flist;
 	
-	private JPanel p_left;
-	protected DefaultListModel dlmodel;
-	private JList<String> flist;
+	protected JPanel p_right;
+	protected JPanel p_cards;
+	protected JPanel p_blank;
+	protected JPanel p_amp;
+	//protected JPanel p_amp_sd; // Not actually possible to retrieve
+	//protected JPanel p_ampslope; // Not actually possible to retrieve
+	protected JPanel p_duration;
+	protected JPanel p_freq_hd;
+	//protected JPanel p_freq_sd; // Apparently not possible to retrieve
+	protected JPanel p_frange;
+	protected JPanel p_fslope_hd;
+	//protected JPanel p_fslope_sd; // Apparently not possible to retrieve
+	protected JPanel p_mfcc;
+	protected JPanel p_poly;
+	protected JPanel p_rms;
+	protected JPanel p_bandwidth;
+	protected JPanel p_centroid;
+	protected JPanel p_contrast;
+	protected JPanel p_flatness;
+	protected JPanel p_flux;
+	protected JPanel p_specmag;
+	protected JPanel p_rolloff;
+	protected JPanel p_yin;
+	protected JPanel p_harmonics;
+	protected JPanel p_zcr;
 	
-	private JPanel p_right;
-	private JPanel p_cards;
-	private JPanel p_blank;
-	private JPanel p_amp;
-	//private JPanel p_amp_sd; // Not actually possible to retrieve
-	//private JPanel p_ampslope; // Not actually possible to retrieve
-	private JPanel p_duration;
-	private JPanel p_freq_hd;
-	//private JPanel p_freq_sd; // Apparently not possible to retrieve
-	private JPanel p_frange;
-	private JPanel p_fslope_hd;
-	//private JPanel p_fslope_sd; // Apparently not possible to retrieve
-	private JPanel p_mfcc;
-	private JPanel p_poly;
-	private JPanel p_rms;
-	private JPanel p_bandwidth;
-	private JPanel p_centroid;
-	private JPanel p_contrast;
-	private JPanel p_flatness;
-	private JPanel p_flux;
-	private JPanel p_specmag;
-	private JPanel p_rolloff;
-	private JPanel p_yin;
-	private JPanel p_harmonics;
-	private JPanel p_zcr;
+	protected JButton addButton;
 	
-	private JButton addButton;
+	//protected JComboBox amp_sd_box;
 	
-	//private JComboBox amp_sd_box;
+	//protected JComboBox ampslope_box;
 	
-	//private JComboBox ampslope_box;
+	protected JComboBox<String> freq_hd_box;
 	
-	private JComboBox freq_hd_box;
+	//protected JComboBox freq_sd_box;
 	
-	//private JComboBox freq_sd_box;
+	//protected JComboBox fslope_sd_box;
 	
-	//private JComboBox fslope_sd_box;
+	protected JComboBox<String> mfcc_box;
+	protected JTextField mfcc_n_field;
+	protected JComboBox<String> mfcc_selector_box;
 	
-	private JComboBox mfcc_box;
-	private JTextField mfcc_n_field;
-	private JComboBox mfcc_selector_box;
+	protected JComboBox<String> poly_box;
+	protected JTextField poly_order_field;
+	protected JComboBox<String> poly_selector_box;
 	
-	private JComboBox poly_box;
-	private JTextField poly_order_field;
-	private JComboBox poly_selector_box;
+	protected JComboBox<String> rms_box;
 	
-	private JComboBox rms_box;
+	protected JComboBox<String> bandwidth_box;
+	protected JCheckBox bandwidth_normalize_check;
+	protected JTextField bandwidth_power_field;
 	
-	private JComboBox bandwidth_box;
-	private JCheckBox bandwidth_normalize_check;
-	private JTextField bandwidth_power_field;
+	protected JComboBox<String> centroid_box;
 	
-	private JComboBox centroid_box;
+	protected JComboBox<String> contrast_box;
+	protected JTextField contrast_freq_field;
+	protected JTextField contrast_bands_field;
+	protected JRadioButton contrast_linear_rb;
+	protected JRadioButton contrast_log_rb;
+	protected ButtonGroup contrast_rbg;
 	
-	private JComboBox contrast_box;
-	private JTextField contrast_freq_field;
-	private JTextField contrast_bands_field;
-	private JRadioButton contrast_linear_rb;
-	private JRadioButton contrast_log_rb;
-	private ButtonGroup contrast_rbg;
+	protected JComboBox<String> flatness_box;
+	protected JTextField flatness_power_field;
 	
-	private JComboBox flatness_box;
-	private JTextField flatness_power_field;
+	protected JComboBox<String> flux_box;
 	
-	private JComboBox flux_box;
+	protected JComboBox<String> specmag_box;
+	protected JTextField specmag_min_field;
+	protected JTextField specmag_max_field;
+	protected JCheckBox specmag_normalize_check;
 	
-	private JComboBox specmag_box;
-	private JTextField specmag_min_field;
-	private JTextField specmag_max_field;
-	private JCheckBox specmag_normalize_check;
+	protected JComboBox<String> rolloff_box;
+	protected JTextField rolloff_threshold_field;
 	
-	private JComboBox rolloff_box;
-	private JTextField rolloff_threshold_field;
+	protected JComboBox<String> yin_box;
+	protected JTextField yin_min_field;
+	protected JTextField yin_max_field;
 	
-	private JComboBox yin_box;
-	private JTextField yin_min_field;
-	private JTextField yin_max_field;
+	protected JComboBox<String> harmonics_box;
+	protected JTextField harmonics_n_field;
+	protected JTextField harmonics_buffer_field;
+	protected JTextField harmonics_min_field;
+	protected JTextField harmonics_max_field;
+	protected JCheckBox harmonics_normalize_check;
 	
-	private JComboBox harmonics_box;
-	private JTextField harmonics_n_field;
-	private JTextField harmonics_buffer_field;
-	private JTextField harmonics_min_field;
-	private JTextField harmonics_max_field;
-	private JCheckBox harmonics_normalize_check;
-	
-	private JComboBox zcr_box;
+	protected JComboBox<String> zcr_box;
 	
 	public FEFeatureDialog(Window parentFrame, FEControl feControl, FESettingsDialog settingsDialog, DefaultTableModel dtmodel) {
 		super(parentFrame, "MIRRF Feature Extractor", true);
@@ -189,11 +170,11 @@ public class FEFeatureDialog extends PamDialog {
 				"Mel-frequency cepstral coefficients","Polynomial features","Root mean square",
 				"Spectral bandwidth","Spectral centroid","Spectral contrast","Spectral flatness","Spectral flux (onset strength)",
 				"Spectral magnitude","Spectral rolloff","YIN fundamental frequency","YIN harmonics","Zero-crossing rate"};
-		dlmodel = new DefaultListModel();
+		dlmodel = new DefaultListModel<String>();
 		for (int i = 0; i < featureNames.length; i++) {
 			dlmodel.addElement(featureNames[i]);
 		}
-		flist = new JList(dlmodel);
+		flist = new JList<String>(dlmodel);
 		flist.setSize(200, 300);
 		flist.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		flist.setLayoutOrientation(JList.VERTICAL);
@@ -305,7 +286,7 @@ public class FEFeatureDialog extends PamDialog {
 		    	polyBoxUpdate();
 		    }
 		});
-		poly_selector_box = new JComboBox();
+		poly_selector_box = new JComboBox<String>();
 		poly_order_field.setText("1");
 		polyBoxUpdate();
 		p_poly = constructFeaturePanel(makeHTML("Get coefficients of fitting an nth-order polynomial to the columns of a spectrogram.\n\n"
@@ -635,7 +616,7 @@ public class FEFeatureDialog extends PamDialog {
 		setDialogComponent(mainPanel);
 	}
 	
-	class AddButtonListener implements ActionListener{
+	protected class AddButtonListener implements ActionListener{
 		public void actionPerformed(ActionEvent e) {
 			String outp = "";
 			if (flist.getSelectedIndex() > -1) {
@@ -749,7 +730,10 @@ public class FEFeatureDialog extends PamDialog {
 		}
 	}
 	
-	public String outpAbbr(String inp) {
+	/**
+	 * Converts full words found in the combo boxes to an abbreviation.
+	 */
+	protected String outpAbbr(String inp) {
 		if (inp == "Mean") {
 			return "mean";
 		} else if (inp == "Median") {
@@ -776,17 +760,35 @@ public class FEFeatureDialog extends PamDialog {
 		return outp;
 	}
 	
-	public JComboBox makeOutputBox() {
+	/**
+	 * @return A JComboBox containing the values "Mean", "Median",
+	 * "Standard deviation", "Minimum" and "Maximum".
+	 */
+	public JComboBox<String> makeOutputBox() {
 		String[] choices = {"Mean","Median","Standard deviation","Minimum","Maximum"};
-		JComboBox outp = new JComboBox(choices);
+		JComboBox<String> outp = new JComboBox<String>(choices);
 		return outp;
 	}
 	
-	public JComboBox makeOutputBox(String[] choices) {
-		JComboBox outp = new JComboBox(choices);
+	/**
+	 * @return A JComboBox containing the input choices.
+	 */
+	public JComboBox<String> makeOutputBox(String[] choices) {
+		JComboBox<String> outp = new JComboBox<String>(choices);
 		return outp;
 	}
 	
+	/**
+	 * Streamlined means of constructing panels detailing info and
+	 * options for each feature.
+	 * @param description - The text description.
+	 * @param comps - Option components following the description.
+	 * Object[]s of size 1 will be added as is with one call of gridy++.
+	 * Object[]s of size 2 will also be added with one call of gridy++,
+	 * with one call of gridx++ after the first object is added.
+	 * @param useHorizontalFill - Whether or not c.fill = GridBagConstraints.HORIZONTAL
+	 * for each Object[] in "comps" of size 2.
+	 */
 	protected JPanel constructFeaturePanel(String description, Object[][] comps, boolean useHorizontalFill) {
 		JPanel outp = new JPanel(new GridBagLayout());
 		GridBagConstraints c = new PamGridBagContraints();
@@ -846,7 +848,10 @@ public class FEFeatureDialog extends PamDialog {
         }
 	} */
 	
-	public void textIntUpdate(JTextField field, int lowest) {
+	/**
+	 * Used for ensuring a numerical text box has a minimum possible value.
+	 */
+	protected void textIntUpdate(JTextField field, int lowest) {
 		if (field.getText().length() < 1) {
 			field.setText(Integer.toString(lowest));
 		} else if (Integer.valueOf(field.getText()) < lowest) {
@@ -854,7 +859,10 @@ public class FEFeatureDialog extends PamDialog {
 		}
 	}
 	
-	public void mfccBoxUpdate() {
+	/**
+	 * Updates mfcc_selector_box when the number in mfcc_n_field changes.
+	 */
+	protected void mfccBoxUpdate() {
 		if (mfcc_n_field.getText().length() < 1) {
         	mfcc_n_field.setText("1");
         } else if (Integer.valueOf(mfcc_n_field.getText()) < 1) {
@@ -867,7 +875,10 @@ public class FEFeatureDialog extends PamDialog {
         }
 	}
 	
-	public void polyBoxUpdate() {
+	/**
+	 * Updates poly_selector_box when the number in poly_order_field changes.
+	 */
+	protected void polyBoxUpdate() {
 		if (poly_order_field.getText().length() < 1) {
 			poly_order_field.setText("1");
         } else if (Integer.valueOf(poly_order_field.getText()) < 1) {
@@ -882,9 +893,8 @@ public class FEFeatureDialog extends PamDialog {
 	
 	/**
 	 * Limits entry in text field to numbers only.
-	 * @return PlainDocument
 	 */
-	public PlainDocument JIntFilter() {
+	protected PlainDocument JIntFilter() {
 		PlainDocument d = new PlainDocument() {
 			@Override
 	        public void insertString(int offs, String str, AttributeSet a) throws BadLocationException {
@@ -899,9 +909,8 @@ public class FEFeatureDialog extends PamDialog {
 	
 	/**
 	 * Limits entry in text field to numbers and a single decimal point only.
-	 * @return PlainDocument
 	 */
-	public PlainDocument JDoubleFilter(JTextField field) {
+	protected PlainDocument JDoubleFilter(JTextField field) {
 		PlainDocument d = new PlainDocument() {
 			@Override
 	        public void insertString(int offs, String str, AttributeSet a) throws BadLocationException {
@@ -917,7 +926,11 @@ public class FEFeatureDialog extends PamDialog {
 		return d;
 	}
 	
-	public PlainDocument fieldToBoxFilter(JTextField field, String cardName) {
+	/**
+	 * Ensures certain JComboBoxes update when their respective
+	 * text fields change values.
+	 */
+	protected PlainDocument fieldToBoxFilter(JTextField field, String cardName) {
 		PlainDocument d = new PlainDocument() {
 			@Override
 	        public void insertString(int offs, String str, AttributeSet a) throws BadLocationException {
@@ -940,19 +953,18 @@ public class FEFeatureDialog extends PamDialog {
 		return d;
 	}
 	
-
+	/**
+	 * Returns false, as the feature table in the settings dialog
+	 * is already updated by the add button.
+	 */
 	@Override
 	public boolean getParams() {
 		return false;
 	}
 
 	@Override
-	public void cancelButtonPressed() {
-		
-	}
+	public void cancelButtonPressed() {}
 
 	@Override
-	public void restoreDefaultSettings() {
-		
-	}
+	public void restoreDefaultSettings() {}
 }

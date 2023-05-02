@@ -1,66 +1,23 @@
 package mirrfFeatureExtractor;
 
 import java.awt.*;
-import java.awt.List;
 import java.awt.event.*;
-import java.io.File;
-import java.io.FilenameFilter;
 
 import javax.swing.*;
-import javax.swing.table.*; //
-import javax.swing.text.AttributeSet;
-import javax.swing.text.BadLocationException;
-import javax.swing.text.Document;
-import javax.swing.text.PlainDocument;
 
-import Layout.PamFramePlots;
-import Layout.PamInternalFrame;
 import PamDetection.RawDataUnit;
 
-import javax.swing.filechooser.*;
-import javax.swing.event.*;
-import java.util.*; //
-import java.text.*; //
-import java.io.PrintWriter;
+import java.util.*;
 
 import javax.swing.border.TitledBorder;
 
-import fftManager.Complex;
-import userDisplay.UserDisplayControl;
-import userDisplay.UserDisplayTabPanel;
-import userDisplay.UserDisplayTabPanelControl;
-import userDisplay.UserFramePlots;
 import whistlesAndMoans.AbstractWhistleDataUnit;
-import wmnt.WMNTSearchDialog;
-import userDisplay.UserDisplayFrame;
-import PamUtils.PamCalendar;
-import PamUtils.SelectFolder;
 import PamView.dialog.PamGridBagContraints;
-import PamView.dialog.PamLabel;
-import PamView.dialog.PamTextDisplay;
 import PamView.panel.PamPanel;
-import PamView.PamList; //
-import PamView.PamTable;
-import PamView.dialog.PamButton; //
-import PamView.dialog.PamTextField; //
 import PamView.dialog.SourcePanel;
-import binaryFileStorage.*;
-import PamguardMVC.DataUnitBaseData;
-import Spectrogram.SpectrogramDisplay;
-import PamUtils.SelectFolder;
-//import PamController.PamFolders;
-import pamScrollSystem.*;
-import PamUtils.PamFileChooser;
-
-import java.util.TimeZone;
-
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
 
 /**
- * The panel where the GUI components are written.
+ * The actual side panel.
  * @author Taylor LeBlond
  */
 public class FEPanel {
@@ -142,12 +99,24 @@ public class FEPanel {
 		resetCounters();
 	}
 	
+	/**
+	 * Resets all counters except "pending" to 0.
+	 */
 	public void resetCounters() {
 		successField.setText("0");
 		failureField.setText("0");
 		ignoreField.setText("0");
 	}
 	
+	/**
+	 * Adds 1 to the respective counter.
+	 * @param i - Number determining the chosen counter:
+	 * <br> 0 = Success
+	 * <br> 1 = Failure
+	 * <br> 2 = Ignore
+	 * <br> 3 = Pending
+	 * @param uid - The contour's UID, for printing purposes.
+	 */
 	public void addOneToCounter(int i, String uid) {
 		try {
 			if (i == SUCCESS) {
@@ -167,6 +136,10 @@ public class FEPanel {
 		}
 	}
 	
+	/**
+	 * Subtracts 1 from the pending counter.
+	 * @return True if the counter is above 0. False otherwise.
+	 */
 	public boolean subtractOneFromPendingCounter() {
 		try {
 			if (Integer.valueOf(pendingField.getText()) > 0) {
@@ -181,6 +154,9 @@ public class FEPanel {
 		return true;
 	}
 	
+	/**
+	 * @return The number in the success counter as an integer.
+	 */
 	public int getSuccessCount() {
 		int outp = -1;
 		try {

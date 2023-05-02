@@ -5,31 +5,17 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.Serializable;
-import java.util.ArrayList;
 
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 
-import com.jogamp.newt.Window;
-
-import PamView.PamSidePanel;
-import PamguardMVC.PamDataBlock;
-import mirrfLiveClassifier.LCColourDialog;
-import mirrfLiveClassifier.LCSettingsDialog;
-import whistlesAndMoans.*;
-//import whistlesAndMoans.WhistleMoanControl.DetectionSettings;
-import Layout.DisplayPanelProvider;
-import Layout.DisplayProviderList;
 import PamController.PamControlledUnit;
 import PamController.PamControlledUnitSettings;
-import userDisplay.*;
-import PamController.PamController;
 import PamController.PamSettingManager;
 import PamController.PamSettings;
 
 /**
  * The controller class for the MIRRF Feature Extractor.
- * Is a subclass of PamControlledUnit.
  * @author Taylor LeBlond
  */
 public class FEControl extends PamControlledUnit implements PamSettings{
@@ -71,29 +57,25 @@ public class FEControl extends PamControlledUnit implements PamSettings{
 		this.feProcess = new FEProcess(this);
 		addPamProcess(feProcess);
 		
-	/*	System.out.println("/////////");
-		ArrayList<PamDataBlock> blockList = this.getPamController().getDataBlocks();
-		for (int i = 0; i < blockList.size(); i++) {
-			PamDataBlock block = blockList.get(i);
-			System.out.println(block.getDataName());
-			int j = 0;
-			while (true) {
-				try {
-					System.out.println("\t"+block.getPamObserver(j).getObserverName());
-				} catch (Exception e) {
-					break;
-				}
-				j++;
-			}
-		}
-		System.out.println("/////////"); */
-		
 	}
 	
+	/**
+	 * Calls the function in FEPanel that adds 1 to the respective counter.
+	 * @param i - Number determining the chosen counter:
+	 * <br> 0 = Success
+	 * <br> 1 = Failure
+	 * <br> 2 = Ignore
+	 * <br> 3 = Pending
+	 * @param uid - The contour's UID, for printing purposes.
+	 */
 	public void addOneToCounter(int i, String uid) {
 		this.getSidePanel().getFEPanel().addOneToCounter(i, uid);
 	}
 	
+	/**
+	 * Calls the function in FEPanel that subtracts 1 from the pending counter in the FEPanel.
+	 * @return True if the counter is above 0. False otherwise.
+	 */
 	public boolean subtractOneFromPendingCounter() {
 		return this.getSidePanel().getFEPanel().subtractOneFromPendingCounter();
 	}
@@ -118,9 +100,6 @@ public class FEControl extends PamControlledUnit implements PamSettings{
 			JOptionPane.ERROR_MESSAGE);
 	}
 	
-	/**
-	 * @return FESidePanel
-	 */
 	@Override
 	public FESidePanel getSidePanel() {
 		return feSidePanel;
@@ -138,14 +117,12 @@ public class FEControl extends PamControlledUnit implements PamSettings{
 		feSettingsDialog = settingsDialog;
 	}
 	
+	/**
+	 * The object that handles the Python scripts that perform the feature extraction.
+	 */
 	public FEPythonThreadManager getThreadManager() {
 		return threadManager;
 	}
-/*
-	public WhistleToneParameters getWhistleToneParams() {
-		return this.whistleToneParameters;
-	}
-*/
 
 	@Override
 	public Serializable getSettingsReference() {
@@ -154,7 +131,7 @@ public class FEControl extends PamControlledUnit implements PamSettings{
 
 	@Override
 	public long getSettingsVersion() {
-		// TODO Auto-generated method stub
+		// TODO
 		return 0;
 	}
 
