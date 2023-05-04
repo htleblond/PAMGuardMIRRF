@@ -13,10 +13,6 @@ from sklearn.feature_selection import SelectKBest, f_classif
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.ensemble import ExtraTreesClassifier
 from sklearn.ensemble import HistGradientBoostingClassifier
-#from builtins import None
-
-print("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
-print("kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk")
 
 class TCModel():
     def __init__(self, trainFN: str, txtParams: list, excludeIDs: list, excludeFolds: list):

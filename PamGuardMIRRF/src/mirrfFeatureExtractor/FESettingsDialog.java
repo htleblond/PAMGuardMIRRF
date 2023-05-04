@@ -1,9 +1,7 @@
 package mirrfFeatureExtractor;
 
-import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
-import java.awt.Frame;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
@@ -13,7 +11,6 @@ import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -47,22 +44,18 @@ import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.PlainDocument;
 
-import PamController.PamController;
 import PamDetection.RawDataUnit;
 import PamUtils.PamFileChooser;
-import spectrogramNoiseReduction.SpectrogramNoiseDialogPanel;
-import spectrogramNoiseReduction.SpectrogramNoiseSettings;
 import whistlesAndMoans.AbstractWhistleDataUnit;
-import fftManager.FFTDataBlock;
-import fftManager.FFTDataUnit;
-import PamView.dialog.GroupedSourcePanel;
 import PamView.dialog.PamDialog;
 import PamView.dialog.PamGridBagContraints;
 import PamView.dialog.SourcePanel;
-import PamguardMVC.PamDataBlock;
-import PamguardMVC.PamProcess;
-import cepstrum.CepstrumProcess;
 
+/**
+ * The settings dialog for the Feature Extractor.
+ * @author Taylor LeBlond
+ */
+@SuppressWarnings("serial")
 public class FESettingsDialog extends PamDialog {
 	
 	protected FEControl feControl;
@@ -129,6 +122,7 @@ public class FESettingsDialog extends PamDialog {
 	protected JCheckBox miscAboveAmpCheck;
 	protected JTextField miscAboveAmpField;
 	
+	@SuppressWarnings("static-access")
 	public FESettingsDialog(Window parentFrame, FEControl feControl) {
 		super(parentFrame, "MIRRF Feature Extractor", true);
 		this.feControl = feControl;
@@ -795,7 +789,10 @@ public class FESettingsDialog extends PamDialog {
 		}
 	}
 	
-	public void switchOn(Object box, boolean boo) {
+	/**
+	 * Enables or disables certain features depending on the input component.
+	 */
+	protected void switchOn(Object box, boolean boo) {
 		if (box.equals(inputProcessRB)) {
 			inputSourcePanel.setEnabled(boo);
 			inputCSVButton.setEnabled(!boo);
@@ -843,16 +840,9 @@ public class FESettingsDialog extends PamDialog {
 		}
 	}
 	
-	class CheckBoxListener implements ActionListener {
-		private JCheckBox box;
-		public CheckBoxListener(JCheckBox box) {
-			this.box = box;
-		}
-		public void actionPerformed(ActionEvent e) {
-			switchOn(box, box.isSelected());
-		}
-	}
-	
+	/**
+	 * For selecting the input .csv file and checking if it's valid or not.
+	 */
 	class CSVListener implements ActionListener{
 		
 		private boolean forOutput;
@@ -1021,9 +1011,9 @@ public class FESettingsDialog extends PamDialog {
 	/**
 	 * Returns the selected file from a JFileChooser, including the extension from
 	 * the file filter.
-	 * 
+	 * <br><br>
 	 * Copied from here: https://stackoverflow.com/questions/16846078/jfilechoosershowsavedialog-cant-get-the-value-of-the-extension-file-chosen
-	 * Author page: https://stackoverflow.com/users/964243/boann
+	 * <br>Author page: https://stackoverflow.com/users/964243/boann
 	 */
 	public static File getSelectedFileWithExtension(JFileChooser c) {
 	    File file = c.getSelectedFile();
@@ -1047,6 +1037,22 @@ public class FESettingsDialog extends PamDialog {
 		return outp;
 	}
 	
+	/**
+	 * ActionListener for checkboxes.
+	 */
+	class CheckBoxListener implements ActionListener {
+		private JCheckBox box;
+		public CheckBoxListener(JCheckBox box) {
+			this.box = box;
+		}
+		public void actionPerformed(ActionEvent e) {
+			switchOn(box, box.isSelected());
+		}
+	}
+	
+	/**
+	 * ActionListener for radio buttons.
+	 */
 	class RadioButtonListener implements ActionListener {
 		private JRadioButton rb;
 		public RadioButtonListener(JRadioButton rb) {
@@ -1057,6 +1063,9 @@ public class FESettingsDialog extends PamDialog {
 		}
 	}
 	
+	/**
+	 * ActionListener for the "add" button in the "Features" tab.
+	 */
 	class AddButtonListener implements ActionListener{
 		public void actionPerformed(ActionEvent e) {
 			FEFeatureDialog featureDialog = new FEFeatureDialog(feControl.getPamView().getGuiFrame(), feControl, feControl.getSettingsDialog(), featureTableModel);
@@ -1064,6 +1073,9 @@ public class FESettingsDialog extends PamDialog {
 		}
 	}
 	
+	/**
+	 * ActionListener for the "delete" button in the "Features" tab.
+	 */
 	class DeleteButtonListener implements ActionListener{
 		public void actionPerformed(ActionEvent e) {
 			if (featureTable.getSelectedRow() > -1) {
@@ -1080,6 +1092,9 @@ public class FESettingsDialog extends PamDialog {
 		}
 	}
 	
+	/**
+	 * ActionListener for the "move up" button in the "Features" tab.
+	 */
 	class MoveUpButtonListener implements ActionListener{
 		public void actionPerformed(ActionEvent e) {
 			if (featureTable.getSelectedRow() > 0) {
@@ -1089,6 +1104,9 @@ public class FESettingsDialog extends PamDialog {
 		}
 	}
 	
+	/**
+	 * ActionListener for the "move down" button in the "Features" tab.
+	 */
 	class MoveDownButtonListener implements ActionListener{
 		public void actionPerformed(ActionEvent e) {
 			if (featureTable.getSelectedRow() > -1 && featureTable.getSelectedRow() < featureTable.getRowCount()-1) {
@@ -1098,6 +1116,9 @@ public class FESettingsDialog extends PamDialog {
 		}
 	}
 	
+	/**
+	 * ActionListener for the "import" buttons in the "Features" tab.
+	 */
 	class ImportCSVFeaturesButtonListener implements ActionListener{
 		private boolean importFromLoadedOutput;
 		
@@ -1155,6 +1176,9 @@ public class FESettingsDialog extends PamDialog {
 		}
 	}
 	
+	/**
+	 * Adds valid features to the table; produces warning if any invalid features are present.
+	 */
 	protected boolean addFeaturesToTable(ArrayList<String> inp) {
 		ArrayList<String> validFeatures = new ArrayList<String>();
 		ArrayList<String> invalidFeatures = new ArrayList<String>();
@@ -1289,6 +1313,9 @@ public class FESettingsDialog extends PamDialog {
 		return true;
 	}
 	
+	/**
+	 * @return Easy-to-access conversion of feature shorthands to full names.
+	 */
 	public HashMap<String, String> shorthandsToNames() {
 		HashMap<String, String> outp = new HashMap<String, String>();
 		outp.put("amplitude","Amplitude");
@@ -1317,7 +1344,6 @@ public class FESettingsDialog extends PamDialog {
 	
 	/**
 	 * Limits entry in text field to numbers only.
-	 * @return PlainDocument
 	 */
 	public PlainDocument JIntFilter() {
 		PlainDocument d = new PlainDocument() {
@@ -1334,7 +1360,6 @@ public class FESettingsDialog extends PamDialog {
 	
 	/**
 	 * Limits entry in text field to numbers and a single decimal point only.
-	 * @return PlainDocument
 	 */
 	public PlainDocument JDoubleFilter(JTextField field) {
 		PlainDocument d = new PlainDocument() {
@@ -1367,6 +1392,9 @@ public class FESettingsDialog extends PamDialog {
 			JOptionPane.ERROR_MESSAGE);
 	}
 	
+	/**
+	 * Fills components with values from FEParameters.
+	 */
 	public boolean actuallyGetParams() {
 		FEParameters params = feControl.getParams();
 		if (params.inputFromCSV) {
@@ -1680,6 +1708,9 @@ public class FESettingsDialog extends PamDialog {
 		return true;
 	}
 	
+	/**
+	 * @return The JTable containing feature names.
+	 */
 	public JTable getTable() {
 		return featureTable;
 	}

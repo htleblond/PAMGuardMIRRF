@@ -8,8 +8,6 @@ import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
-//import org.python.util.PythonInterpreter; //DO NOT USE - PAMGUARD DOES NOT RECOGNIZE IT!!!!
-
 import mirrfFeatureExtractor.JarExtractor;
 
 public class LCPythonThreadManager{

@@ -6,36 +6,22 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.Scanner;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
-import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
 
-import javax.swing.JOptionPane;
-
-import org.apache.commons.io.IOUtils;
-//import org.python.antlr.PythonParser.break_stmt_return;
-import org.docx4j.dml.CTCustomColorList;
-
-//import org.python.util.PythonInterpreter; //DO NOT USE - PAMGUARD DOES NOT RECOGNIZE IT!!!!
-
-import PamController.PamController;
-import whistlesAndMoans.AbstractWhistleDataUnit;
-
+/**
+ * Creates an instance of a Python interpreter, sends clips to the
+ * Python script for processing, and manages communication between
+ * Java and Python.
+ * @author Taylor LeBlond
+ */
 public class FEPythonThreadManager {
 	
 	private FEControl feControl;
@@ -54,7 +40,7 @@ public class FEPythonThreadManager {
 	public volatile ArrayList<String> commandList;
 	public PythonInterpreterThread pit = null;
 	
-	private final int maxThreads = 10; // ADD THIS TO FEPARAMETERS EVENTUALLY
+	private final int maxThreads = 10; // TODO ADD THIS TO FEPARAMETERS EVENTUALLY
 	protected volatile ArrayList<ContourClip> waitList;
 	protected volatile ArrayList<String> idList;
 	protected volatile ArrayList<ArrayList<ContourClip>> ccList;
@@ -82,13 +68,16 @@ public class FEPythonThreadManager {
 		if (feControl.getParams().tempFolder.length() > 0) {
 			setActive();
 		} else {
-			setInactive(true);
+			setInactive();
 		}
 		
 		this.pit = new PythonInterpreterThread();
 		pit.start();
 	}
 	
+	/**
+	 * Checks if threads are still running and restarts them if necessary.
+	 */
 	public void checkThreads() {
 		if (!pit.isAlive() || active == false) {
 			pit = new PythonInterpreterThread();
@@ -106,22 +95,31 @@ public class FEPythonThreadManager {
 		}
 	}
 	
+	/**
+	 * Clears waitList, idList, ccList and pythonOutpList, and calls resetActiveThread().
+	 */
 	public void resetWaitlists() {
 		waitList = new ArrayList<ContourClip>();
 		idList = new ArrayList<String>();
 		ccList = new ArrayList<ArrayList<ContourClip>>();
-		activeThread = -1;
+		resetActiveThread();
 		pythonOutpList = new ArrayList<ArrayList<String[]>>();
 	}
 	
+	/**
+	 * Sets activeThread to -1. This means that addVectorToDataBlock() won't
+	 * skip over any slots in pythonOutpList. Don't call this unless FEProcess
+	 * has finished with its current cluster.
+	 */
 	public void resetActiveThread() {
 		activeThread = -1;
 	}
 	
+	/**
+	 * Thread that initializes and sends commands to the Python interpreter.
+	 */
 	protected class PythonInterpreterThread extends Thread {
-		protected PythonInterpreterThread() {
-			//this.run();
-		}
+		protected PythonInterpreterThread() {}
 		@Override
 		public void run() {
 			if (active) {
@@ -163,9 +161,9 @@ public class FEPythonThreadManager {
 						}
 					}
 					
-					System.out.println("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+					System.out.println("Python Interpreter Thread initialization successful.");
 				} catch (Exception e) {
-					System.out.println("nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn");
+					System.out.println("Python Interpreter Thread initialization failed.");
 					e.printStackTrace(System.out);
 				}
 			}
@@ -187,6 +185,9 @@ public class FEPythonThreadManager {
 		}
 	}
 	
+	/**
+	 * A simple data structure for storing info to be passed to the Python script.
+	 */
 	protected class ContourClip {
 		
 		public String clusterID;
@@ -204,14 +205,38 @@ public class FEPythonThreadManager {
 		}
 	}
 	
+	/**
+	 * Adds a Python command to the queue.
+	 */
 	public void addCommand(String inp) {
 		commandList.add(inp);
 	}
 	
+	/**
+	 * Adds a contour clip to the waitList.
+	 * "extras" should include contour header data (see use in FEProcess for details).
+	 */
 	public void sendContourClipToThread(String clusterID, String uid, String nrName, String clipName, String[] extras) {
 		waitList.add(new ContourClip(clusterID, uid, nrName, clipName, extras));
 	}
 	
+	/**
+	 * @return How many Python commands are still in the queue.
+	 */
+	public int commandsLeft() {
+		return commandList.size();
+	}
+	
+	/**
+	 * @return How many clips there are that haven't been sent to the Python script yet.
+	 */
+	public int getWaitlistSize() {
+		return waitList.size();
+	}
+	
+	/**
+	 * @return How many clips there are that are currently being processed.
+	 */
 	public int clipsLeft() {
 		int outp = 0;
 		for (int i = 0; i < ccList.size(); i++) {
@@ -220,6 +245,9 @@ public class FEPythonThreadManager {
 		return outp;
 	}
 	
+	/**
+	 * @return How many instances of Python output there are that haven't been added to the data block yet.
+	 */
 	public int vectorsLeft() {
 		int outp = 0;
 		for (int i = 0; i < pythonOutpList.size(); i++) {
@@ -228,15 +256,12 @@ public class FEPythonThreadManager {
 		return outp;
 	}
 	
-	public int getWaitlistSize() {
-		return waitList.size();
-	}
-	
-	public int commandsLeft() {
-		return commandList.size();
-	}
-	
-	public void shutDown() {
+	/**
+	 * Shuts down the Python interpreter.
+	 * Probably useless and would likely cause a tonne of exceptions.
+	 */
+	@Deprecated
+	protected void shutDown() {
 		if (bw != null) {
 			try {
 				bw.write("quit()");
@@ -249,6 +274,9 @@ public class FEPythonThreadManager {
 		}
 	}
 	
+	/**
+	 * Directly sends a Python command to the interpreter.
+	 */
 	private void pythonCommand(String command) {
 		if (bw != null) {
 			try {
@@ -264,14 +292,24 @@ public class FEPythonThreadManager {
 		}
 	}
 	
+	/**
+	 * Used by the RawDataBlockCheckerThread in FEProcess to signal that the current cluster has been passed.
+	 */
 	public void setRDBCTSignal(boolean inp) {
 		rdbctSignal = inp;
 	}
 	
+	/**
+	 * Checks if the RawDataBlockCheckerThread in FEProcess is finished with the current cluster.
+	 */
 	public boolean getRDBCTSignal() {
 		return rdbctSignal;
 	}
 	
+	/**
+	 * Thread that passes ContourClip objects from the waitList to the ccList and
+	 * sends Python commands in the queue to the interpreter.
+	 */
 	protected class RunnerThread extends Thread {
 		protected RunnerThread() {}
 		@Override
@@ -347,6 +385,9 @@ public class FEPythonThreadManager {
 		}
 	}
 	
+	/**
+	 * Processes output from the InputPrintThread.
+	 */
 	protected boolean processPythonOutput(String inp) {
 		String subinp = "";
 		if (inp.length() >= 5) {
@@ -503,6 +544,9 @@ public class FEPythonThreadManager {
 		return true;
 	}
 	
+	/**
+	 * Parses through pythonOutpList and sends any feature vector data that's ready to go to the data block.
+	 */
 	private void addVectorToDataBlock() {
 		for (int i = 0; i < pythonOutpList.size(); i++) {
 			ArrayList<String[]> currList = new ArrayList<String[]>(pythonOutpList.get(i));
@@ -537,7 +581,11 @@ public class FEPythonThreadManager {
 		}
 	}
 	
-	public void resetTxtParams() {
+	/**
+	 * Re-initializes the "txtParams" variable, generally under the assumption that the
+	 * Feature Extractor's settings have changed.
+	 */
+	protected void resetTxtParams() {
 		try {
 			String pyParams = feControl.getParams().outputPythonParamsToText();
 	        if (pyParams.length() > 0) {
@@ -550,6 +598,9 @@ public class FEPythonThreadManager {
 		}
 	}
 	
+	/**
+	 * Forces the print threads and runner thread to (re)start.
+	 */
 	public void startPrintThreads() {
 		printThreadsActive = true;
 		ipt = new InputPrintThread();
@@ -560,6 +611,10 @@ public class FEPythonThreadManager {
 		rt.start();
 	}
 	
+	/**
+	 * Doesn't work. Needs to be fixed at some point.
+	 */
+	@Deprecated
 	public void stopPrintThreads() {
 		printThreadsActive = false;
 		try {
@@ -567,14 +622,15 @@ public class FEPythonThreadManager {
 			ept.join();
 			rt.join();
 		} catch(InterruptedException e) {
-			// TODO
+			e.printStackTrace();
 		}
 	}
 	
+	/**
+	 * Passes non-error Python output back to Java.
+	 */
 	protected class InputPrintThread extends Thread {
-		protected InputPrintThread() {
-			//this.run();
-		}
+		protected InputPrintThread() {}
 		@Override
 		public void run() {
 			while(printThreadsActive) {
@@ -618,10 +674,11 @@ public class FEPythonThreadManager {
 		}
 	}
 	
+	/**
+	 * Passes Python error output back to Java.
+	 */
 	protected class ErrorPrintThread extends Thread {
-		protected ErrorPrintThread() {
-			//this.run();
-		}
+		protected ErrorPrintThread() {}
 		@Override
 		public void run() {
 			while(printThreadsActive) {
@@ -658,9 +715,7 @@ public class FEPythonThreadManager {
 	
 	@Deprecated
 	protected class KillerThread extends Thread {
-		protected KillerThread() {
-			//this.run();
-		}
+		protected KillerThread() {}
 		@Override
 		public void run() {
 			while(printThreadsActive) {
@@ -679,10 +734,17 @@ public class FEPythonThreadManager {
 		return feControl;
 	}
 	
+	/**
+	 * Checks if the thread manager is running or not. Generally should return true.
+	 */
 	public boolean isActive() {
 		return active;
 	}
 	
+	/**
+	 * Attempts to extract the Python script from the .jar file and sets the thread manager to active if it worked.
+	 * @return Whether or not the JarExtractor succeeded.
+	 */
 	public boolean setActive() {
 		active = new JarExtractor().extract("src/mirrfFeatureExtractor/FEPythonThread.py",
 				feControl.getParams().tempFolder, "FEPythonThread.py", true);
@@ -690,7 +752,10 @@ public class FEPythonThreadManager {
 		return active;
 	}
 	
-	public void setInactive(boolean changePanelStatusText) {
+	/**
+	 * Deactivates the threads. Exercise caution.
+	 */
+	public void setInactive() {
 		active = false;
 	}
 }

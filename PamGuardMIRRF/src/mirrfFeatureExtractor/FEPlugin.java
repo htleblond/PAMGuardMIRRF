@@ -3,7 +3,8 @@
  * Version 1.01 
  * By Taylor LeBlond
  * Fisheries and Oceans Canada
- * May 2022
+ * Started May 2022
+ * Uploaded May 2023
  */
 
 package mirrfFeatureExtractor;
@@ -13,7 +14,6 @@ import PamModel.PamPluginInterface;
 
 /**
  * Music Information Retrieval Random Forest (MIRRF) Classifier - Feature Extractor
- * (Write description here.)
  * @author Taylor LeBlond
  */
 public class FEPlugin implements PamPluginInterface {
@@ -42,7 +42,8 @@ public class FEPlugin implements PamPluginInterface {
 
 	@Override
 	public String getToolTip() {
-		return "TBA";
+		return "A modified version of the Clip Generator that extracts feature data from audio clips "
+				+ "where Whistle and Moan Detector contours occur.";
 	}
 
 	@Override
@@ -107,13 +108,12 @@ public class FEPlugin implements PamPluginInterface {
 
 	@Override
 	public String getPamVerTestedOn() {
-		return "2.02.02";
+		return "2.02.06";
 	}
 
 	@Override
 	public String getAboutText() {
-		String desc = "TBA";
-		return desc;
+		return getToolTip();
 	}
 
 	/* (non-Javadoc)

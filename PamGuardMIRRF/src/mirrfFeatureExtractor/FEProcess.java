@@ -1,6 +1,5 @@
 package mirrfFeatureExtractor;
 
-import java.awt.event.MouseEvent;
 import java.io.File;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -17,9 +16,7 @@ import javax.sound.sampled.AudioFormat;
 
 import Acquisition.AcquisitionControl;
 import warnings.PamWarning;
-import clipgenerator.ClipDataUnit;
 import clipgenerator.localisation.ClipDelays;
-import dataPlotsFX.layout.TDGraphFX;
 import wavFiles.Wav16AudioFormat;
 import wavFiles.WavFileWriter;
 import PamController.PamController;
@@ -28,39 +25,29 @@ import PamguardMVC.PamDataUnit;
 import PamguardMVC.PamObservable;
 import PamguardMVC.PamObserver;
 import PamguardMVC.PamObserverAdapter;
+import PamguardMVC.PamProcess;
 import PamguardMVC.PamRawDataBlock;
 import PamguardMVC.RawDataUnavailableException;
-import Spectrogram.SpectrogramDisplay;
-import Spectrogram.SpectrogramMarkProcess;
 import annotation.handler.ManualAnnotationHandler;
 
 /**
- * Process for making short clips of audio data. 
- * <br> separate subscriber processes for each triggering data block, but these all send clip requests
- * back into the main observer of the actual raw data - so that all clips are made from the 
- * same central thread. 
- * <br> Let the request queue trigger off the main clock signal. 
- *  
- * @author Doug Gillespie
- *
+ * A modified version of clipGenerator.ClipProcess that creates sound clips
+ * when Whistle and Moan Detector contours occur and sends them to the
+ * thread manager for extracting feature data via a Python script.
+ * @author Taylor LeBlond (original code by Doug Gillespie)
  */
-public class FEProcess extends SpectrogramMarkProcess {
-
-	//private ClipControl clipControl;
-	private PamDataBlock[] dataSources;
-	private ClipBlockProcess[] clipBlockProcesses;
-	private List<ClipRequest> clipRequestQueue;
-	private Object clipRequestSynch = new Object();
-	private PamRawDataBlock rawDataBlock;
-	//private ClipDataBlock clipDataBlock;
-	private long specMouseDowntime;
-	private boolean specMouseDown;
-	private long masterClockTime;
-	private ClipDelays clipDelays;
-	//private BuoyLocaliserManager buoyLocaliserManager;
-	//private ClipSpectrogramMarkDataBlock clipSpectrogramMarkDataBlock;
-	private ManualAnnotationHandler manualAnnotaionHandler;
-	private static PamWarning warningMessage = new PamWarning("Clip Generator", "", 2);
+public class FEProcess extends PamProcess {
+	
+	protected ClipBlockProcess[] clipBlockProcesses;
+	protected List<ClipRequest> clipRequestQueue;
+	protected Object clipRequestSynch = new Object();
+	protected PamRawDataBlock rawDataBlock;
+	protected long specMouseDowntime;
+	protected boolean specMouseDown;
+	protected long masterClockTime;
+	protected ClipDelays clipDelays;
+	protected ManualAnnotationHandler manualAnnotaionHandler;
+	protected static PamWarning warningMessage = new PamWarning("Clip Generator", "", 2);
 	
 	protected FEControl feControl;
 	protected double[][] nrData;
@@ -72,23 +59,10 @@ public class FEProcess extends SpectrogramMarkProcess {
 	protected FEDataBlock vectorDataBlock;
 
 	public FEProcess(FEControl feControl) {
-		super(feControl);
+		//super(feControl);
+		super(feControl, null);
 		this.feControl = feControl;
-		//this.clipControl = clipControl;
 		clipRequestQueue = new LinkedList<ClipRequest>();
-		//clipSpectrogramMarkDataBlock = new ClipSpectrogramMarkDataBlock(this, 0);
-		//clipDataBlock = new ClipDataBlock(clipControl.getUnitName() + " Clips", this, 0);
-		//clipDataBlock.setBinaryDataSource(new ClipBinaryDataSource(clipControl, clipDataBlock));
-		//ClipOverlayGraphics cog = new ClipOverlayGraphics(clipControl, clipDataBlock);
-		//clipDataBlock.setOverlayDraw(cog);
-		//StandardSymbolManager symbolManager = new ClipSymbolManager(clipDataBlock, ClipOverlayGraphics.defSymbol, true);
-		//symbolManager.addSymbolOption(StandardSymbolManager.HAS_LINE_AND_LENGTH);
-		//clipDataBlock.setPamSymbolManager(symbolManager);
-		//addOutputDataBlock(clipDataBlock);
-		//clipDelays = new ClipDelays(clipControl);
-		//buoyLocaliserManager = new BuoyLocaliserManager();
-		//manualAnnotaionHandler = new ManualAnnotationHandler(clipControl, clipDataBlock);
-		//clipDataBlock.setAnnotationHandler(manualAnnotaionHandler);
 		
 		prevDU = null;
 		clusterCountID = 0;
@@ -117,7 +91,8 @@ public class FEProcess extends SpectrogramMarkProcess {
 	 * Process the queue of clip request - these are passed straight back
 	 * into the ClipBlockProcesses which started them since there is a 
 	 * certain amount of bookkeeping which needs to be done at the
-	 * individual block level.  
+	 * individual block level.
+	 * @author Doug Gillespie (modified by Taylor LeBlond)
 	 */
 	protected void processRequestList() {
 		if (PamController.getInstance().getRunMode() != PamController.RUN_NORMAL &&
@@ -147,16 +122,6 @@ public class FEProcess extends SpectrogramMarkProcess {
 					feControl.addOneToCounter(FEPanel.PENDING, String.valueOf(clipRequest.getUID()));
 					li.remove();
 				}
-				
-			/*	switch (clipErr) {
-				case 0: // no error - clip should have been created. 
-				case RawDataUnavailableException.DATA_ALREADY_DISCARDED:
-				case RawDataUnavailableException.INVALID_CHANNEL_LIST:
-					//					System.out.println("Clip error : " + clipErr);
-					li.remove();
-				case RawDataUnavailableException.DATA_NOT_ARRIVED:
-					continue; // hopefully, will get this next time !
-				} */
 			}
 		}
 	}
@@ -166,11 +131,6 @@ public class FEProcess extends SpectrogramMarkProcess {
 	 */
 	@Override
 	public void prepareProcess() {
-		/*
-		 * Work out which hydrophones are in use and create an appropriate bearing
-		 * localiser. 
-		 */
-		
 		// TODO TAYLOR - There's probably a better way of communicating this.
 		if (feControl.getParams().audioSourceProcessName.length() > 0)
 			feControl.getParams().sr = 
@@ -182,7 +142,7 @@ public class FEProcess extends SpectrogramMarkProcess {
 
 	@Override
 	public void pamStart() {
-		super.pamStart();
+		//super.pamStart();
 		clipRequestQueue.clear(); // just in case anything hanging around from previously. 
 		// if there is it may crash since the ClipblockProcess will probably have been replaced anyway.
 		
@@ -202,14 +162,6 @@ public class FEProcess extends SpectrogramMarkProcess {
 	@Override
 	public void pamStop() {
 		System.out.println("Went through pamStop().");
-		//feControl.getThreadManager().pamStopped = true;
-		//checkerThreadOn = false;
-		//csvThreadActive = false;
-		//if (feParams.inputCSVEntries.size() > 0) {
-		//	feControl.getParams().inputCSVIndexes = new ArrayList<Integer>(csvIndexesCopy);
-		//	feControl.getSidePanel().getFEPanel().getReloadCSVButton().setEnabled(true);
-		//}
-		//while (feControl.getThreadManager().pythonResultsWaitQueue > 0) {
 		FEPythonThreadManager threadManager = feControl.getThreadManager();
 		int waitNum = 0;
 		while (threadManager.getWaitlistSize() > 0 || threadManager.clipsLeft() > 0 || threadManager.vectorsLeft() > 0) {
@@ -246,6 +198,12 @@ public class FEProcess extends SpectrogramMarkProcess {
 		}
 	}
 	
+	/**
+	 * Sets up a queue for processing clips when using the CSV input option.
+	 * Adds entries to queue if they occur between the start time of the current
+	 * audio file and the expected end of the file as specified in the settings.
+	 * @author Taylor LeBlond
+	 */
 	protected void fillClipRequestQueueViaCSV() {
 		AcquisitionControl ac = null;
 		for (int i = 0; i < feControl.getPamController().getNumControlledUnits(); i++) {
@@ -296,37 +254,16 @@ public class FEProcess extends SpectrogramMarkProcess {
 	
 	/**
 	 * Called at end of setup of after settings dialog to subscribe data blocks. 
+	 * @author Doug Gillespie (modified by Taylor LeBlond)
 	 */
 	public synchronized void subscribeDataBlocks() {
 		unSubscribeDataBlocks();
-		//rawDataBlock = PamController.getInstance().getRawDataBlock(clipControl.clipSettings.dataSourceName);
 		rawDataBlock = PamController.getInstance().getRawDataBlock(feControl.getParams().audioSourceProcessName);
 		setParentDataBlock(rawDataBlock, true);
 		
-		//int nBlocks = clipControl.clipSettings.getNumClipGenerators();
 		int nBlocks = 1;
 		clipBlockProcesses = new ClipBlockProcess[nBlocks];
 		PamDataBlock aDataBlock;
-		//ClipGenSetting clipGenSetting;
-	/*	for (int i = 0; i < nBlocks; i++) {
-			
-			clipGenSetting = clipControl.clipSettings.getClipGenSetting(i);
-
-			if (clipGenSetting.enable == false) {
-				continue;
-			}
-			if (i == 0) {
-				aDataBlock = this.clipSpectrogramMarkDataBlock;
-			}
-			else {
-				aDataBlock = PamController.getInstance().getDetectorDataBlock(clipGenSetting.dataName); 
-
-			}
-			if (aDataBlock == null) {
-				continue;
-			}
-			clipBlockProcesses[i] = new ClipBlockProcess(this, aDataBlock, clipGenSetting);
-		} */
 		if (feControl.getParams().inputFromCSV) {
 			aDataBlock = new PamDataBlock<FEDummyDataUnit>(FEDummyDataUnit.class, processName, this, 0);
 			aDataBlock.setSampleRate(feControl.getParams().sr, false);
@@ -337,9 +274,10 @@ public class FEProcess extends SpectrogramMarkProcess {
 	}
 	
 	/**
-	 * Kill off the old ClipBlockProcesses before creating new ones. 
+	 * Kill off the old ClipBlockProcesses before creating new ones.
+	 * @author Doug Gillespie
 	 */
-	private void unSubscribeDataBlocks() {
+	protected void unSubscribeDataBlocks() {
 		if (clipBlockProcesses == null) {
 			return;
 		}
@@ -351,38 +289,24 @@ public class FEProcess extends SpectrogramMarkProcess {
 		}
 	}
 	
+	/**
+	 * @author Doug Gillespie (modified by Taylor LeBlond)
+	 */
 	public class ClipBlockProcess extends PamObserverAdapter {
 		
 		private PamDataBlock dataBlock;
-		//protected ClipGenSetting clipGenSetting;
 		protected FEProcess clipProcess;
-		//private ClipDataUnit lastClipDataUnit;
 		private WavFileWriter wavFile;
-		//private StandardClipBudgetMaker clipBudgetMaker;
-		//private BearingLocaliser bearingLocaliser;
-		//private int hydrophoneMap;
 		
 		/**
 		 * @param dataBlock
 		 * @param clipGenSetting
 		 */
-		//public ClipBlockProcess(FEProcessNew clipProcess, PamDataBlock dataBlock,
-		//		ClipGenSetting clipGenSetting) {
 		public ClipBlockProcess(FEProcess clipProcess, PamDataBlock dataBlock) {
 			super();
 			this.clipProcess = clipProcess;
 			this.dataBlock = dataBlock;
-			//this.clipGenSetting = clipGenSetting;
-			//clipBudgetMaker = new StandardClipBudgetMaker(this);
 			dataBlock.addObserver(this, true);
-			
-
-		/*	if (rawDataBlock != null) {
-				int chanMap = decideChannelMap(rawDataBlock.getChannelMap());
-				hydrophoneMap = rawDataBlock.getChannelListManager().channelIndexesToPhones(chanMap);
-				double timingError = Correlations.defaultTimingError(getSampleRate());
-				bearingLocaliser = BearingLocaliserSelector.createBearingLocaliser(hydrophoneMap, timingError); 
-			} */
 		}
 		
 		/**
@@ -392,28 +316,13 @@ public class FEProcess extends SpectrogramMarkProcess {
 		 * output folder. 
 		 * @param clipRequest clip request information
 		 * @return 0 if OK or the cause from RawDataUnavailableException if data are not available. 
+		 * @author Doug Gillespie (modified by Taylor LeBlond)
 		 */
-		private int processClipRequest(ClipRequest clipRequest) {
-//			System.out.println("Process clip request:? " +clipRequest.dataUnit); 
+		protected int processClipRequest(ClipRequest clipRequest) { 
 			PamDataUnit dataUnit = (PamDataUnit) clipRequest.dataUnit;
 			long rawStart = dataUnit.getStartSample();
 			long rawEnd = rawStart + dataUnit.getSampleDuration();
-//			rawStart -= (clipGenSetting.preSeconds * getSampleRate());
-			//rawStart = (long) Math.max(rawStart-clipGenSetting.preSeconds * getSampleRate(),0); // prevent negative numbers, just start at the beginning if detection is near start of file
-			//rawEnd += (clipGenSetting.postSeconds * getSampleRate());
 			int channelMap = decideChannelMap(dataUnit.getChannelBitmap());
-			
-			//boolean append = false;
-//			if (lastClipDataUnit != null) {
-//				if (rawStart < (lastClipDataUnit.getStartSample()+lastClipDataUnit.getSampleDuration()) &&
-//						channelMap == lastClipDataUnit.getChannelBitmap()) {
-//					append = true;
-//					rawStart = lastClipDataUnit.getStartSample()+lastClipDataUnit.getSampleDuration();
-//					if (rawEnd < rawStart) {
-//						return 0; // nothing to do !
-//					}
-//				}
-//			}
 			
 			FEParameters params = feControl.getParams();
 			
@@ -507,76 +416,19 @@ public class FEProcess extends SpectrogramMarkProcess {
 					/ (dataUnit.getDurationInMilliseconds()/1000));
 			feControl.getThreadManager().sendContourClipToThread(clusterID, String.valueOf(dataUnit.getUID()), nrPath, clipPath, extras);
 			
-		/*	if (append && clipControl.clipSettings.storageOption == ClipSettings.STORE_WAVFILES) {
-				wavFile.append(rawData);
-				lastClipDataUnit.setSampleDuration(rawEnd-lastClipDataUnit.getStartSample());
-				clipDataBlock.updatePamData(lastClipDataUnit, dataUnit.getTimeMilliseconds());
-//				System.out.println(String.format("%d samples added to file", rawData[0].length));
-			} */
-		/*	else {
-				ClipDataUnit clipDataUnit = null;
-				//long startMillis = dataUnit.getTimeMilliseconds() - (long) (clipGenSetting.preSeconds*1000.);
-				long startMillis = dataUnit.getTimeMilliseconds();
-				String fileName = "";
-				
-				if ((clipControl.clipSettings.storageOption == ClipSettings.STORE_WAVFILES) 
-						|| (clipControl.clipSettings.storageOption == ClipSettings.STORE_BOTH)) {
-					String folderName = getClipFileFolder(dataUnit.getTimeMilliseconds(), true);
-					fileName = getClipFileName(startMillis);
-					AudioFormat af = new Wav16AudioFormat(getSampleRate(), rawData.length);
-					wavFile = new WavFileWriter(folderName+fileName, af);
-					wavFile.write(rawData);
-					wavFile.close();
-					// make a data unit to go with it. 
-					clipDataUnit = new ClipDataUnit(startMillis, dataUnit.getTimeMilliseconds(), rawStart,
-							(int)(rawEnd-rawStart), channelMap, fileName, dataBlock.getDataName(), rawData, getSampleRate());
-				}
-				if ((clipControl.clipSettings.storageOption == ClipSettings.STORE_BINARY) 
-						|| (clipControl.clipSettings.storageOption == ClipSettings.STORE_BOTH)) {
-					clipDataUnit = new ClipDataUnit(startMillis, dataUnit.getTimeMilliseconds(), rawStart,
-							(int)(rawEnd-rawStart), channelMap, fileName, dataBlock.getDataName(), rawData, getSampleRate());
-				}
-				clipDataUnit.setTriggerDataUnit(dataUnit);
-				clipDataUnit.setFrequency(dataUnit.getFrequency());
-				lastClipDataUnit = clipDataUnit;
-				if (bearingLocaliser != null) {
-					localiseClip(clipDataUnit, bearingLocaliser, hydrophoneMap);
-				}				
-				clipDataBlock.addPamData(clipDataUnit);
-				
-				
-			} */
-			
 			return 0; // no error. 
 		}
 
-	/*	private String getClipFileName(long timeStamp) {
-			return PamCalendar.createFileNameMillis(timeStamp, clipGenSetting.clipPrefix, ".wav");
-		} */
-	
-
 		/**
-		 * Decide which channels should actually be used. 
-		 * @param channelBitmap
-		 * @return
+		 * @return 1
 		 */
 		protected int decideChannelMap(int channelBitmap) {
-		/*	switch (clipGenSetting.channelSelection) {
-			case ClipGenSetting.ALL_CHANNELS:
-				return rawDataBlock.getChannelMap();
-			case ClipGenSetting.DETECTION_CHANNELS_ONLY:
-				return channelBitmap;
-			case ClipGenSetting.FIRST_DETECTION_CHANNEL_ONLY:
-				int overlap = channelBitmap & rawDataBlock.getChannelMap();
-				int first = PamUtils.getLowestChannel(overlap);
-				return 1<<first;
-			} */
-			//return 0;
 			return 1;
 		}
 
 		/**
-		 * disconnect from it's data source. 
+		 * disconnect from it's data source.
+		 * @author Doug Gillespie
 		 */
 		public void disconnect() {
 			dataBlock.deleteObserver(this);
@@ -592,61 +444,27 @@ public class FEProcess extends SpectrogramMarkProcess {
 			return clipProcess.getObserverObject();
 		}
 		
-	/*	@Override
-		public long getRequiredDataHistory(PamObservable o, Object arg) {
-			return (long) ((clipGenSetting.preSeconds+clipGenSetting.postSeconds) * 1000.);
-		} */
-		
 		@Override
 		public void addData(PamObservable o, PamDataUnit dataUnit) {
 			/**
 			 * This one should get updates from the triggering data block. 
 			 */
-//			System.out.printf("Clip request: " + dataUnit.toString());
-		/*	if (shouldMakeClip((PamDataUnit) dataUnit)) {
-//				System.out.printf(": Clip requested\n");
-				addClipRequest(new ClipRequest(this, dataUnit));
-			} */
-//			else {
-//				System.out.printf(": Clip request refused\n");
-//			}
 			addClipRequest(new ClipRequest(this, dataUnit));
 		}
 
 		@Override
-		public void updateData(PamObservable observable, PamDataUnit pamDataUnit) {
-			// TODO Auto-generated method stub
-		}
-
-		/**
-		 * Function to decide whether or not a clip should be made. 
-		 * Might be set to all clips, might be working to a budget. 
-		 * Will ultimately be calling into quite a long winded decision
-		 * making process. 
-		 * @param arg
-		 * @return true if a clip should be made, false otherwsie. 
-		 */
-		private boolean shouldMakeClip(PamDataUnit dataUnit) {
-			//return clipBudgetMaker.shouldStore(dataUnit);
-			return true;
-		}
-		
+		public void updateData(PamObservable observable, PamDataUnit pamDataUnit) {}
 	}
 	
 	/**
 	 * Data needed for a clip request. 
-	 * @author Doug Gillespie
-	 *
+	 * @author Doug Gillespie (modified by Taylor LeBlond)
 	 */
 	public class ClipRequest {
 		
 		protected ClipBlockProcess clipBlockProcess;
 		protected PamDataUnit dataUnit;
 		
-		/**
-		 * @param clipBlockProcess
-		 * @param dataUnit
-		 */
 		public ClipRequest(ClipBlockProcess clipBlockProcess,
 				PamDataUnit dataUnit) {
 			super();
@@ -724,54 +542,17 @@ public class FEProcess extends SpectrogramMarkProcess {
 	}
 	
 	/**
-	 * Find the wav file to go with a particular clip
-	 * @param clipDataUnit data unit to find the file for. 
-	 * @return file, or null if not found. 
-	 */
-	@Deprecated
-	public File findClipFile(ClipDataUnit clipDataUnit) {
-		//String path = getClipFileFolder(clipDataUnit.getTimeMilliseconds(), true);
-		String path = getClipFileFolder();
-		path += clipDataUnit.fileName;
-		File aFile = new File(path);
-		if (aFile.exists() == false) {
-			return null;
-		}
-		return aFile;
-	}
-	
-	/**
-	 * Get the output folder, based on time and sub folder options. 
-	 * @param timeStamp
-	 * @param addSeparator
-	 * @return
+	 * Get the output folder, based on time and sub folder options.
 	 */
 	public String getClipFileFolder() {
-	/*	String fileSep = FileParts.getFileSeparator();
-		if (clipControl.clipSettings.outputFolder == null) return null;
-		String folderName = new String(clipControl.clipSettings.outputFolder);
-		if (clipControl.clipSettings.datedSubFolders) {
-			folderName += fileSep + PamCalendar.formatFileDate(timeStamp);
-
-			// now check that that folder exists. 
-			File folder = FileFunctions.createNonIndexedFolder(folderName);
-			if (folder == null || folder.exists() == false) {
-				return null;
-			}
-		}
-		if (addSeparator) {
-			folderName += fileSep;
-		}
-		return folderName; */
 		return feControl.getParams().tempFolder; // TODO TAYLOR - MAKE SURE THIS IS CORRECT!!!
 	}
 	
 	/**
-	 * 
+	 * Creates a cluster ID String based off of the input UID and cluster count number.
 	 * @param uid
 	 * @param clusterCount
-	 * @param underscore
-	 * @return
+	 * @param underscore - Whether or not it uses a dash or an underscore.
 	 * @author Taylor LeBlond
 	 */
 	public String createClusterID(long uid, int clusterCount, boolean underscore) {
@@ -782,11 +563,10 @@ public class FEProcess extends SpectrogramMarkProcess {
 	}
 	
 	/**
-	 * 
+	 * Produces the path for a new sound clip with a cluster ID.
 	 * @param uid
 	 * @param clusterCount
-	 * @param isNR
-	 * @return
+	 * @param isNR - If the file is supposed to be used for noise removal (true) or if it's the actual contour clip (false).
 	 * @author Taylor LeBlond
 	 */
 	public String createClipPath(long uid, int clusterCount, boolean isNR) {
@@ -797,11 +577,13 @@ public class FEProcess extends SpectrogramMarkProcess {
 		return fp+"FE_"+cID+"_"+String.valueOf(uid)+".wav";
 	}
 
+	/**
+	 * @author Doug Gillespie
+	 */
 	@Override
 	public boolean flushDataBlockBuffers(long maxWait) {
 		boolean ans = super.flushDataBlockBuffers(maxWait);
 		processRequestList(); // one last go at processing the clip request list before stopping.
-		
 		return ans;
 	}
 	
@@ -824,42 +606,29 @@ public class FEProcess extends SpectrogramMarkProcess {
 		}
 		return minH;
 	}
-
+	
+	/**
+	 * @author Doug Gillespie
+	 */
 	protected void addClipRequest(ClipRequest clipRequest) {
 		synchronized (clipRequestSynch) {
 			clipRequestQueue.add(clipRequest);
 		}
 	}
 	
+	/**
+	 * @return The output data block.
+	 * @author Taylor LeBlond
+	 */
 	public FEDataBlock getVectorDataBlock() {
 		return vectorDataBlock;
 	}
 	
+	/**
+	 * Adds a data unit containing vector data to the output data block.
+	 * @author Taylor LeBlond
+	 */
 	public void addVectorData(FEDataUnit du) {
 		vectorDataBlock.addPamData(du);
-	}
-	
-	@Override
-	public boolean spectrogramNotification(SpectrogramDisplay display, MouseEvent mouseEvent, int downUp, int channel, 
-			long startMilliseconds, long duration, double f1, double f2, TDGraphFX tdDisplay) {
-		return false;
-	}
-
-	@Override
-	public boolean canMark() {
-		return false;
-	}
-
-	@Override
-	public String getMarkName() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	/**
-	 * @return the manualAnnotaionHandler
-	 */
-	public ManualAnnotationHandler getManualAnnotaionHandler() {
-		return manualAnnotaionHandler;
 	}
 }

@@ -22,8 +22,6 @@ import time
 import warnings
 from builtins import FileNotFoundError
 
-print("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb")
-
 class FEThread():
     def __init__(self, y_nr_name: str, y_nr: np.ndarray, txtParams: list):
         #print("In thread __init__.")
