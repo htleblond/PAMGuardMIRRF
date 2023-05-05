@@ -22,6 +22,8 @@ import time
 import warnings
 from builtins import FileNotFoundError
 
+# Basically, an instance of this should be created in the Python interpreter
+# for each cluster, and sound clips should be fed into it via addClip.
 class FEThread():
     def __init__(self, y_nr_name: str, y_nr: np.ndarray, txtParams: list):
         #print("In thread __init__.")
@@ -57,6 +59,7 @@ class FEThread():
         #thread = threading.Thread(target=self.threadFunc(), args=(1,))
         #thread.start()
         
+    # Loads a clip for processing.
     def addClip(self, fn:str, uid, datelong, amplitude, duration, freqhd_min, freqhd_max, frange, fslopehd):
         #print("Reached addClip().")
         self.clipList.append(fn)
@@ -66,6 +69,7 @@ class FEThread():
         thread.start()
         print("Thread "+str(uid)+" has finished.", flush=True)
     
+    # The processing thread's function.
     def threadFunc(self, fn: str, extras):
         #print("Reached threadFunc().")
         if self.audioNRChecked and len(self.y_nr) == 0:
@@ -83,23 +87,25 @@ class FEThread():
             print(traceback.format_exc(), flush=True, file=sys.stderr)
         if os.path.exists(fn):
             os.remove(fn)
-        
+    
+    @deprecated
     def killAfterCompletion(self):
         self.active = False
-        
+    
+    @deprecated
     def checkIfFreeable(self):
         if not self.active and len(self.clipList) == 0:
             return True
         else:
             return False
     
+    # Loads and manipulates the audio before sending it to the functions
+    # that perform the feature extraction.
     def extractFeatures(self, fn: str, extras):
-        #print(self.y_nr_name[3:len(self.y_nr_name)-4]+", "+str(np.mean(self.y_nr)))
         self.sr = librosa.core.get_samplerate(fn)
         y, sr = librosa.load(fn, sr=self.sr)
         y_stft = librosa.stft(y, n_fft=self.audioSTFTLength, hop_length=self.audioHopSize, win_length=self.audioSTFTLength, \
                               window=self.getWindowName(self.audioWindowFunction))
-        #print(y[100:200])
         maxval = np.max(np.abs(y_stft))
         if self.audioNRChecked:
             for i in np.arange(len(y_stft)):
@@ -134,7 +140,10 @@ class FEThread():
         for i in np.arange(len(self.features)):
             outp.append(self.extractIndividualFeature(self.features[i], preCalcFeatures[self.featureProcessIndexes[i]], extras))
         return outp
-
+    
+    # Performs the actual feature extraction. Designed such that instances where
+    # the actual processing is the same will use the same output without having
+    # to calculate it more than once.
     def preCalculateFeature(self, feature: str, y, y_stft):
         tokens = feature.split("_")
         if tokens[0] == "mfcc":
@@ -208,7 +217,6 @@ class FEThread():
                                  np.mod((yin[j]*(k+1)-0.5)/((self.sr/2)/(self.audioSTFTLength/2)),1)]
                         ceiling = [int(np.ceil((yin[j]*(k+1)-0.5)/((self.sr/2)/(self.audioSTFTLength/2)))), \
                                    1-np.mod((yin[j]*(k+1)-0.5)/((self.sr/2)/(self.audioSTFTLength/2)),1)]
-                        #print(str(yin[j])+" : "+str(floor[0]))
                         if yin[j] >= int(tokens[2]) and yin[j] <= int(tokens[3]):
                             if ceiling[0] < self.audioSTFTLength/2:
                                 harmonics_arr[k].append(y_amp_t[j][floor[0]]*floor[1] + y_amp_t[j][int(ceiling[0])]*ceiling[1])
@@ -224,7 +232,7 @@ class FEThread():
             return librosa.feature.zero_crossing_rate(y+0.0001)
         return []
             
-        
+    # Goes through the array of pre-calculated data and runs calculateData on it.
     def extractIndividualFeature(self, feature: str, featureArray, extras):
         tokens = feature.split("_")
         header_features = ["amplitude","duration","freqhd_min","freqhd_max","frange","fslopehd"]
@@ -284,6 +292,7 @@ class FEThread():
                     return 0.0
         return feature
      
+    # Extracts the mean, median, standard deviation, maximum or minimum from pre-calculated data.
     def calculateUnit(self, featureArray, function):
         if function == "mean":
             return np.mean(featureArray)
@@ -297,6 +306,7 @@ class FEThread():
             return np.min(featureArray)
         return 0;
     
+    # Parses through input settings and creates a list of what to process
     def featuresToProcess(self, features: list):
         outp = []
         outpIndexes = []
@@ -327,6 +337,7 @@ class FEThread():
                 
         return outp, outpIndexes
     
+    # Returns shorthands for window functions.
     def getWindowName(self, winname):
         if winname == "Bartlett-Hann":
             return "barthann"
@@ -340,7 +351,8 @@ class FEThread():
     
     def runLast(self):
         print("RUNLAST")
-    
+
+@deprecated
 def freeThroughList(threadList: list, wavNrList: list):
     #print("listlens: "+str(len(threadList))+", "+str(len(wavNrList)))
     if len(threadList) == len(wavNrList):
@@ -352,7 +364,8 @@ def freeThroughList(threadList: list, wavNrList: list):
             else:
                 i += 1
     return threadList, wavNrList
-    
+
+@deprecated
 def freeIfComplete(inpThread: FEThread, inpWav):
     if inpThread.checkIfFreeable():
         print("freed: "+inpThread.y_nr_name[:len(inpThread.y_nr_name)-4])

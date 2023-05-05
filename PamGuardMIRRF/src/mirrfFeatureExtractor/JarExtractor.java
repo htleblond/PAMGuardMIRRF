@@ -1,23 +1,16 @@
 package mirrfFeatureExtractor;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.List;
-import java.util.Scanner;
-import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
 import org.apache.commons.io.FileUtils;
 
+/**
+ * Extracts Python scripts from the plugin's .jar file.
+ * @author Taylor LeBlond
+ */
 public class JarExtractor {
 	
 	public boolean extract(String resourceName, String destFolderName, String destFileName, boolean delete) {

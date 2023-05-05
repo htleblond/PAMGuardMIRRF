@@ -1,67 +1,31 @@
 package mirrfFeatureExtractor;
 
-import java.awt.BorderLayout;
-import java.awt.CardLayout;
-import java.awt.Component;
-import java.awt.Dimension;
 import java.awt.FlowLayout;
-import java.awt.Frame;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.awt.GridLayout;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.FocusAdapter;
-import java.awt.event.FocusEvent;
 import java.io.File;
-import java.io.PrintWriter;
 
-import javax.swing.ButtonGroup;
-import javax.swing.DefaultListModel;
 import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
-import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.JRadioButton;
-import javax.swing.JScrollPane;
-import javax.swing.JTabbedPane;
-import javax.swing.JTable;
 import javax.swing.JTextField;
-import javax.swing.ListModel;
-import javax.swing.ListSelectionModel;
-import javax.swing.SwingConstants;
 import javax.swing.border.TitledBorder;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
-import javax.swing.filechooser.FileNameExtensionFilter;
-import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableModel;
-import javax.swing.table.TableRowSorter;
-import javax.swing.text.AttributeSet;
-import javax.swing.text.BadLocationException;
-import javax.swing.text.PlainDocument;
 
-import PamController.PamController;
-import PamDetection.RawDataUnit;
 import PamUtils.PamFileChooser;
-import spectrogramNoiseReduction.SpectrogramNoiseDialogPanel;
-import spectrogramNoiseReduction.SpectrogramNoiseSettings;
-import whistlesAndMoans.AbstractWhistleDataUnit;
-import fftManager.FFTDataBlock;
-import fftManager.FFTDataUnit;
-import PamView.dialog.GroupedSourcePanel;
 import PamView.dialog.PamDialog;
 import PamView.dialog.PamGridBagContraints;
-import PamView.dialog.SourcePanel;
-import PamguardMVC.PamDataBlock;
-import PamguardMVC.PamProcess;
-import cepstrum.CepstrumProcess;
 
+/**
+ * Dialog for selecting the "temp folder" where audio clips and
+ * Python code are temporarily stored.
+ * @author Taylor LeBlond
+ */
+@SuppressWarnings("serial")
 public class FETempFolderDialog extends PamDialog {
 	
 	private FEControl feControl;
@@ -206,13 +170,8 @@ public class FETempFolderDialog extends PamDialog {
 	}
 
 	@Override
-	public void cancelButtonPressed() {
-		//feControl.removeUnit();
-		//feControl.getSidePanel().getFEPanel().fileField.setText("No MIRRF Temp folder selected.");
-	}
+	public void cancelButtonPressed() {}
 
 	@Override
-	public void restoreDefaultSettings() {
-		return;
-	}
+	public void restoreDefaultSettings() {}
 }
