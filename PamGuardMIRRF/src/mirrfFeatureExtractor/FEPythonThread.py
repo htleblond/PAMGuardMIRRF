@@ -88,11 +88,11 @@ class FEThread():
         if os.path.exists(fn):
             os.remove(fn)
     
-    @deprecated
+    #deprecated
     def killAfterCompletion(self):
         self.active = False
     
-    @deprecated
+    #deprecated
     def checkIfFreeable(self):
         if not self.active and len(self.clipList) == 0:
             return True
@@ -352,7 +352,7 @@ class FEThread():
     def runLast(self):
         print("RUNLAST")
 
-@deprecated
+#deprecated
 def freeThroughList(threadList: list, wavNrList: list):
     #print("listlens: "+str(len(threadList))+", "+str(len(wavNrList)))
     if len(threadList) == len(wavNrList):
@@ -365,7 +365,7 @@ def freeThroughList(threadList: list, wavNrList: list):
                 i += 1
     return threadList, wavNrList
 
-@deprecated
+#deprecated
 def freeIfComplete(inpThread: FEThread, inpWav):
     if inpThread.checkIfFreeable():
         print("freed: "+inpThread.y_nr_name[:len(inpThread.y_nr_name)-4])
