@@ -23,7 +23,7 @@ import PamUtils.PamFileChooser;
 import PamView.dialog.PamDialog;
 import PamView.dialog.PamGridBagContraints;
 
-@SuppressWarnings("serial")
+//@SuppressWarnings("serial")
 public class MIRRFTempFolderDialog extends PamDialog {
 	
 	protected PamControlledUnit control;
