@@ -8,12 +8,12 @@ import java.util.HashMap;
 import PamModel.parametermanager.ManagedParameters;
 import PamModel.parametermanager.PamParameterSet;
 import PamView.GroupedSourceParameters;
+import mirrfFeatureExtractor.MIRRFParameters;
 
 import org.apache.commons.text.WordUtils;
 
-public class LCParameters implements Serializable, Cloneable, ManagedParameters {
-	
-	public String tempFolder;
+//@SuppressWarnings("serial")
+public class LCParameters extends MIRRFParameters {
 	
 	public String trainPath; // This should be accessed from loadedTrainingSetInfo in control in most cases.
 	
@@ -56,7 +56,6 @@ public class LCParameters implements Serializable, Cloneable, ManagedParameters 
 	public int fftLength;
 	
 	public LCParameters() {
-		this.tempFolder = "";
 		
 		this.trainPath = "";
 		
@@ -99,6 +98,7 @@ public class LCParameters implements Serializable, Cloneable, ManagedParameters 
 		this.fftLength = 2048;
 	}
 	
+	@Override
 	public String outputPythonParamsToText() {
 		if (tempFolder.length() == 0) {
 			return "";
@@ -205,12 +205,6 @@ public class LCParameters implements Serializable, Cloneable, ManagedParameters 
 	
 	@Override
 	public LCParameters clone() {
-		try {
-			return (LCParameters) super.clone();
-		}
-		catch (Exception e) {
-			e.printStackTrace();
-			return null;
-		}
+		return (LCParameters) super.clone();
 	}
 }

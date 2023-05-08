@@ -43,16 +43,19 @@ public class TCControl extends LCControl {
 		loadedTestingSetInfo = new LCTrainingSetInfo("");
 		tabPanel = new TCTabPanel(this);
 		sidePanel = new TCSidePanel(this);
-		if (parameters.tempFolder.length() == 0) {
-			LCTempFolderDialog tfDialog = new LCTempFolderDialog(this.getGuiFrame(), this, "MIRRF Live Classifier", "Live Classifier");
+		
+		runTempFolderDialogLoop("MIRRF Test Classifier", "Test Classifier", parameters);
+	/*	if (parameters.tempFolder.length() == 0) {
+			LCTempFolderDialog tfDialog = new LCTempFolderDialog(this.getGuiFrame(), this, "MIRRF Test Classifier", "Test Classifier");
 			tfDialog.setVisible(true);
 		} else {
 			File testFile = new File(parameters.tempFolder);
 			if (!testFile.exists()) {
-				LCTempFolderDialog tfDialog = new LCTempFolderDialog(this.getGuiFrame(), this, "MIRRF Live Classifier", "Live Classifier");
+				LCTempFolderDialog tfDialog = new LCTempFolderDialog(this.getGuiFrame(), this, "MIRRF Test Classifier", "Test Classifier");
 				tfDialog.setVisible(true);
 			}
-		}
+		} */
+		
 		threadManager = new TCPythonThreadManager(this);
 		this.removePamProcess(process);
 		process = new TCProcess(this);

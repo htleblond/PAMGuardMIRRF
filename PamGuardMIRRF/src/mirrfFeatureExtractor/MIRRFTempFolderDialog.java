@@ -7,6 +7,7 @@ import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.util.Random;
 
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
@@ -17,22 +18,18 @@ import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import javax.swing.border.TitledBorder;
 
+import PamController.PamControlledUnit;
 import PamUtils.PamFileChooser;
 import PamView.dialog.PamDialog;
 import PamView.dialog.PamGridBagContraints;
 
-import java.util.*;
-
-/**
- * Dialog for selecting the "temp folder" where audio clips and
- * Python code are temporarily stored.
- * @author Taylor LeBlond
- */
-@Deprecated
 @SuppressWarnings("serial")
-public class FETempFolderDialog extends PamDialog {
+public class MIRRFTempFolderDialog extends PamDialog {
 	
-	protected FEControl feControl;
+	protected PamControlledUnit control;
+	protected MIRRFParameters params;
+	protected String unitName;
+	protected String subfolderName;
 	private Window parentFrame;
 	
 	protected int key;
@@ -40,15 +37,17 @@ public class FETempFolderDialog extends PamDialog {
 	protected JTextField fileField;
 	protected JButton selectButton;
 	protected boolean hasMirrfName;
-	
 	protected JTextField keyField;
 	protected JButton randomizeButton;
 	
-	public FETempFolderDialog(Window parentFrame, FEControl feControl) {
-		super(parentFrame, "MIRRF Feature Extractor", true);
-		this.feControl = feControl;
+	public MIRRFTempFolderDialog(Window parentFrame, PamControlledUnit control, String unitName, String subfolderName, MIRRFParameters params) {
+		super(parentFrame, unitName, true);
+		this.control = control;
+		this.params = params;
 		this.parentFrame = parentFrame;
 		this.hasMirrfName = false;
+		this.unitName = unitName;
+		this.subfolderName = subfolderName;
 		
 		this.getDefaultButton().setVisible(false);
 		
@@ -64,8 +63,8 @@ public class FETempFolderDialog extends PamDialog {
 		subPanel.add(new JLabel(makeHTML("MIRRF requires a folder to temporarily keep sound clips and Python code during processing. "
 				+ "Unfortunately, PamGuard's file security configuration doesn't allow the program to create new files or folders within PamGuard's own "
 				+ "folders, so a different folder must be created.<br><br>"
-				+ "A new folder named \"MIRRF Temp\\Feature Extractor\\[key]\" will be created in the folder you select (unless the selected folder is named \"MIRRF Temp\" itself). "
-				+ "NOTE THAT anything placed inside this folder will be deleted every time the Feature Extractor is run.")), b);
+				+ "A new folder named \"MIRRF Temp\\"+subfolderName+"\\[key]\" will be created in the folder you select (unless the selected folder is named \"MIRRF Temp\" itself). "
+				+ "NOTE THAT anything placed inside the new folder will be deleted every time the "+subfolderName+" is run.")), b);
 		b.gridy++;
 		b.gridwidth = 2;
 		fileField = new JTextField(30);
@@ -104,7 +103,10 @@ public class FETempFolderDialog extends PamDialog {
 		return outp;
 	}
 	
-	protected class FileListener implements ActionListener{
+	/**
+	 * The listener for the 'Export table' button.
+	 */
+	class FileListener implements ActionListener{
 		public void actionPerformed(ActionEvent e) {
 			PamFileChooser fc = new PamFileChooser();
 			fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
@@ -137,8 +139,8 @@ public class FETempFolderDialog extends PamDialog {
 		keyField.setText(String.format("%09d", key));
 	}
 	
-	public FEControl getControl() {
-		return feControl;
+	public PamControlledUnit getControl() {
+		return control;
 	}
 	
 	/**
@@ -147,7 +149,7 @@ public class FETempFolderDialog extends PamDialog {
 	public void SimpleErrorDialog(String inptext) {
 		JOptionPane.showMessageDialog(null,
 			inptext,
-			"Whistle and Moan Navigation Tool",
+			unitName,
 			JOptionPane.ERROR_MESSAGE);
 	}
 	
@@ -173,7 +175,7 @@ public class FETempFolderDialog extends PamDialog {
 				return false;
 			}
 		}
-		currPath += "Feature Extractor\\";
+		currPath += subfolderName+"\\";
 		testFile = new File(currPath);
 		if (!testFile.exists()) {
 			testFile.mkdir();
@@ -204,8 +206,8 @@ public class FETempFolderDialog extends PamDialog {
 				return false;
 			}
 		}
-		feControl.getParams().tempFolder = currPath;
-		feControl.getParams().tempKey = key;
+		params.tempFolder = currPath;
+		params.tempKey = key;
 		return true;
 	}
 

@@ -38,15 +38,17 @@ public class FEControl extends PamControlledUnit implements PamSettings{
 		
 		feSettingsDialog = null;
 		
-		if (feParameters.tempFolder.length() == 0) {
+		if (feParameters.tempFolder.length() == 0 || feParameters.tempKey < 0) {
 			do {
-				FETempFolderDialog tfDialog = new FETempFolderDialog(this.getGuiFrame(), this);
+				//FETempFolderDialog tfDialog = new FETempFolderDialog(this.getGuiFrame(), this);
+				MIRRFTempFolderDialog tfDialog = new MIRRFTempFolderDialog(this.getGuiFrame(), this,
+						"MIRRF Feature Extractor", "Feature Extractor", feParameters);
 				tfDialog.setVisible(true);
 				File testFile = new File(feParameters.tempFolder);
 				if (!testFile.exists()) {
 					feParameters.tempFolder = "";
 				}
-			} while (feParameters.tempFolder.length() == 0);
+			} while (feParameters.tempFolder.length() == 0 || feParameters.tempKey < 0);
 		}
 		System.out.println("tempFolder: "+feParameters.tempFolder);
 		

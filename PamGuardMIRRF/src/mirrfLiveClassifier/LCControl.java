@@ -23,6 +23,9 @@ import PamController.PamControlledUnitSettings;
 import PamController.PamSettingManager;
 import PamController.PamSettings;
 import PamguardMVC.PamDataBlock;
+import mirrfFeatureExtractor.FETempFolderDialog;
+import mirrfFeatureExtractor.MIRRFParameters;
+import mirrfFeatureExtractor.MIRRFTempFolderDialog;
 
 /**
  * The controller class for the MIRRF Live Classifier.
@@ -62,7 +65,9 @@ public class LCControl extends PamControlledUnit implements PamSettings {
 		modelFittingFinished = true;
 		
 		tabPanel = new LCTabPanel(this);
-		if (parameters.tempFolder.length() == 0) {
+		
+		runTempFolderDialogLoop("MIRRF Live Classifier", "Live Classifier", parameters);
+	/*	if (parameters.tempFolder.length() == 0) {
 			LCTempFolderDialog tfDialog = new LCTempFolderDialog(this.getGuiFrame(), this, "MIRRF Live Classifier", "Live Classifier");
 			tfDialog.setVisible(true);
 		} else {
@@ -71,7 +76,8 @@ public class LCControl extends PamControlledUnit implements PamSettings {
 				LCTempFolderDialog tfDialog = new LCTempFolderDialog(this.getGuiFrame(), this, "MIRRF Live Classifier", "Live Classifier");
 				tfDialog.setVisible(true);
 			}
-		}
+		} */
+		
 		//if (!this.isViewer()) {
 		if (true) {
 			threadManager = new LCPythonThreadManager(this);
@@ -88,6 +94,20 @@ public class LCControl extends PamControlledUnit implements PamSettings {
 		if (this.getParams().timeZone == null) {
 			showTimeZoneDialog();
 		}
+	}
+	
+	public void runTempFolderDialogLoop(String unitName, String subfolderName, MIRRFParameters params) {
+		if (parameters.tempFolder.length() == 0 || parameters.tempKey < 0) {
+			do {
+				MIRRFTempFolderDialog tfDialog = new MIRRFTempFolderDialog(this.getGuiFrame(), this, unitName, subfolderName, params);
+				tfDialog.setVisible(true);
+				File testFile = new File(parameters.tempFolder);
+				if (!testFile.exists()) {
+					parameters.tempFolder = "";
+				}
+			} while (parameters.tempFolder.length() == 0 || parameters.tempKey < 0);
+		}
+		System.out.println("tempFolder: "+parameters.tempFolder);
 	}
 	
 	public void showTimeZoneDialog() {

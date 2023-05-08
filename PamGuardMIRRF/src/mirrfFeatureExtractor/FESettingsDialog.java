@@ -121,6 +121,8 @@ public class FESettingsDialog extends PamDialog {
 	protected JTextField miscBelowAmpField;
 	protected JCheckBox miscAboveAmpCheck;
 	protected JTextField miscAboveAmpField;
+	protected JTextField miscTempField;
+	protected JButton miscTempButton;
 	
 	@SuppressWarnings("static-access")
 	public FESettingsDialog(Window parentFrame, FEControl feControl) {
@@ -722,6 +724,23 @@ public class FESettingsDialog extends PamDialog {
 		miscFP2.add(miscIgnorePanel);
 		mainPanel5.add(miscFP2, b);
 		
+		b.gridy++;
+		JPanel miscFP3 = new JPanel(new FlowLayout(FlowLayout.LEFT));
+		JPanel miscTempPanel = new JPanel(new GridBagLayout());
+		miscFP3.setBorder(new TitledBorder("Temporary file storage"));
+		miscTempPanel.setAlignmentX(LEFT_ALIGNMENT);
+		c = new PamGridBagContraints();
+		miscTempField = new JTextField(30);
+		miscTempField.setEnabled(false);
+		miscTempPanel.add(miscTempField, c);
+		c.gridx++;
+		miscTempButton = new JButton("Change (TBA)");
+		miscTempButton.setEnabled(false);
+		// add listener
+		miscTempPanel.add(miscTempButton, c);
+		miscFP3.add(miscTempPanel);
+		mainPanel5.add(miscFP3, b);
+		
 		p5.add(mainPanel5);
 		tabbedPane.add("Miscellaneous", p5);
 		
@@ -786,6 +805,8 @@ public class FESettingsDialog extends PamDialog {
 			this.miscBelowAmpField.setEnabled(false);
 			this.miscAboveAmpCheck.setEnabled(false);
 			this.miscAboveAmpField.setEnabled(false);
+			this.miscTempField.setEnabled(false);
+			this.miscTempButton.setEnabled(false);
 		}
 	}
 	
@@ -1486,6 +1507,7 @@ public class FESettingsDialog extends PamDialog {
 		miscAboveAmpCheck.setSelected(params.miscIgnoreLoudAmpChecked);
 		switchOn(miscAboveAmpCheck, params.miscIgnoreLoudAmpChecked);
 		miscAboveAmpField.setText(Integer.toString(params.miscIgnoreLoudAmp));
+		miscTempField.setText(params.tempFolder);
 		
 		return true;
 	}

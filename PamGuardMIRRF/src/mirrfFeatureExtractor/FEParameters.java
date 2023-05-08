@@ -1,20 +1,13 @@
 package mirrfFeatureExtractor;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.Serializable;
 import java.util.ArrayList;
 
-import PamModel.parametermanager.ManagedParameters;
 import PamModel.parametermanager.PamParameterSet;
-import PamView.GroupedSourceParameters;
-import whistlesAndMoans.WhistleToneParameters;
 
 import org.apache.commons.text.WordUtils;
 
-public class FEParameters implements Serializable, Cloneable, ManagedParameters {
-	
-	public String tempFolder;
+//@SuppressWarnings("serial")
+public class FEParameters extends MIRRFParameters {
 	
 	public int sr;
 	
@@ -70,9 +63,6 @@ public class FEParameters implements Serializable, Cloneable, ManagedParameters 
 	
 	public FEParameters() {
 		
-		//this.tempFolder = "C:/Users/wtleb/Desktop/MIRRF Test Clips/";
-		this.tempFolder = "";
-		
 		this.sr = 0;
 		
 		this.inputFromCSV = false;
@@ -126,6 +116,7 @@ public class FEParameters implements Serializable, Cloneable, ManagedParameters 
 		this.miscIgnoreLoudAmp = 0;
 	}
 	
+	@Override
 	public String outputPythonParamsToText() {
 		if (tempFolder.length() == 0) {
 			return "";
@@ -168,12 +159,6 @@ public class FEParameters implements Serializable, Cloneable, ManagedParameters 
 	
 	@Override
 	public FEParameters clone() {
-		try {
-			return (FEParameters) super.clone();
-		}
-		catch (CloneNotSupportedException e) {
-			e.printStackTrace();
-			return null;
-		}
+		return (FEParameters) super.clone();
 	}
 }

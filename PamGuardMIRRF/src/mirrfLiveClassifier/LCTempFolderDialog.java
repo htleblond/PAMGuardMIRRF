@@ -20,6 +20,7 @@ import PamUtils.PamFileChooser;
 import PamView.dialog.PamDialog;
 import PamView.dialog.PamGridBagContraints;
 
+@Deprecated
 public class LCTempFolderDialog extends PamDialog {
 	
 	private LCControl lcControl;
@@ -54,8 +55,8 @@ public class LCTempFolderDialog extends PamDialog {
 		subPanel.add(new JLabel(makeHTML("MIRRF requires a folder to temporarily keep sound clips and Python code during processing. "
 				+ "Unfortunately, PamGuard's file security configuration doesn't allow the program to create new files or folders within PamGuard's own "
 				+ "folders, so a different folder must be created.<br><br>"
-				+ "A new folder named \"MIRRF Temp\" will be created in the folder you select (unless the selected folder is named \"MIRRF Temp\" itself). "
-				+ "NOTE THAT anything placed inside this folder will be deleted every time the Feature Extractor is run.")), b);
+				+ "A new folder named \"MIRRF Temp\\"+subfolderName+"\\[key]\" will be created in the folder you select (unless the selected folder is named \"MIRRF Temp\" itself). "
+				+ "NOTE THAT anything placed inside the new folder will be deleted every time the "+subfolderName+" is run.")), b);
 		b.gridy++;
 		b.gridwidth = 1;
 		fileField = new JTextField(30);
