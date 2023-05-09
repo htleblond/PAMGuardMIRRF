@@ -4,7 +4,9 @@ import java.awt.Frame;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.Serializable;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 
 import javax.swing.JMenuItem;
@@ -66,12 +68,17 @@ public class TSBControl extends PamControlledUnit implements PamSettings {
 			JOptionPane.ERROR_MESSAGE);
 	}
 	
-/*	// Kudos to this: https://stackoverflow.com/questions/1842223/java-linebreaks-in-jlabels
-		public String makeHTML(String inp, int width) {
-			//int width = 150;
-			String outp = "<html><p style=\"width:"+Integer.toString(width)+"px\">"+inp+"</p></html>";
-			return outp;
-		} */
+	public long convertDateStringToLong(String inp) {
+		// Kudos: https://stackoverflow.com/questions/12473550/how-to-convert-a-string-date-to-long-millseconds
+		SimpleDateFormat f = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss+SSS");
+		try {
+		    Date d = f.parse(inp);
+		    return d.getTime();
+		} catch (Exception e) {
+		    e.printStackTrace();
+		}
+		return -1;
+	}
 	
 	public String makeHTML(String inp, int width) {
 		return String.format("<html><body style='width: %1spx'>%1s", width, inp);

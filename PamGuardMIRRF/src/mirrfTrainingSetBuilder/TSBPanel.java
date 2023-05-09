@@ -469,9 +469,9 @@ public class TSBPanel extends PamBorderPanel {
 					}
 					if (!curr.classList.contains(currLine[7])) {
 						curr.classList.add(currLine[7]);
-						curr.validEntriesList.add(new ArrayList<String[]>());
+						curr.validEntriesList.add(new ArrayList<TSBDetection>());
 					}
-					String[] outp = new String[currLine.length-1];
+				/*	String[] outp = new String[currLine.length-1];
 					outp[0] = currLine[0].substring(3);
 					outp[1] = currLine[1];
 					outp[2] = currLine[3];
@@ -481,8 +481,13 @@ public class TSBPanel extends PamBorderPanel {
 					outp[6] = currLine[7];
 					for (int k = 7; k < outp.length; k++) {
 						outp[k] = currLine[k+1];
+					} */
+					try {
+						TSBDetection outp = new TSBDetection(tsbControl, firstLine.length-8, currLine);
+						curr.validEntriesList.get(curr.classList.indexOf(currLine[7])).add(outp);
+					} catch (AssertionError | Exception e2) {
+						e2.printStackTrace();
 					}
-					curr.validEntriesList.get(curr.classList.indexOf(currLine[7])).add(outp);
 					dataLines.remove(j);
 				} else {
 					j++;
@@ -649,31 +654,31 @@ public class TSBPanel extends PamBorderPanel {
 				outpList.add(firstLine);
 				for (int i = 0; i < tsbControl.getTabPanel().getPanel().getSubsetTable().getRowCount(); i++) {
 					String currID = (String) tsbControl.getTabPanel().getPanel().getSubsetTable().getValueAt(i, 0);
-					TSBSubset curr = null;
+					TSBSubset currSubset = null;
 					for (int j = 0; j < tsbControl.getSubsetList().size(); j++) {
 						if (currID.equals(tsbControl.getSubsetList().get(j).id)) {
-							curr = tsbControl.getSubsetList().get(j);
+							currSubset = tsbControl.getSubsetList().get(j);
 							break;
 						}
 					}
-					if (curr != null) {
+					if (currSubset != null) {
 						ArrayList<String[]> splitList = new ArrayList<String[]>();
-						for (int j = 0; j < curr.selectionArray.length; j++) {
-							if (tsbControl.getFullClassList().contains(curr.classList.get(curr.selectionArray[j]))) {
-								for (int k = 0; k < curr.validEntriesList.get(curr.selectionArray[j]).size(); k++) {
-									String[] currEntry = (String[]) curr.validEntriesList.get(curr.selectionArray[j]).get(k);
+						for (int j = 0; j < currSubset.selectionArray.length; j++) {
+							if (tsbControl.getFullClassList().contains(currSubset.classList.get(currSubset.selectionArray[j]))) {
+								for (int k = 0; k < currSubset.validEntriesList.get(currSubset.selectionArray[j]).size(); k++) {
+									TSBDetection currDetection = currSubset.validEntriesList.get(currSubset.selectionArray[j]).get(k);
 									String[] nextLine = new String[8+outputFeatureIndices.length];
-									nextLine[0] = currID+"-"+currEntry[0];
-									nextLine[1] = currEntry[1];
-									nextLine[2] = curr.location;
-									nextLine[3] = currEntry[2];
-									nextLine[4] = currEntry[3];
-									nextLine[5] = currEntry[4];
-									nextLine[6] = currEntry[5];
+									nextLine[0] = currID+"-"+currDetection.clusterID;
+									nextLine[1] = String.valueOf(currDetection.uid);
+									nextLine[2] = currSubset.location;
+									nextLine[3] = currDetection.datetime;
+									nextLine[4] = String.valueOf(currDetection.duration);
+									nextLine[5] = String.valueOf(currDetection.lf);
+									nextLine[6] = String.valueOf(currDetection.hf);
 									//nextLine[7] = curr.classList.get(curr.selectionArray[j]);
-									nextLine[7] = tsbControl.getClassMap().get(curr.classList.get(curr.selectionArray[j]));
+									nextLine[7] = tsbControl.getClassMap().get(currSubset.classList.get(currSubset.selectionArray[j]));
 									for (int l = 0; l < outputFeatureIndices.length; l++) {
-										nextLine[l+8] = String.valueOf(currEntry[outputFeatureIndices[l]+7]);
+										nextLine[l+8] = String.valueOf(currDetection.featureVector[outputFeatureIndices[l]]);
 									}
 									splitList.add(nextLine);
 								/*	if (i == 0 && j == 0 && k == 0) {

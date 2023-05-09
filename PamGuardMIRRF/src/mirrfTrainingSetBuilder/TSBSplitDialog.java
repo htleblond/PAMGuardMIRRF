@@ -108,7 +108,7 @@ public class TSBSplitDialog extends PamDialog {
 	protected JTextField newTotalField;
 	
 	protected TSBSubset currSubset;
-	protected ArrayList<String[]> currList;
+	protected ArrayList<TSBDetection> currDetectionList;
 	
 	public TSBSplitDialog(Window parentFrame, TSBControl tsbControl) {
 		super(parentFrame, "MIRRF Training Set Builder", false);
@@ -292,7 +292,7 @@ public class TSBSplitDialog extends PamDialog {
 		
 		setDialogComponent(mainPanel);
 		
-		currList = new ArrayList<String[]>();
+		currDetectionList = new ArrayList<TSBDetection>();
 		ArrayList<String> selectedLabels = new ArrayList<String>();
 		for (int i = 0; i < currSubset.selectionArray.length; i++) {
 			selectedLabels.add(currSubset.classList.get(currSubset.selectionArray[i]));
@@ -300,18 +300,14 @@ public class TSBSplitDialog extends PamDialog {
 		}
 		for (int i = 0; i < currSubset.validEntriesList.size(); i++) {
 			for (int j = 0; j < currSubset.validEntriesList.get(i).size(); j++) {
-				String[] currArr = (String[]) currSubset.validEntriesList.get(i).get(j);
-			/*	if (j < 5) {
-					for (int k = 0; k < 10; k++) {
-						System.out.println(String.valueOf(k)+": "+currArr[k]);
-					}
-				} */
-				if (selectedLabels.contains(currArr[6])) {
-					currList.add((String[]) currSubset.validEntriesList.get(i).get(j));
+				TSBDetection currDetection = currSubset.validEntriesList.get(i).get(j);
+				if (selectedLabels.contains(currDetection.species)) {
+					currDetectionList.add(currDetection);
 				}
 			}
 		}
-		currList.sort(Comparator.comparing(a -> a[2]));
+		//currList.sort(Comparator.comparing(a -> a[2]));
+		Collections.sort(currDetectionList, Comparator.comparingLong(TSBDetection::getDateTimeAsLong));
 		
 		oldIDDigit1Field.setText(currID.substring(0, 1));
 		oldIDDigit2Field.setText(currID.substring(1));
@@ -319,11 +315,11 @@ public class TSBSplitDialog extends PamDialog {
 		newLocationField.setText(currSubset.location);
 		oldStartField.setText(currSubset.start);
 		String halfwayDate = "";
-		for (int i = 0; i < currList.size(); i++) {
+		for (int i = 0; i < currDetectionList.size(); i++) {
 			//System.out.println(String.valueOf(i)+" -> "+String.valueOf(currList.size()/2));
-			if (i >= currList.size()/2) {
-				String[] currEntry = currList.get(i);
-				halfwayDate = currEntry[2].substring(0,19)+"+000";
+			if (i >= currDetectionList.size()/2) {
+				TSBDetection currDetection = currDetectionList.get(i);
+				halfwayDate = currDetection.datetime.substring(0,19)+"+000";
 				break;
 			}
 		}
@@ -335,20 +331,20 @@ public class TSBSplitDialog extends PamDialog {
 		secondField.setText(halfwayDate.substring(17,19));
 		msField.setText("000");
 		int halfwayPoint = 0;
-		for (int i = 0; i < currList.size(); i++) {
+		for (int i = 0; i < currDetectionList.size(); i++) {
 			//System.out.println(currList.get(i)[2]+" -> "+halfwayDate);
-			if (currList.get(i)[2].compareTo(halfwayDate) > 0) {
+			if (currDetectionList.get(i).datetime.compareTo(halfwayDate) > 0) {
 				halfwayPoint = i;
 				break;
 			}
 		}
-		oldEndField.setText(currList.get(halfwayPoint-1)[2]);
-		if (halfwayPoint < currList.size()-1) {
-			newStartField.setText(currList.get(halfwayPoint)[2]);
-			newEndField.setText(currList.get(currList.size()-1)[2]);
+		oldEndField.setText(currDetectionList.get(halfwayPoint-1).datetime);
+		if (halfwayPoint < currDetectionList.size()-1) {
+			newStartField.setText(currDetectionList.get(halfwayPoint).datetime);
+			newEndField.setText(currDetectionList.get(currDetectionList.size()-1).datetime);
 		}
 		oldTotalField.setText(String.valueOf(halfwayPoint));
-		newTotalField.setText(String.valueOf(currList.size()-(halfwayPoint)));
+		newTotalField.setText(String.valueOf(currDetectionList.size()-(halfwayPoint)));
 		ArrayList<String> newIDList = new ArrayList<String>();
 		String newID = currID.substring(0,1)+"A";
 		boolean foundFreeID = true;
@@ -394,47 +390,47 @@ public class TSBSplitDialog extends PamDialog {
 				tsbControl.SimpleErrorDialog("Invalid date/time entered.", 250);
 				return;
 			}
-			int halfwayIndex = currList.size();
-			for (int i = 0; i < currList.size(); i++) {
-				if (newDate.compareTo(currList.get(i)[2]) < 0) {
+			int halfwayIndex = currDetectionList.size();
+			for (int i = 0; i < currDetectionList.size(); i++) {
+				if (newDate.compareTo(currDetectionList.get(i).datetime) < 0) {
 					halfwayIndex = i;
 					break;
 				}
 			}
 			if (startOrEndBox.getSelectedItem().equals("starts")) {
 				if (halfwayIndex > 0) {
-					oldStartField.setText(currList.get(0)[2]);
-					oldEndField.setText(currList.get(halfwayIndex-1)[2]);
+					oldStartField.setText(currDetectionList.get(0).datetime);
+					oldEndField.setText(currDetectionList.get(halfwayIndex-1).datetime);
 				} else {
 					oldStartField.setText("");
 					oldEndField.setText("");
 				}
 				oldTotalField.setText(String.valueOf(halfwayIndex));
-				if (halfwayIndex < currList.size()) {
-					newStartField.setText(currList.get(halfwayIndex)[2]);
-					newEndField.setText(currList.get(currList.size()-1)[2]);
+				if (halfwayIndex < currDetectionList.size()) {
+					newStartField.setText(currDetectionList.get(halfwayIndex).datetime);
+					newEndField.setText(currDetectionList.get(currDetectionList.size()-1).datetime);
 				} else {
 					newStartField.setText("");
 					newEndField.setText("");
 				}
-				newTotalField.setText(String.valueOf(currList.size()-halfwayIndex));
+				newTotalField.setText(String.valueOf(currDetectionList.size()-halfwayIndex));
 			} else {
 				if (halfwayIndex > 0) {
-					newStartField.setText(currList.get(0)[2]);
-					newEndField.setText(currList.get(halfwayIndex)[2]);
+					newStartField.setText(currDetectionList.get(0).datetime);
+					newEndField.setText(currDetectionList.get(halfwayIndex).datetime);
 				} else {
 					newStartField.setText("");
 					newEndField.setText("");
 				}
 				newTotalField.setText(String.valueOf(halfwayIndex+1));
-				if (halfwayIndex < currList.size()) {
-					oldStartField.setText(currList.get(halfwayIndex+1)[2]);
-					oldEndField.setText(currList.get(currList.size()-1)[2]);
+				if (halfwayIndex < currDetectionList.size()) {
+					oldStartField.setText(currDetectionList.get(halfwayIndex+1).datetime);
+					oldEndField.setText(currDetectionList.get(currDetectionList.size()-1).datetime);
 				} else {
 					oldStartField.setText("");
 					oldEndField.setText("");
 				}
-				oldTotalField.setText(String.valueOf(currList.size()-(halfwayIndex+1)));
+				oldTotalField.setText(String.valueOf(currDetectionList.size()-(halfwayIndex+1)));
 			}
 		}
 	}
@@ -492,12 +488,13 @@ public class TSBSplitDialog extends PamDialog {
 		newSubset.classList = new ArrayList<String>(currSubset.classList);
 		newSubset.selectionArray = currSubset.selectionArray;
 		for (int i = 0; i < currSubset.validEntriesList.size(); i++) {
-			newSubset.validEntriesList.add(new ArrayList<String[]>());
+			newSubset.validEntriesList.add(new ArrayList<TSBDetection>());
 			int j = 0;
 			while (j < currSubset.validEntriesList.get(i).size()) {
-				String[] currEntry = (String[]) currSubset.validEntriesList.get(i).get(j);
-				if (currEntry[2].compareTo(newStartField.getText()) >= 0 && currEntry[2].compareTo(newEndField.getText()) <= 0) {
-					newSubset.validEntriesList.get(i).add(currEntry);
+				TSBDetection currDetection = currSubset.validEntriesList.get(i).get(j);
+				if (currDetection.datetime.compareTo(newStartField.getText()) >= 0 &&
+						currDetection.datetime.compareTo(newEndField.getText()) <= 0) {
+					newSubset.validEntriesList.get(i).add(currDetection);
 					currSubset.validEntriesList.get(i).remove(j);
 				} else {
 					j++;
@@ -571,14 +568,8 @@ public class TSBSplitDialog extends PamDialog {
 	}
 
 	@Override
-	public void cancelButtonPressed() {
-		// TODO Auto-generated method stub
-		
-	}
+	public void cancelButtonPressed() {}
 
 	@Override
-	public void restoreDefaultSettings() {
-		// TODO Auto-generated method stub
-		
-	}
+	public void restoreDefaultSettings() {}
 }

@@ -12,7 +12,7 @@ public class TSBSubset {
 	public String end;
 	public ArrayList<String> classList;
 	public int[] selectionArray;
-	public ArrayList<ArrayList> validEntriesList;
+	public ArrayList<ArrayList<TSBDetection>> validEntriesList;
 	
 	public TSBSubset() {
 		this.featurePath = "";
@@ -23,6 +23,6 @@ public class TSBSubset {
 		this.end = "";
 		this.classList = new ArrayList<String>();
 		this.selectionArray = new int[0];
-		this.validEntriesList = new ArrayList<ArrayList>();
+		this.validEntriesList = new ArrayList<ArrayList<TSBDetection>>();
 	}
 }

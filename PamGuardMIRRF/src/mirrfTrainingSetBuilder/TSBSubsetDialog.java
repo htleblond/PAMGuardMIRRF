@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -99,7 +100,7 @@ public class TSBSubsetDialog extends PamDialog {
 	private ArrayList<String[]> featuresEntriesList;
 	private ArrayList<String[]> wmntEntriesList;
 	private ArrayList<String> classList;
-	private ArrayList<ArrayList> validEntriesList;
+	private ArrayList<ArrayList<TSBDetection>> validEntriesList;
 	private ArrayList<String> featureList;
 	
 	public TSBSubsetDialog(Window parentFrame, TSBControl tsbControl, boolean editing) {
@@ -111,7 +112,7 @@ public class TSBSubsetDialog extends PamDialog {
 		this.featuresEntriesList = new ArrayList<String[]>();
 		this.wmntEntriesList = new ArrayList<String[]>();
 		this.classList = new ArrayList<String>();
-		this.validEntriesList = new ArrayList<ArrayList>();
+		this.validEntriesList = new ArrayList<ArrayList<TSBDetection>>();
 		this.featureList = new ArrayList<String>();
 		
 		mainPanel = new PamPanel(new GridBagLayout());
@@ -287,7 +288,7 @@ public class TSBSubsetDialog extends PamDialog {
 					startField.setText(currSubset.start);
 					endField.setText(currSubset.end);
 					classList = new ArrayList<String>(currSubset.classList);
-					validEntriesList = new ArrayList<ArrayList>(currSubset.validEntriesList);
+					validEntriesList = new ArrayList<ArrayList<TSBDetection>>(currSubset.validEntriesList);
 					DefaultListModel dlm = new DefaultListModel();
 					for (int i = 0; i < classList.size(); i++) {
 						dlm.addElement(classList.get(i));
@@ -322,7 +323,7 @@ public class TSBSubsetDialog extends PamDialog {
 						sc = new Scanner(f);
 						if (sc.hasNextLine()) {
 							if (featuresNotWMNT) {
-								ArrayList<String[]> currList = new ArrayList<String[]>();
+								ArrayList<String[]> currFEList = new ArrayList<String[]>();
 								ArrayList<String> currFeatureList = new ArrayList<String>();
 								String[] firstLine = sc.nextLine().split(",");
 								if (firstLine.length > 6) {
@@ -365,13 +366,13 @@ public class TSBSubsetDialog extends PamDialog {
 												for (int i = 3; i < firstLine.length; i++) {
 													nextLine[i] = String.valueOf(Double.valueOf(nextLine[i]));
 												}
-												currList.add(nextLine);
+												currFEList.add(nextLine);
 											} catch (Exception e2){
 												// TODO
 											}
 										}
-										if (currList.size() > 0) {
-											featuresEntriesList = currList;
+										if (currFEList.size() > 0) {
+											featuresEntriesList = currFEList;
 											featuresCSVField.setText(f.getPath());
 											if (tsbControl.getFeatureList().size() > 0) {
 												featureList = new ArrayList<String>(tsbControl.getFeatureList());
@@ -394,7 +395,7 @@ public class TSBSubsetDialog extends PamDialog {
 									return;
 								}
 							} else {
-								ArrayList<String[]> currList = new ArrayList<String[]>();
+								ArrayList<String[]> currWMNTList = new ArrayList<String[]>();
 								String[] firstLine = sc.nextLine().split(",");
 								if (firstLine.length >= 8) {
 									if (firstLine[0].equals("uid") && firstLine[1].equals("datetime") && firstLine[2].equals("lf")
@@ -413,19 +414,19 @@ public class TSBSubsetDialog extends PamDialog {
 												Integer.valueOf(nextLine[5]);
 												if (tsbControl.includeCallType && nextLine.length > 7) {
 													if (nextLine[6].length() > 0 || nextLine[7].length() > 0) {
-														currList.add(nextLine);
+														currWMNTList.add(nextLine);
 													}
 												} else {
 													if (nextLine[6].length() > 0) {
-														currList.add(nextLine);
+														currWMNTList.add(nextLine);
 													}
 												}
 											} catch (Exception e2){
 												// TODO
 											}
 										}
-										if (currList.size() > 0) {
-											wmntEntriesList = currList;
+										if (currWMNTList.size() > 0) {
+											wmntEntriesList = currWMNTList;
 											wmntCSVField.setText(f.getPath());
 										} else {
 											tsbControl.SimpleErrorDialog("Selected file contained no valid entries.", 150);
@@ -470,42 +471,48 @@ public class TSBSubsetDialog extends PamDialog {
 								}
 								Collections.sort(classList);
 								
-								validEntriesList = new ArrayList<ArrayList>();
+								validEntriesList = new ArrayList<ArrayList<TSBDetection>>();
 								//boolean printFirst = true;
 								for (int i = 0; i < classList.size(); i++) {
-									ArrayList<String[]> currList = new ArrayList<String[]>();
+									ArrayList<TSBDetection> currDetectionList = new ArrayList<TSBDetection>();
 									for (int j = 0; j < wmntEntriesList.size(); j++) {
-										String[] curr = wmntEntriesList.get(j);
+										String[] currWMNT = wmntEntriesList.get(j);
 										String className = "";
 										if (tsbControl.includeCallType) {
-											if (curr.length > 7) {
-												if (curr[6].length() > 0 && curr[7].length() > 0) {
-													className = curr[6]+" ("+curr[7]+")";
-												} else if (curr[6].length() > 0) {
-													className = curr[6];
-												} else if (curr[7].length() > 0) {
-													className = curr[7];
+											if (currWMNT.length > 7) {
+												if (currWMNT[6].length() > 0 && currWMNT[7].length() > 0) {
+													className = currWMNT[6]+" ("+currWMNT[7]+")";
+												} else if (currWMNT[6].length() > 0) {
+													className = currWMNT[6];
+												} else if (currWMNT[7].length() > 0) {
+													className = currWMNT[7];
 												}
 											}
 										} else {
-											className = curr[6];
+											className = currWMNT[6];
 										}
 										if (className.equals(classList.get(i))) {
 											for (int k = 0; k < featuresEntriesList.size(); k++) {
-												String[] curr2 = featuresEntriesList.get(k);
-												if (curr[0].equals(curr2[1]) && curr[1].equals(curr2[2])) {
-													String[] outp = new String[curr2.length + 1];
-													outp[0] = curr2[0];
-													outp[1] = curr2[1];
-													outp[2] = curr2[2];
-													outp[3] = curr2[3];
-													outp[4] = curr2[4];
-													outp[5] = curr2[5];
+												String[] currFE = featuresEntriesList.get(k);
+												if (currWMNT[0].equals(currFE[1]) && currWMNT[1].equals(currFE[2])) {
+												/*	String[] outp = new String[currFE.length + 1];
+													outp[0] = currFE[0];
+													outp[1] = currFE[1];
+													outp[2] = currFE[2];
+													outp[3] = currFE[3];
+													outp[4] = currFE[4];
+													outp[5] = currFE[5];
 													outp[6] = className;
-													for (int l = 6; l < curr2.length; l++) {
-														outp[l+1] = curr2[l];
+													for (int l = 6; l < currFE.length; l++) {
+														outp[l+1] = currFE[l];
+													} */
+													try {
+														TSBDetection outp = new TSBDetection(tsbControl, featureList.size(),
+																currFE[0], currWMNT, Arrays.copyOfRange(currFE, 6, currFE.length));
+														currDetectionList.add(outp);
+													} catch (AssertionError | Exception e2) {
+														e2.printStackTrace();
 													}
-													currList.add(outp);
 												/*	if (printFirst) {
 														System.out.print(outp[0]);
 														for (int l = 1; l < outp.length; l++) {
@@ -519,9 +526,10 @@ public class TSBSubsetDialog extends PamDialog {
 											}
 										}
 									}
-									if (currList.size() > 0) {
-										currList.sort(Comparator.comparing(a -> a[2]));
-										validEntriesList.add(currList);
+									if (currDetectionList.size() > 0) {
+										//currDetectionList.sort(Comparator.comparing(a -> a[2]));
+										Collections.sort(currDetectionList, Comparator.comparingLong(TSBDetection::getDateTimeAsLong));
+										validEntriesList.add(currDetectionList);
 									} else {
 										classList.remove(i);
 										i--;
@@ -576,7 +584,7 @@ public class TSBSubsetDialog extends PamDialog {
 				try {
 					sc = new Scanner(f);
 					if (sc.hasNextLine()) {
-						ArrayList<String[]> currList = new ArrayList<String[]>();
+						ArrayList<String[]> currFEList = new ArrayList<String[]>();
 						ArrayList<String> currFeatureList = new ArrayList<String>();
 						String[] firstLine = sc.nextLine().split(",");
 						if (firstLine.length > 3) {
@@ -617,13 +625,13 @@ public class TSBSubsetDialog extends PamDialog {
 										for (int i = 3; i < firstLine.length; i++) {
 											Double.valueOf(nextLine[i]);
 										}
-										currList.add(nextLine);
+										currFEList.add(nextLine);
 									} catch (Exception e2){
 										// TODO
 									}
 								}
-								if (currList.size() > 0) {
-									featuresEntriesList = currList;
+								if (currFEList.size() > 0) {
+									featuresEntriesList = currFEList;
 									featuresCSVField.setText(f.getPath());
 									if (tsbControl.getFeatureList().size() > 0) {
 										featureList = new ArrayList<String>(tsbControl.getFeatureList());
@@ -674,7 +682,7 @@ public class TSBSubsetDialog extends PamDialog {
 				try {
 					sc = new Scanner(f);
 					if (sc.hasNextLine()) {
-						ArrayList<String[]> currList = new ArrayList<String[]>();
+						ArrayList<String[]> currWMNTList = new ArrayList<String[]>();
 						String[] firstLine = sc.nextLine().split(",");
 						if (firstLine.length >= 8) {
 							if (firstLine[0].equals("uid") && firstLine[1].equals("datetime") && firstLine[2].equals("lf")
@@ -693,19 +701,19 @@ public class TSBSubsetDialog extends PamDialog {
 										Integer.valueOf(nextLine[5]);
 										if (tsbControl.includeCallType && nextLine.length > 7) {
 											if (nextLine[6].length() > 0 || nextLine[7].length() > 0) {
-												currList.add(nextLine);
+												currWMNTList.add(nextLine);
 											}
 										} else {
 											if (nextLine[6].length() > 0) {
-												currList.add(nextLine);
+												currWMNTList.add(nextLine);
 											}
 										}
 									} catch (Exception e2){
 										// TODO
 									}
 								}
-								if (currList.size() > 0) {
-									wmntEntriesList = currList;
+								if (currWMNTList.size() > 0) {
+									wmntEntriesList = currWMNTList;
 									wmntCSVField.setText(f.getPath());
 								} else {
 									tsbControl.SimpleErrorDialog("Selected file contained no valid entries.", 150);
@@ -745,20 +753,20 @@ public class TSBSubsetDialog extends PamDialog {
 			if (featuresEntriesList.size() > 0 && wmntEntriesList.size() > 0) {
 				classList = new ArrayList<String>();
 				for (int i = 0; i < wmntEntriesList.size(); i++) {
-					String[] curr = wmntEntriesList.get(i);
+					String[] currWMNT = wmntEntriesList.get(i);
 					String className = "";
 					if (tsbControl.includeCallType) {
-						if (curr.length > 7) {
-							if (curr[6].length() > 0 && curr[7].length() > 0) {
-								className = curr[6]+" ("+curr[7]+")";
-							} else if (curr[6].length() > 0) {
-								className = curr[6];
-							} else if (curr[7].length() > 0) {
-								className = curr[7];
+						if (currWMNT.length > 7) {
+							if (currWMNT[6].length() > 0 && currWMNT[7].length() > 0) {
+								className = currWMNT[6]+" ("+currWMNT[7]+")";
+							} else if (currWMNT[6].length() > 0) {
+								className = currWMNT[6];
+							} else if (currWMNT[7].length() > 0) {
+								className = currWMNT[7];
 							}
 						}
 					} else {
-						className = curr[6];
+						className = currWMNT[6];
 					}
 					if (className.length() > 0 && !classList.contains(className)) {
 						classList.add(className);
@@ -767,49 +775,56 @@ public class TSBSubsetDialog extends PamDialog {
 				}
 				Collections.sort(classList);
 				
-				validEntriesList = new ArrayList<ArrayList>();
+				validEntriesList = new ArrayList<ArrayList<TSBDetection>>();
 				for (int i = 0; i < classList.size(); i++) {
-					ArrayList<String[]> currList = new ArrayList<String[]>();
+					ArrayList<TSBDetection> currDetectionList = new ArrayList<TSBDetection>();
 					for (int j = 0; j < wmntEntriesList.size(); j++) {
-						String[] curr = wmntEntriesList.get(j);
+						String[] currWMNT = wmntEntriesList.get(j);
 						String className = "";
 						if (tsbControl.includeCallType) {
-							if (curr.length > 7) {
-								if (curr[6].length() > 0 && curr[7].length() > 0) {
-									className = curr[6]+" ("+curr[7]+")";
-								} else if (curr[6].length() > 0) {
-									className = curr[6];
-								} else if (curr[7].length() > 0) {
-									className = curr[7];
+							if (currWMNT.length > 7) {
+								if (currWMNT[6].length() > 0 && currWMNT[7].length() > 0) {
+									className = currWMNT[6]+" ("+currWMNT[7]+")";
+								} else if (currWMNT[6].length() > 0) {
+									className = currWMNT[6];
+								} else if (currWMNT[7].length() > 0) {
+									className = currWMNT[7];
 								}
 							}
 						} else {
-							className = curr[6];
+							className = currWMNT[6];
 						}
 						if (className.equals(classList.get(i))) {
 							for (int k = 0; k < featuresEntriesList.size(); k++) {
-								String[] curr2 = featuresEntriesList.get(k);
-								if (curr[0].equals(curr2[1]) && curr[1].equals(curr2[2])) {
-									String[] outp = new String[curr2.length + 1];
-									outp[0] = curr2[0];
-									outp[1] = curr2[1];
-									outp[2] = curr2[2];
-									outp[3] = curr2[3];
-									outp[4] = curr2[4];
-									outp[5] = curr2[5];
+								String[] currFE = featuresEntriesList.get(k);
+								if (currWMNT[0].equals(currFE[1]) && currWMNT[1].equals(currFE[2])) {
+								/*	String[] outp = new String[currFE.length + 1];
+									outp[0] = currFE[0];
+									outp[1] = currFE[1];
+									outp[2] = currFE[2];
+									outp[3] = currFE[3];
+									outp[4] = currFE[4];
+									outp[5] = currFE[5];
 									outp[6] = className;
-									for (int l = 6; l < curr2.length; l++) {
-										outp[l+1] = curr2[l];
+									for (int l = 6; l < currFE.length; l++) {
+										outp[l+1] = currFE[l];
+									} */
+									try {
+										TSBDetection outp = new TSBDetection(tsbControl, featureList.size(),
+												currFE[0], currWMNT, Arrays.copyOfRange(currFE, 6, currFE.length));
+										currDetectionList.add(outp);
+									} catch (AssertionError | Exception e2) {
+										e2.printStackTrace();
 									}
-									currList.add(outp);
 									break;
 								}
 							}
 						}
 					}
-					if (currList.size() > 0) {
-						currList.sort(Comparator.comparing(a -> a[2]));
-						validEntriesList.add(currList);
+					if (currDetectionList.size() > 0) {
+						//currDetectionList.sort(Comparator.comparing(a -> a[2]));
+						Collections.sort(currDetectionList, Comparator.comparingLong(TSBDetection::getDateTimeAsLong));
+						validEntriesList.add(currDetectionList);
 					} else {
 						classList.remove(i);
 						i--;
@@ -854,12 +869,12 @@ public class TSBSubsetDialog extends PamDialog {
 		int total = 0;
 		for (int i = 0; i < checkList.getModel().getSize(); i++) {
 			if (checkList.isSelectedIndex(i)) {
-				ArrayList<String[]> currList = validEntriesList.get(i);
-				if (startDate.length() == 0 || currList.get(0)[2].compareTo(startDate) < 0) {
-					startDate = currList.get(0)[2];
+				ArrayList<TSBDetection> currList = validEntriesList.get(i);
+				if (startDate.length() == 0 || currList.get(0).datetime.compareTo(startDate) < 0) {
+					startDate = currList.get(0).datetime;
 				}
-				if (endDate.length() == 0 || currList.get(currList.size()-1)[2].compareTo(endDate) > 0) {
-					endDate = currList.get(currList.size()-1)[2];
+				if (endDate.length() == 0 || currList.get(currList.size()-1).datetime.compareTo(endDate) > 0) {
+					endDate = currList.get(currList.size()-1).datetime;
 				}
 				total += currList.size();
 			}
