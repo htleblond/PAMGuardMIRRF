@@ -52,11 +52,15 @@ public class FPControl extends PamControlledUnit implements PamSettings {
 			JOptionPane.ERROR_MESSAGE);
 	}
 	
-	// Kudos to this: https://stackoverflow.com/questions/1842223/java-linebreaks-in-jlabels
+/*	// Kudos to this: https://stackoverflow.com/questions/1842223/java-linebreaks-in-jlabels
 	public String makeHTML(String inp, int width) {
 		//int width = 150;
 		String outp = "<html><p style=\"width:"+Integer.toString(width)+"px\">"+inp+"</p></html>";
 		return outp;
+	} */
+	
+	public String makeHTML(String inp, int width) {
+		return String.format("<html><body style='width: %1spx'>%1s", width, inp);
 	}
 		
 	@Override

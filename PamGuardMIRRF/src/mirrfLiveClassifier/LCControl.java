@@ -23,7 +23,7 @@ import PamController.PamControlledUnitSettings;
 import PamController.PamSettingManager;
 import PamController.PamSettings;
 import PamguardMVC.PamDataBlock;
-import mirrfFeatureExtractor.FETempFolderDialog;
+import mirrfFeatureExtractor.MIRRFControlledUnit;
 import mirrfFeatureExtractor.MIRRFParameters;
 import mirrfFeatureExtractor.MIRRFTempFolderDialog;
 
@@ -32,7 +32,7 @@ import mirrfFeatureExtractor.MIRRFTempFolderDialog;
  * Is a subclass of PamControlledUnit.
  * @author Taylor LeBlond
  */
-public class LCControl extends PamControlledUnit implements PamSettings {
+public class LCControl extends MIRRFControlledUnit implements PamSettings {
 	
 	public static final String UNITTYPE = "MIRRFLC";
 	
@@ -96,10 +96,31 @@ public class LCControl extends PamControlledUnit implements PamSettings {
 		}
 	}
 	
-	public void runTempFolderDialogLoop(String unitName, String subfolderName, MIRRFParameters params) {
+/*	protected void runTempFolderDialogLoop(String unitName, String subfolderName, MIRRFParameters params) {
+		boolean preExistingFile = false;
+		if (parameters.tempKey > -1) {
+			int result = JOptionPane.showConfirmDialog(this.getGuiFrame(),
+					makeHTML("In this configuration, the following temporary folder path was found:"
+							+ "\n\n"+parameters.tempFolder+"\n\n"
+							+ "Would you like to change the folder?\n\n"
+							+ "(WARNING: If another instance of PAMGuard is running the "+subfolderName+" with\n"
+							+ "this folder, SELECT YES, otherwise that instance will most likely crash.)", 300),
+					unitName,
+					JOptionPane.YES_NO_OPTION);
+			if (result == JOptionPane.YES_OPTION) {
+				String toRemove = subfolderName+"\\"+String.format("%09d", parameters.tempKey)+"\\";
+				if (parameters.tempFolder.endsWith(toRemove)) {
+					parameters.tempFolder = parameters.tempFolder.substring(0, parameters.tempFolder.length()-toRemove.length());
+					preExistingFile = true;
+				}
+				parameters.tempKey = -1;
+			}
+		}
+		
 		if (parameters.tempFolder.length() == 0 || parameters.tempKey < 0) {
 			do {
-				MIRRFTempFolderDialog tfDialog = new MIRRFTempFolderDialog(this.getGuiFrame(), this, unitName, subfolderName, params);
+				MIRRFTempFolderDialog tfDialog = new MIRRFTempFolderDialog(this.getGuiFrame(), this, unitName,
+						subfolderName, params, preExistingFile);
 				tfDialog.setVisible(true);
 				File testFile = new File(parameters.tempFolder);
 				if (!testFile.exists()) {
@@ -108,7 +129,7 @@ public class LCControl extends PamControlledUnit implements PamSettings {
 			} while (parameters.tempFolder.length() == 0 || parameters.tempKey < 0);
 		}
 		System.out.println("tempFolder: "+parameters.tempFolder);
-	}
+	} */
 	
 	public void showTimeZoneDialog() {
 		String[] tz_list = TimeZone.getAvailableIDs();
@@ -154,19 +175,23 @@ public class LCControl extends PamControlledUnit implements PamSettings {
 	/**
 	 * Streamlined error dialog with an editable message.
 	 */
-	public void SimpleErrorDialog(String inptext, int width) {
+/*	public void SimpleErrorDialog(String inptext, int width) {
 		JOptionPane.showMessageDialog(this.getGuiFrame(),
 				makeHTML(inptext, width),
 			this.getUnitName(),
 			JOptionPane.ERROR_MESSAGE);
-	}
+	} */
 	
-	// Kudos to this: https://stackoverflow.com/questions/1842223/java-linebreaks-in-jlabels
+/*	// Kudos to this: https://stackoverflow.com/questions/1842223/java-linebreaks-in-jlabels
 	public String makeHTML(String inp, int width) {
 		//int width = 150;
 		String outp = "<html><p style=\"width:"+Integer.toString(width)+"px\">"+inp+"</p></html>";
 		return outp;
-	}
+	} */
+	
+/*	public String makeHTML(String inp, int width) {
+		return String.format("<html><body style='width: %1spx'>%1s", width, inp);
+	} */
 		
 	@Override
 	public LCTabPanel getTabPanel() {

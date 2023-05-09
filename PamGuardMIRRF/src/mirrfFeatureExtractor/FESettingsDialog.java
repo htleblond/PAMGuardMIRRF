@@ -888,7 +888,7 @@ public class FESettingsDialog extends PamDialog {
 					if (f.exists() == true) {
 						while (!f.canWrite()) {
 							int res = JOptionPane.showConfirmDialog(parentFrame,
-									makeHTML("The selected .csv file is currently open. "
+									feControl.makeHTML("The selected .csv file is currently open. "
 											+ "Please close the file to proceed.", 250),
 									"MIRRF Feature Extractor",
 									JOptionPane.OK_CANCEL_OPTION);
@@ -921,7 +921,7 @@ public class FESettingsDialog extends PamDialog {
 					}
 					if (!blankFile && matchesFeatures) {
 						int res = JOptionPane.showConfirmDialog(parentFrame,
-								makeHTML("The selected .csv file matches the currently selected feature vector.\n\n"
+								feControl.makeHTML("The selected .csv file matches the currently selected feature vector.\n\n"
 										+ "Would you like to overwrite the contents? (Selecting Yes will immediately "
 										+ "delete all rows.)", 250),
 								"MIRRF Feature Extractor",
@@ -945,7 +945,7 @@ public class FESettingsDialog extends PamDialog {
 						}
 					} else if (!blankFile && !matchesFeatures) {
 						int res = JOptionPane.showOptionDialog(parentFrame,
-								makeHTML("The first row of the selected .csv file does not match the currently selected feature vector. "
+								feControl.makeHTML("The first row of the selected .csv file does not match the currently selected feature vector. "
 										+ "Which features do you want to keep?\n\n"
 										+ "(Selecting \"Keep in file\" will replace any features in the table, and "
 										+ "selecting \"Keep in table\" will delete all rows in the file.)", 300),
@@ -1052,11 +1052,11 @@ public class FESettingsDialog extends PamDialog {
 	    return file;
 	}
 	
-	// Kudos to this: https://stackoverflow.com/questions/1842223/java-linebreaks-in-jlabels
+/*	// Kudos to this: https://stackoverflow.com/questions/1842223/java-linebreaks-in-jlabels
 	public String makeHTML(String inp, int width) {
 		String outp = "<html><p style=\"width:"+Integer.toString(width)+"px\">"+inp+"</p></html>";
 		return outp;
-	}
+	} */
 	
 	/**
 	 * ActionListener for checkboxes.
@@ -1316,7 +1316,7 @@ public class FESettingsDialog extends PamDialog {
 			}
 			message += "\n"+String.valueOf(validFeatures.size())+" valid features were found. Proceed?";
 			int res = JOptionPane.showConfirmDialog(parentFrame,
-					makeHTML(message, 325),
+					feControl.makeHTML(message, 325),
 					"MIRRF Feature Extractor",
 					JOptionPane.YES_NO_OPTION);
 			if (res == JOptionPane.NO_OPTION) {

@@ -36,16 +36,17 @@ public class MIRRFTempFolderDialog extends PamDialog {
 	
 	protected JTextField fileField;
 	protected JButton selectButton;
-	protected boolean hasMirrfName;
+	//protected boolean hasMirrfName;
 	protected JTextField keyField;
 	protected JButton randomizeButton;
 	
-	public MIRRFTempFolderDialog(Window parentFrame, PamControlledUnit control, String unitName, String subfolderName, MIRRFParameters params) {
+	public MIRRFTempFolderDialog(Window parentFrame, PamControlledUnit control, String unitName, String subfolderName,
+			MIRRFParameters params, boolean importPreExistingFolderName) {
 		super(parentFrame, unitName, true);
 		this.control = control;
 		this.params = params;
 		this.parentFrame = parentFrame;
-		this.hasMirrfName = false;
+		//this.hasMirrfName = false;
 		this.unitName = unitName;
 		this.subfolderName = subfolderName;
 		
@@ -64,10 +65,11 @@ public class MIRRFTempFolderDialog extends PamDialog {
 				+ "Unfortunately, PamGuard's file security configuration doesn't allow the program to create new files or folders within PamGuard's own "
 				+ "folders, so a different folder must be created.<br><br>"
 				+ "A new folder named \"MIRRF Temp\\"+subfolderName+"\\[key]\" will be created in the folder you select (unless the selected folder is named \"MIRRF Temp\" itself). "
-				+ "NOTE THAT anything placed inside the new folder will be deleted every time the "+subfolderName+" is run.")), b);
+				+ "NOTE THAT anything placed inside the new folder will be deleted every time the "+subfolderName+" is run.", 300)), b);
 		b.gridy++;
 		b.gridwidth = 2;
 		fileField = new JTextField(30);
+		if (importPreExistingFolderName) fileField.setText(params.tempFolder);
 		fileField.setEnabled(false);
 		subPanel.add(fileField, b);
 		b.gridx += b.gridwidth;
@@ -96,11 +98,15 @@ public class MIRRFTempFolderDialog extends PamDialog {
 		setDialogComponent(mainPanel);
 	}
 	
-	// Kudos to this: https://stackoverflow.com/questions/1842223/java-linebreaks-in-jlabels
+/*	// Kudos to this: https://stackoverflow.com/questions/1842223/java-linebreaks-in-jlabels
 	public String makeHTML(String inp) {
 		int width = 300;
 		String outp = "<html><p style=\"width:"+Integer.toString(width)+"px\">"+inp+"</p></html>";
 		return outp;
+	} */
+	
+	public String makeHTML(String inp, int width) {
+		return String.format("<html><body style='width: %1spx'>%1s", width, inp);
 	}
 	
 	/**
@@ -111,17 +117,12 @@ public class MIRRFTempFolderDialog extends PamDialog {
 			PamFileChooser fc = new PamFileChooser();
 			fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 			fc.setMultiSelectionEnabled(false);
+			if (fileField.getText().length() > 0) {
+				File f = new File(fileField.getText());
+				if (f.exists()) fc.setCurrentDirectory(f);
+			}
 			int returnVal = fc.showSaveDialog(parentFrame);
 			if (returnVal == JFileChooser.APPROVE_OPTION) {
-				//System.out.println(fc.getSelectedFile().getName());
-				if (fc.getSelectedFile().getName().equals("MIRRF Temp")) {
-					//fileField.setText(fc.getSelectedFile().getPath()+"\\");
-					hasMirrfName = true;
-				} else {
-					//fileField.setText(fc.getSelectedFile().getPath()+"\\MIRRF Temp\\");
-					hasMirrfName = false;
-				}
-				//System.out.println(hasMirrfName);
 				fileField.setText(fc.getSelectedFile().getPath()+"\\");
 			}
 		}
@@ -165,7 +166,7 @@ public class MIRRFTempFolderDialog extends PamDialog {
 			SimpleErrorDialog("Selected object is not a folder.");
 			return false;
 		}
-		if (!hasMirrfName) {
+		if (!currPath.endsWith("MIRRF Temp\\")) {
 			currPath += "MIRRF Temp\\";
 			testFile = new File(currPath);
 		}

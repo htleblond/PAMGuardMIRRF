@@ -881,12 +881,6 @@ public class LCSettingsDialog extends PamDialog {
 	    return file;
 	}
 	
-	// Kudos to this: https://stackoverflow.com/questions/1842223/java-linebreaks-in-jlabels
-	public String makeHTML(String inp, int width) {
-		String outp = "<html><p style=\"width:"+Integer.toString(width)+"px\">"+inp+"</p></html>";
-		return outp;
-	}
-	
 	class RadioButtonListener implements ActionListener {
 		private JRadioButton rb;
 		public RadioButtonListener(JRadioButton rb) {
