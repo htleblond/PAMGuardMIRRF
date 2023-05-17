@@ -590,7 +590,7 @@ public class WMNTPanel {
 				}
 			}
 			
-			String[] tz_list = TimeZone.getAvailableIDs();
+		/*	String[] tz_list = TimeZone.getAvailableIDs();
 			String tz = (String)JOptionPane.showInputDialog(wmntControl.getGuiFrame(),
 					"Select a time zone.\n"
 					+ "(NOTE: This will convert dates/times from the binary files FROM the\n"
@@ -600,7 +600,7 @@ public class WMNTPanel {
 			if (tz == null) {
 				return;
 			}
-			wmntControl.setTimezone(tz);
+			wmntControl.setTimezone(tz); */
 			
 			try {
 				backupIndexes = null;
@@ -629,6 +629,7 @@ public class WMNTPanel {
 						PopulateTable(files[i]);
 					} catch (Exception e2) {
 						System.out.println("Error while parsing "+files[i].getName()+".");
+						e2.printStackTrace();
 					}
 					loadingBarWindow.addOneToLoadingBar();
 				}
@@ -690,16 +691,20 @@ public class WMNTPanel {
 					dubd = curr.getDataUnitBaseData();
 				}
 				if (curr.getObjectType() != -4){
-					long currtime = curr.getTimeMilliseconds();
-					long datatime = reader.bh.getDataDate();
-					Date date = new Date(currtime);
-					Date date2 = new Date(datatime);
+					long detectionTime = curr.getTimeMilliseconds();
+					long fileTime = reader.bh.getDataDate();
+					Date detectionDate = new Date(detectionTime);
+					Date fileDate = new Date(fileTime);
 					
 					String date_format = "yyyy-MM-dd HH:mm:ss+SSS";
 					SimpleDateFormat currdateformat = new SimpleDateFormat(date_format);
-					String currdate = currdateformat.format(date);
-					String datadate = currdateformat.format(date2);
-					LocalDateTime ldt = LocalDateTime.parse(currdate, DateTimeFormatter.ofPattern(date_format));
+					String detectionDateString = currdateformat.format(detectionDate);
+					String fileDateString = currdateformat.format(fileDate);
+					
+					detectionDateString = wmntControl.convertBetweenTimeZones(wmntControl.binaryTZ, "UTC", detectionDateString, true);
+					fileDateString = wmntControl.convertBetweenTimeZones(wmntControl.binaryTZ, "UTC", fileDateString, true);
+					if (detectionDateString == null || fileDateString == null) continue;
+				/*	LocalDateTime ldt = LocalDateTime.parse(currdate, DateTimeFormatter.ofPattern(date_format));
 					LocalDateTime ldt2 = LocalDateTime.parse(datadate, DateTimeFormatter.ofPattern(date_format));
 					ZoneId localZoneId = ZoneId.of(wmntControl.getTimezone());
 					ZoneId utcZoneId = ZoneId.of("UTC");
@@ -709,21 +714,21 @@ public class WMNTPanel {
 					ZonedDateTime utcDateTime2 = localZonedDateTime2.withZoneSameInstant(utcZoneId);
 					DateTimeFormatter dtformat = DateTimeFormatter.ofPattern(date_format);
 					currdate = dtformat.format(utcDateTime);
-					datadate = dtformat.format(utcDateTime2);
-					dataDates.add(datadate);
-					if (!(dubd.getUID() <= 0 && currdate.equals("1970-01-01 00:00:00+000"))) {
+					datadate = dtformat.format(utcDateTime2); */
+					dataDates.add(fileDateString);
+					if (!(dubd.getUID() <= 0 && detectionDateString.equals("1970-01-01 00:00:00+000"))) {
 						if (currformat > 3) {
 							double[] freqs = dubd.getFrequency();
 							//double dur = dubd.getSampleDuration(); //Millisecond version doesn't work
 							//double amp = dubd.getCalculatedAmlitudeDB(); //THIS DOESN'T ACTUALLY WORK
 							// THE ABOVE TWO VARIABLES ARE LOADED IN THROUGH THE DATABASE INSTEAD
-							dtmodel.addRow(new Object[]{dubd.getUID(), currdate,
+							dtmodel.addRow(new Object[]{dubd.getUID(), detectionDateString,
 									(int)freqs[0], (int)freqs[1], -1, -1, "", "", ""});
 						} else  if (currformat == 3){
-							dtmodel.addRow(new Object[]{dubd.getUID(), currdate,
+							dtmodel.addRow(new Object[]{dubd.getUID(), detectionDateString,
 									-1, -1, -1, -1, "", "", ""});
 						} else {
-							dtmodel.addRow(new Object[]{-1, currdate,
+							dtmodel.addRow(new Object[]{-1, detectionDateString,
 									-1, -1, -1, -1, "", "", ""});
 						}
 					}
@@ -1026,7 +1031,7 @@ public class WMNTPanel {
 					SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss+SSS");
 					df.setTimeZone(TimeZone.getTimeZone("UTC"));
 					String fromTable = ttable.getValueAt(ttable.getSelectedRow(), 1).toString();
-					
+					fromTable = wmntControl.convertBetweenTimeZones("UTC", wmntControl.audioTZ, fromTable, true);
 					try {
 						Date date = df.parse(fromTable);
 						long outpTime = date.getTime();

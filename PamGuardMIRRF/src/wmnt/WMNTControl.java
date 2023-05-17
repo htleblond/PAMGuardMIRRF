@@ -3,6 +3,11 @@ package wmnt;
 import java.awt.Frame;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
@@ -18,9 +23,12 @@ public class WMNTControl extends PamControlledUnit {
 	
 	WMNTSidePanel wmntSidePanel;
 	
-	private String timezone;
+	//private String timezone;
+	protected String audioTZ;
+	protected String binaryTZ;
+	protected String databaseTZ;
 	
-	private WMNTProcess wmntProcess;
+	protected WMNTProcess wmntProcess;
 	
 	public WMNTControl(String unitName) {
 		super("WMNT", "Whistle and Moan Detector");
@@ -28,7 +36,10 @@ public class WMNTControl extends PamControlledUnit {
 		wmntSidePanel = new WMNTSidePanel(this);
 		setSidePanel(wmntSidePanel);
 		
-		timezone = "Canada/Pacific";
+		//timezone = "Canada/Pacific";
+		audioTZ = "UTC";
+		binaryTZ = "UTC";
+		databaseTZ = "UTC";
 		
 		this.wmntProcess = new WMNTProcess(this, null);
 		this.addPamProcess(wmntProcess);
@@ -65,17 +76,34 @@ public class WMNTControl extends PamControlledUnit {
 	 * @param inpstr - Valid time zone name from java.utils.TimeZone. (String)
 	 * @author Taylor LeBlond
 	 */
-	public void setTimezone(String inpstr) {
+/*	public void setTimezone(String inpstr) {
 		timezone = inpstr;
-	}
+	} */
 	
 	/**
 	 * Getter function for the time zone.
 	 * @return String - time offset from UTC.
 	 * @author Taylor LeBlond
 	 */
-	public String getTimezone() {
+/*	public String getTimezone() {
 		return timezone;
+	} */
+	
+	public String convertBetweenTimeZones(String tz1name, String tz2name, String originalDate, boolean includeMilliseconds) {
+		try {
+			String date_format = "yyyy-MM-dd HH:mm:ss";
+			if (includeMilliseconds) date_format += "+SSS";
+			LocalDateTime ldt = LocalDateTime.parse(originalDate, DateTimeFormatter.ofPattern(date_format));
+			ZoneId tz1 = ZoneId.of(tz1name);
+			ZoneId tz2 = ZoneId.of(tz2name);
+			ZonedDateTime originalZDT = ldt.atZone(tz1);
+			ZonedDateTime newZDT = originalZDT.withZoneSameInstant(tz2);
+			DateTimeFormatter dtformat = DateTimeFormatter.ofPattern(date_format);
+			return dtformat.format(newZDT);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
 	}
 	
 	/**

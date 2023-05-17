@@ -158,7 +158,8 @@ public class WMNTSQLLogging {
 				int rownum = -1;
 				while(rs.next()) {
 					String conv = convertDate(String.valueOf(rs.getTimestamp("UTC")).substring(0, 19),
-							rs.getShort("UTCMilliseconds"), 0);
+							rs.getShort("UTCMilliseconds"), false);
+					//System.out.println(conv);
 					String entry = String.valueOf(rs.getLong("UID")) + " - " + conv;
 					dbSet.add(entry);
 					dbList.add(entry);
@@ -229,34 +230,37 @@ public class WMNTSQLLogging {
 	}
 	
 	/**
-	 * Fixes the rounding discrepancy for date/time between the binary files and database.
+	 * Fixes the rounding discrepancy for date/time between the binary files and database
+	 * and converts time zones.
 	 * Unfortunately, the binary files appear to have the correct time, not the database.
 	 * @param inpdate - Date being converted (String).
 	 * @param mill - The milliseconds attached to the date (Short).
-	 * @param direction - 0 or less removes a second, more than 0 adds a second (Int).
+	 * @param writing - False removes a second and converts to UTC. True adds a second and converts from UTC.
 	 * @return The converted date (String).
 	 * @author Taylor LeBlond
 	 */
-	protected String convertDate(String inpdate, short mill, int direction) {
+	protected String convertDate(String inpdate, short mill, boolean writing) {
+		String conv;
+		if (!writing) {
+			conv = wmntControl.convertBetweenTimeZones(wmntControl.databaseTZ, "UTC", inpdate.substring(0, 19), false);
+		} else {
+			conv = wmntControl.convertBetweenTimeZones("UTC", wmntControl.databaseTZ, inpdate.substring(0, 19), false);
+		}
 		if (mill < 500) {
-			return inpdate;
+			return conv;
 		}
 		SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 		Calendar cal = Calendar.getInstance();
 		try {
-			cal.setTime(df.parse(inpdate));
-			if (direction <= 0) {
-				//DB to table
+			cal.setTime(df.parse(conv));
+			if (!writing) { //DB to table
 				cal.add(Calendar.SECOND, -1);
-				return df.format(cal.getTime());
-			} else {
-				//Table to DB
+			} else { //Table to DB
 				cal.add(Calendar.SECOND, 1);
-				return df.format(cal.getTime());
 			}
+			return df.format(cal.getTime());
 		} catch (ParseException e1) {
 			e1.printStackTrace();
-			wmntControl.SimpleErrorDialog();
 		}
 		return null;
 	}
@@ -364,7 +368,7 @@ public class WMNTSQLLogging {
 				}
 				outpSql = outpSql + outpTable.getValueAt(i, 0).toString() + " AND UTC = '";
 				String conv = convertDate(outpTable.getValueAt(i, 1).toString().substring(0, 19),
-						Short.valueOf(outpTable.getValueAt(i, 1).toString().substring(20, 23)), 1);
+						Short.valueOf(outpTable.getValueAt(i, 1).toString().substring(20, 23)), true);
 				outpSql = outpSql + conv + "';";
 				
 				boolean success = commitEntry(outpSql);

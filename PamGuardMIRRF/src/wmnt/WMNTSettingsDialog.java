@@ -10,6 +10,7 @@ import java.awt.event.ActionListener;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
@@ -29,19 +30,25 @@ import PamView.dialog.PamGridBagContraints;
  */
 public class WMNTSettingsDialog extends PamDialog {
 	
-	private JTextField speciesField;
-	private DefaultComboBoxModel<String> speciesModel;
-	private JComboBox<String> speciesBox;
-	private JTextField callTypeField;
-	private DefaultComboBoxModel<String> callTypeModel;
-	private JComboBox<String> callTypeBox;
-	private JTextField intervalField;
+	protected JTextField speciesField;
+	protected DefaultComboBoxModel<String> speciesModel;
+	protected JComboBox<String> speciesBox;
+	protected JTextField callTypeField;
+	protected DefaultComboBoxModel<String> callTypeModel;
+	protected JComboBox<String> callTypeBox;
+	protected JTextField intervalField;
+	protected WMNTTimeZonePanel tzPanel;
+	protected String originalAudioTZ;
+	protected String originalBinaryTZ;
+	protected String originalDatabaseTZ;
 	
-	private WMNTControl wmntControl;
+	protected WMNTControl wmntControl;
+	protected Window parentFrame;
 	
 	public WMNTSettingsDialog(Window parentFrame, WMNTControl wmntControl) {
-		super(parentFrame, "Whistle and Moan Navigation Tool", true);
+		super(parentFrame, wmntControl.getUnitName(), true);
 		this.wmntControl = wmntControl;
+		this.parentFrame = parentFrame;
 		
 		this.getDefaultButton().setVisible(false);
 		
@@ -145,9 +152,20 @@ public class WMNTSettingsDialog extends PamDialog {
 		c.gridx++;
 		c.fill = GridBagConstraints.NONE;
 		intervalField = new JTextField(5);
+		intervalField.setText(String.valueOf(wmntControl.getSidePanel().getWMNTPanel().startInterval));
 		intervalField.setDocument(JNumFilter());
 		intervalPanel.add(intervalField, c);
 		mainPanel.add(intervalPanel, b);
+		
+		b.gridy++;
+		tzPanel = new WMNTTimeZonePanel(true, true, true, true);
+		tzPanel.setAudioTimeZone(wmntControl.audioTZ);
+		tzPanel.setBinaryTimeZone(wmntControl.binaryTZ);
+		tzPanel.setDatabaseTimeZone(wmntControl.databaseTZ);
+		originalAudioTZ = wmntControl.audioTZ;
+		originalBinaryTZ = wmntControl.binaryTZ;
+		originalDatabaseTZ = wmntControl.databaseTZ;
+		mainPanel.add(tzPanel, b);
 		
 		p.add(BorderLayout.NORTH, mainPanel);
 		
@@ -240,6 +258,19 @@ public class WMNTSettingsDialog extends PamDialog {
 	
 	@Override
 	public boolean getParams() {
+		if (!tzPanel.getAudioTimeZone().equals(originalAudioTZ) ||
+			!tzPanel.getBinaryTimeZone().equals(originalBinaryTZ) ||
+			!tzPanel.getDatabaseTimeZone().equals(originalDatabaseTZ)) {
+			int result = JOptionPane.showConfirmDialog(parentFrame,
+					"Time zones have been changed, therefore the binary data should be re-loaded."
+					+ "\n\nProceed with settings changes?",
+					wmntControl.getUnitName(),
+					JOptionPane.OK_CANCEL_OPTION);
+			if (result != JOptionPane.OK_OPTION) return false;
+			wmntControl.audioTZ = tzPanel.getAudioTimeZone();
+			wmntControl.binaryTZ = tzPanel.getBinaryTimeZone();
+			wmntControl.databaseTZ = tzPanel.getDatabaseTimeZone();
+		}
 		wmntControl.getSidePanel().getWMNTPanel().speciesModel = new DefaultComboBoxModel<String>();
 		wmntControl.getSidePanel().getWMNTPanel().speciesModel.addElement("");
 		for (int i = 0; i < speciesModel.getSize(); i++) {
