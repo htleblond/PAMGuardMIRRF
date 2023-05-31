@@ -3,6 +3,7 @@ package wmnt;
 import java.awt.Frame;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -13,33 +14,40 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 
 import PamController.PamControlledUnit;
+import PamController.PamControlledUnitSettings;
+import PamController.PamSettingManager;
+import PamController.PamSettings;
+import mirrfLiveClassifier.LCParameters;
 import whistlesAndMoans.*;
 
 /**
  * The controller class for the Whistle and Moan Navigation Tool.
  * @author Taylor LeBlond
  */
-public class WMNTControl extends PamControlledUnit {
+public class WMNTControl extends PamControlledUnit implements PamSettings {
 	
-	WMNTSidePanel wmntSidePanel;
+	protected WMNTParameters parameters = new WMNTParameters();
+	
+	protected WMNTSidePanel wmntSidePanel;
 	
 	//private String timezone;
-	protected String audioTZ;
+/*	protected String audioTZ;
 	protected String binaryTZ;
-	protected String databaseTZ;
+	protected String databaseTZ; */
 	
 	protected WMNTProcess wmntProcess;
 	
 	public WMNTControl(String unitName) {
 		super("WMNT", "Whistle and Moan Detector");
+		PamSettingManager.getInstance().registerSettings(this);
 		
 		wmntSidePanel = new WMNTSidePanel(this);
 		setSidePanel(wmntSidePanel);
 		
 		//timezone = "Canada/Pacific";
-		audioTZ = "UTC";
+	/*	audioTZ = "UTC";
 		binaryTZ = "UTC";
-		databaseTZ = "UTC";
+		databaseTZ = "UTC"; */
 		
 		this.wmntProcess = new WMNTProcess(this, null);
 		this.addPamProcess(wmntProcess);
@@ -114,6 +122,14 @@ public class WMNTControl extends PamControlledUnit {
 		return wmntSidePanel;
 	}
 	
+	protected WMNTParameters getParams() {
+		return parameters;
+	}
+	
+	protected void setParams(WMNTParameters inp) {
+		parameters = inp;
+	}
+	
 	@Override
 	public JMenuItem createDetectionMenu(Frame parentFrame) {
 		JMenuItem menuItem = new JMenuItem("Whistle and Moan Navigation Tool");
@@ -144,5 +160,24 @@ public class WMNTControl extends PamControlledUnit {
 	protected void settingsDialog(Frame parentFrame) {
 		WMNTSettingsDialog settingsDialog = new WMNTSettingsDialog(this.getPamView().getGuiFrame(), this);
 		settingsDialog.setVisible(true);
+	}
+
+	@Override
+	public Serializable getSettingsReference() {
+		return parameters;
+	}
+
+	@Override
+	public long getSettingsVersion() {
+		// TODO
+		return 0;
+	}
+
+	@Override
+	public boolean restoreSettings(PamControlledUnitSettings pamControlledUnitSettings) {
+		WMNTParameters newParams = (WMNTParameters) pamControlledUnitSettings.getSettings();
+		parameters = newParams;
+		//parameters = newParams.clone(); (not sure why this doesn't work - Cloneable should be imported)
+		return true;
 	}
 }

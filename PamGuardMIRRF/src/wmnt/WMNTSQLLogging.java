@@ -27,7 +27,7 @@ import generalDatabase.DBControl;
 import generalDatabase.DBSystem;
 
 /**
- * Used to read from and write to the 'whistle_and_moan_detector' table in the database.
+ * Used to read from and write to the 'whistle_and_moan_detector' (or otherwise re-named) table in the database.
  * @author Taylor LeBlond
  */
 public class WMNTSQLLogging {
@@ -74,13 +74,13 @@ public class WMNTSQLLogging {
 		try {
 			if (isMySQL) {
 				stmt = mySystem.getConnection().getConnection().createStatement();
-				rsColumns = stmt.executeQuery("SHOW COLUMNS FROM whistle_and_moan_detector;");
+				rsColumns = stmt.executeQuery("SHOW COLUMNS FROM "+wmntControl.getParams().sqlTableName+";");
 			} else {
 				if (!mySystem.getConnection().getConnection().isClosed()) {
 					mySystem.getConnection().getConnection().close();
 				}
 				stmt = mySystem.getConnection().getConnection().createStatement();
-				rsColumns = stmt.executeQuery("PRAGMA table_info('whistle_and_moan_detector');");
+				rsColumns = stmt.executeQuery("PRAGMA table_info('"+wmntControl.getParams().sqlTableName+"');");
 			}
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -125,7 +125,7 @@ public class WMNTSQLLogging {
 			
 			if (boo1 == false) {
 				try {
-					stmt.executeUpdate("ALTER TABLE whistle_and_moan_detector\r\n" + 
+					stmt.executeUpdate("ALTER TABLE "+wmntControl.getParams().sqlTableName+"\r\n" + 
 							"ADD COLUMN species CHAR(20);");
 				} catch(SQLException e) {
 					e.printStackTrace();
@@ -134,7 +134,7 @@ public class WMNTSQLLogging {
 			}
 			if (boo2 == false) {
 				try {
-					stmt.executeUpdate("ALTER TABLE whistle_and_moan_detector\r\n" + 
+					stmt.executeUpdate("ALTER TABLE "+wmntControl.getParams().sqlTableName+"\r\n" + 
 							"ADD COLUMN callType CHAR(20);");
 				} catch(SQLException e) {
 					e.printStackTrace();
@@ -143,7 +143,7 @@ public class WMNTSQLLogging {
 			}
 			if (boo3 == false) {
 				try {
-					stmt.executeUpdate("ALTER TABLE whistle_and_moan_detector\r\n" + 
+					stmt.executeUpdate("ALTER TABLE "+wmntControl.getParams().sqlTableName+"\r\n" + 
 							"ADD COLUMN comment NVARCHAR(400);");
 				} catch(SQLException e) {
 					e.printStackTrace();
@@ -152,7 +152,7 @@ public class WMNTSQLLogging {
 			}
 			
 			try {
-				rs = stmt.executeQuery("SELECT * FROM whistle_and_moan_detector;");
+				rs = stmt.executeQuery("SELECT * FROM "+wmntControl.getParams().sqlTableName+";");
 				dbSet = new HashSet<String>();
 				dbList = new ArrayList<String>();
 				int rownum = -1;
@@ -242,9 +242,9 @@ public class WMNTSQLLogging {
 	protected String convertDate(String inpdate, short mill, boolean writing) {
 		String conv;
 		if (!writing) {
-			conv = wmntControl.convertBetweenTimeZones(wmntControl.databaseTZ, "UTC", inpdate.substring(0, 19), false);
+			conv = wmntControl.convertBetweenTimeZones(wmntControl.getParams().databaseTZ, "UTC", inpdate.substring(0, 19), false);
 		} else {
-			conv = wmntControl.convertBetweenTimeZones("UTC", wmntControl.databaseTZ, inpdate.substring(0, 19), false);
+			conv = wmntControl.convertBetweenTimeZones("UTC", wmntControl.getParams().databaseTZ, inpdate.substring(0, 19), false);
 		}
 		if (mill < 500) {
 			return conv;
@@ -350,7 +350,7 @@ public class WMNTSQLLogging {
 		System.out.println("\nCOMMITTING TO DATABASE: "+mySystem.getDatabaseName());
 		for (int i = 0; i < outpTable.getRowCount(); i++) {
 			if (changeLog[getOriginalIndex(i,outpTable,origTable)] == true) {
-				String outpSql = "UPDATE whistle_and_moan_detector SET species = ";
+				String outpSql = "UPDATE "+wmntControl.getParams().sqlTableName+" SET species = ";
 				if (outpTable.getValueAt(i, 6).toString().length() > 0) {
 					outpSql = outpSql + "\"" + outpTable.getValueAt(i, 6).toString() + "\", callType = ";
 				} else {

@@ -6,6 +6,7 @@ import java.awt.GridBagLayout;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.ArrayList;
 
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JComboBox;
@@ -23,6 +24,7 @@ import javax.swing.text.PlainDocument;
 import PamView.dialog.PamButton;
 import PamView.dialog.PamDialog;
 import PamView.dialog.PamGridBagContraints;
+import wmnt.WMNTPanel.SpeciesListener;
 
 /**
  * The settings dialog for the WMNT.
@@ -38,9 +40,10 @@ public class WMNTSettingsDialog extends PamDialog {
 	protected JComboBox<String> callTypeBox;
 	protected JTextField intervalField;
 	protected WMNTTimeZonePanel tzPanel;
-	protected String originalAudioTZ;
+/*	protected String originalAudioTZ;
 	protected String originalBinaryTZ;
-	protected String originalDatabaseTZ;
+	protected String originalDatabaseTZ; */
+	protected JTextField sqlTableField;
 	
 	protected WMNTControl wmntControl;
 	protected Window parentFrame;
@@ -50,7 +53,7 @@ public class WMNTSettingsDialog extends PamDialog {
 		this.wmntControl = wmntControl;
 		this.parentFrame = parentFrame;
 		
-		this.getDefaultButton().setVisible(false);
+		//this.getDefaultButton().setVisible(false);
 		
 		JTabbedPane tabbedPane = new JTabbedPane();
 		
@@ -82,11 +85,8 @@ public class WMNTSettingsDialog extends PamDialog {
 		c.gridy++;
 		c.gridx = 0;
 		speciesModel = new DefaultComboBoxModel<String>();
-		for (int i = 0; i < wmntControl.getSidePanel().getWMNTPanel().speciesModel.getSize(); i++) {
-			String item = wmntControl.getSidePanel().getWMNTPanel().speciesModel.getElementAt(i).toString();
-			if (!(item.equals(""))) {
-				speciesModel.addElement(wmntControl.getSidePanel().getWMNTPanel().speciesModel.getElementAt(i));
-			}
+		for (int i = 1; i < wmntControl.getParams().speciesList.size(); i++) {
+			speciesModel.addElement(wmntControl.getParams().speciesList.get(i));
 		}
 		speciesBox = new JComboBox<String>(speciesModel);
 		speciesBox.setPrototypeDisplayValue("aaaaaaaaaaaaaaaaaaaaaaaaa");
@@ -117,11 +117,8 @@ public class WMNTSettingsDialog extends PamDialog {
 		c.gridy++;
 		c.gridx = 0;
 		callTypeModel = new DefaultComboBoxModel<String>();
-		for (int i = 0; i < wmntControl.getSidePanel().getWMNTPanel().calltypeModel.getSize(); i++) {
-			String item = wmntControl.getSidePanel().getWMNTPanel().calltypeModel.getElementAt(i).toString();
-			if (!(item.equals(""))) {
-				callTypeModel.addElement(wmntControl.getSidePanel().getWMNTPanel().calltypeModel.getElementAt(i));
-			}
+		for (int i = 1; i < wmntControl.getParams().callTypeList.size(); i++) {
+			callTypeModel.addElement(wmntControl.getParams().callTypeList.get(i));
 		}
 		callTypeBox = new JComboBox<String>(callTypeModel);
 		callTypeBox.setPrototypeDisplayValue("aaaaaaaaaaaaaaaaaaaaaaaaa");
@@ -152,20 +149,37 @@ public class WMNTSettingsDialog extends PamDialog {
 		c.gridx++;
 		c.fill = GridBagConstraints.NONE;
 		intervalField = new JTextField(5);
-		intervalField.setText(String.valueOf(wmntControl.getSidePanel().getWMNTPanel().startInterval));
 		intervalField.setDocument(JNumFilter());
+		intervalField.setText(String.valueOf(wmntControl.getParams().startBuffer));
 		intervalPanel.add(intervalField, c);
 		mainPanel.add(intervalPanel, b);
 		
 		b.gridy++;
 		tzPanel = new WMNTTimeZonePanel(true, true, true, true);
-		tzPanel.setAudioTimeZone(wmntControl.audioTZ);
-		tzPanel.setBinaryTimeZone(wmntControl.binaryTZ);
-		tzPanel.setDatabaseTimeZone(wmntControl.databaseTZ);
-		originalAudioTZ = wmntControl.audioTZ;
-		originalBinaryTZ = wmntControl.binaryTZ;
-		originalDatabaseTZ = wmntControl.databaseTZ;
+		tzPanel.setAudioTimeZone(wmntControl.getParams().audioTZ);
+		tzPanel.setBinaryTimeZone(wmntControl.getParams().binaryTZ);
+		tzPanel.setDatabaseTimeZone(wmntControl.getParams().databaseTZ);
+	/*	originalAudioTZ = wmntControl.getParams().audioTZ;
+		originalBinaryTZ = wmntControl.getParams().binaryTZ;
+		originalDatabaseTZ = wmntControl.getParams().databaseTZ; */
 		mainPanel.add(tzPanel, b);
+		
+		b.gridy++;
+		JPanel sqlPanel = new JPanel(new GridBagLayout());
+		sqlPanel.setBorder(new TitledBorder("SQL table name"));
+		c = new PamGridBagContraints();
+		c.anchor = GridBagConstraints.WEST;
+		c.fill = GridBagConstraints.HORIZONTAL;
+		String sqlText = "Name of the database table being read from and written into. Table must include all columns from a "
+				+ "typical Whistle and Moan Detector database table.\n";
+		html = "<html><body style='width: %1spx'>%1s";
+		sqlPanel.add(new JLabel(String.format(html, 250, sqlText)), c);
+		c.gridy++;
+		sqlTableField = new JTextField();
+		sqlTableField.setDocument(JSQLFilter(sqlTableField));
+		sqlTableField.setText(wmntControl.getParams().sqlTableName);
+		sqlPanel.add(sqlTableField, c);
+		mainPanel.add(sqlPanel, b);
 		
 		p.add(BorderLayout.NORTH, mainPanel);
 		
@@ -256,46 +270,107 @@ public class WMNTSettingsDialog extends PamDialog {
 		return d;
 	}
 	
+	/**
+	 * Limits entry in text field to miniscule letters, digits and underscores.
+	 * Capital letters are automatically un-capitalized, and digits are blocked from being the first character.
+	 * @return PlainDocument
+	 */
+	public PlainDocument JSQLFilter(JTextField field) {
+		PlainDocument d = new PlainDocument() {
+			@Override
+	        public void insertString(int offs, String str, AttributeSet a) throws BadLocationException {
+				if (str.length() > 1) {
+					super.insertString(offs, str, a);
+					return;
+				}
+	            char c = str.charAt(0);
+	            if (c >= 'A' && c <= 'Z') {
+	            	c += 32;
+	            } else if (!((c >= '0' && c <= '9' && field.getText().length() > 0)
+	            		    || (c >= 'a' && c <= 'z')
+	            		    || c == '_')) {
+	            	return;
+		        }
+	            super.insertString(offs, String.valueOf(c), a);
+	        }
+		};
+		return d;
+	}
+	
 	@Override
 	public boolean getParams() {
-		if (!tzPanel.getAudioTimeZone().equals(originalAudioTZ) ||
-			!tzPanel.getBinaryTimeZone().equals(originalBinaryTZ) ||
-			!tzPanel.getDatabaseTimeZone().equals(originalDatabaseTZ)) {
+		if (sqlTableField.getText().length() == 0) {
+			wmntControl.SimpleErrorDialog("SQL table must have a name.");
+			return false;
+		}
+		
+		if (!sqlTableField.getText().equals(wmntControl.getParams().sqlTableName)) {
 			int result = JOptionPane.showConfirmDialog(parentFrame,
-					"Time zones have been changed, therefore the binary data should be re-loaded."
+					"The SQL table name has been changed, therefore the database should be manually re-connected to."
 					+ "\n\nProceed with settings changes?",
 					wmntControl.getUnitName(),
 					JOptionPane.OK_CANCEL_OPTION);
 			if (result != JOptionPane.OK_OPTION) return false;
-			wmntControl.audioTZ = tzPanel.getAudioTimeZone();
-			wmntControl.binaryTZ = tzPanel.getBinaryTimeZone();
-			wmntControl.databaseTZ = tzPanel.getDatabaseTimeZone();
+			wmntControl.getParams().sqlTableName = sqlTableField.getText();
 		}
+		
+		if (!tzPanel.getAudioTimeZone().equals(wmntControl.getParams().audioTZ) ||
+			!tzPanel.getBinaryTimeZone().equals(wmntControl.getParams().binaryTZ) ||
+			!tzPanel.getDatabaseTimeZone().equals(wmntControl.getParams().databaseTZ)) {
+			int result = JOptionPane.showConfirmDialog(parentFrame,
+					"Time zones have been changed, therefore the binary data should be manually re-loaded."
+					+ "\n\nProceed with settings changes?",
+					wmntControl.getUnitName(),
+					JOptionPane.OK_CANCEL_OPTION);
+			if (result != JOptionPane.OK_OPTION) return false;
+			wmntControl.getParams().audioTZ = tzPanel.getAudioTimeZone();
+			wmntControl.getParams().binaryTZ = tzPanel.getBinaryTimeZone();
+			wmntControl.getParams().databaseTZ = tzPanel.getDatabaseTimeZone();
+		}
+		
+		wmntControl.getParams().speciesList = new ArrayList<String>();
+		wmntControl.getParams().speciesList.add("");
 		wmntControl.getSidePanel().getWMNTPanel().speciesModel = new DefaultComboBoxModel<String>();
 		wmntControl.getSidePanel().getWMNTPanel().speciesModel.addElement("");
 		for (int i = 0; i < speciesModel.getSize(); i++) {
+			wmntControl.getParams().speciesList.add(speciesModel.getElementAt(i));
 			wmntControl.getSidePanel().getWMNTPanel().speciesModel.addElement(speciesModel.getElementAt(i));
 		}
 		wmntControl.getSidePanel().getWMNTPanel().speciesBox.setModel(wmntControl.getSidePanel().getWMNTPanel().speciesModel);
+		
+		wmntControl.getParams().callTypeList = new ArrayList<String>();
+		wmntControl.getParams().callTypeList.add("");
 		wmntControl.getSidePanel().getWMNTPanel().calltypeModel = new DefaultComboBoxModel<String>();
 		wmntControl.getSidePanel().getWMNTPanel().calltypeModel.addElement("");
 		for (int i = 0; i < callTypeModel.getSize(); i++) {
+			wmntControl.getParams().callTypeList.add(callTypeModel.getElementAt(i));
 			wmntControl.getSidePanel().getWMNTPanel().calltypeModel.addElement(callTypeModel.getElementAt(i));
 		}
 		wmntControl.getSidePanel().getWMNTPanel().calltypeBox.setModel(wmntControl.getSidePanel().getWMNTPanel().calltypeModel);
+		
 		if (intervalField.getText().length() > 0) {
-			wmntControl.getSidePanel().getWMNTPanel().startInterval = Integer.valueOf(intervalField.getText());
+			wmntControl.getParams().startBuffer = Integer.valueOf(intervalField.getText());
 		}
+		
 		return true;
 	}
 
 	@Override
-	public void cancelButtonPressed() {
-		
-	}
+	public void cancelButtonPressed() {}
 
 	@Override
 	public void restoreDefaultSettings() {
-		// Never called (removed).
+		// (Confirm dialog apparently comes built-in.)
+		// NOT meant to immediately replace the settings, just setting the values in the boxes to default.
+		WMNTParameters newParams = new WMNTParameters();
+		speciesModel.removeAllElements();
+		for (int i = 1; i < newParams.speciesList.size(); i++) speciesModel.addElement(newParams.speciesList.get(i));
+		callTypeModel.removeAllElements();
+		for (int i = 1; i < newParams.callTypeList.size(); i++) callTypeModel.addElement(newParams.callTypeList.get(i));
+		intervalField.setText(String.valueOf(newParams.startBuffer));
+		tzPanel.setAudioTimeZone(newParams.audioTZ);
+		tzPanel.setBinaryTimeZone(newParams.binaryTZ);
+		tzPanel.setDatabaseTimeZone(newParams.databaseTZ);
+		sqlTableField.setText(newParams.sqlTableName);
 	}
 }

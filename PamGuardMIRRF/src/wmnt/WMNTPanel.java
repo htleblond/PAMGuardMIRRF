@@ -88,7 +88,7 @@ public class WMNTPanel {
 	private WMNTBinaryReader reader;
 	protected WMNTMarkControl marker;
 	private List dataDates;
-	public int startInterval;
+	//public int startInterval;
 	
 	private String defaultloc;
 	private File[] files;
@@ -104,7 +104,7 @@ public class WMNTPanel {
 	public WMNTPanel(WMNTControl wmntControl) {
 		this.wmntControl = wmntControl;
 		currformat = 6;
-		startInterval = 2000;
+		//startInterval = 2000;
 		testLogger = null;
 		backupIndexes = null;
 		backupValues = null;
@@ -392,7 +392,7 @@ public class WMNTPanel {
 					SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss+SSS");
 					Calendar cal = Calendar.getInstance();
 					cal.setTime(df.parse(dataDates.getItem(i)));
-					cal.add(Calendar.MILLISECOND, startInterval);
+					cal.add(Calendar.MILLISECOND, wmntControl.getParams().startBuffer);
 					String limdate = df.format(cal.getTime());
 					if (ttable.getValueAt(i, 1).toString().compareTo(limdate) < 0) {
 						ttable.addRowSelectionInterval(i, i);
@@ -701,8 +701,8 @@ public class WMNTPanel {
 					String detectionDateString = currdateformat.format(detectionDate);
 					String fileDateString = currdateformat.format(fileDate);
 					
-					detectionDateString = wmntControl.convertBetweenTimeZones(wmntControl.binaryTZ, "UTC", detectionDateString, true);
-					fileDateString = wmntControl.convertBetweenTimeZones(wmntControl.binaryTZ, "UTC", fileDateString, true);
+					detectionDateString = wmntControl.convertBetweenTimeZones(wmntControl.getParams().binaryTZ, "UTC", detectionDateString, true);
+					fileDateString = wmntControl.convertBetweenTimeZones(wmntControl.getParams().binaryTZ, "UTC", fileDateString, true);
 					if (detectionDateString == null || fileDateString == null) continue;
 				/*	LocalDateTime ldt = LocalDateTime.parse(currdate, DateTimeFormatter.ofPattern(date_format));
 					LocalDateTime ldt2 = LocalDateTime.parse(datadate, DateTimeFormatter.ofPattern(date_format));
@@ -1031,7 +1031,7 @@ public class WMNTPanel {
 					SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss+SSS");
 					df.setTimeZone(TimeZone.getTimeZone("UTC"));
 					String fromTable = ttable.getValueAt(ttable.getSelectedRow(), 1).toString();
-					fromTable = wmntControl.convertBetweenTimeZones("UTC", wmntControl.audioTZ, fromTable, true);
+					fromTable = wmntControl.convertBetweenTimeZones("UTC", wmntControl.getParams().audioTZ, fromTable, true);
 					try {
 						Date date = df.parse(fromTable);
 						long outpTime = date.getTime();
