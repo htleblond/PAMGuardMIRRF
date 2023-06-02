@@ -42,15 +42,13 @@ public class MIRRFTempFolderDialog extends PamDialog {
 	
 	public MIRRFTempFolderDialog(Window parentFrame, PamControlledUnit control, String unitName, String subfolderName,
 			MIRRFParameters params, boolean importPreExistingFolderName) {
-		super(parentFrame, unitName, true);
+		super(parentFrame, unitName, false);
 		this.control = control;
 		this.params = params;
 		this.parentFrame = parentFrame;
 		//this.hasMirrfName = false;
 		this.unitName = unitName;
 		this.subfolderName = subfolderName;
-		
-		this.getDefaultButton().setVisible(false);
 		
 		JPanel mainPanel = new JPanel(new FlowLayout());
 		JPanel subPanel = new JPanel(new GridBagLayout());

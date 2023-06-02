@@ -84,6 +84,8 @@ public class TSBPanel extends PamBorderPanel {
 	protected DefaultTableModel subsetTableModel;
 	protected PamTable subsetTable;
 	
+	protected JButton audioBatchButton;
+	
 	protected JButton loadButton;
 	protected JButton saveButton;
 	
@@ -200,6 +202,14 @@ public class TSBPanel extends PamBorderPanel {
 		b.anchor = b.WEST;
 		memPanel.add(sp, b);
 		
+		audioBatchButton = new JButton("Create audio test batch");
+		audioBatchButton.addActionListener(new AudioBatchButtonListener());
+		b.gridy++;
+		b.gridx = 0;
+		b.gridwidth = 1;
+		b.fill = b.NONE;
+		b.anchor = b.SOUTHWEST;
+		memPanel.add(audioBatchButton, b);
 		JPanel bottomButtonsPanel = new JPanel(new GridLayout(1, 2, 5, 5));
 		loadButton = new JButton("Load set");
 		loadButton.addActionListener(new LoadButtonListener());
@@ -208,7 +218,7 @@ public class TSBPanel extends PamBorderPanel {
 		saveButton.addActionListener(new SaveButtonListener());
 		saveButton.setEnabled(false);
 		bottomButtonsPanel.add(saveButton);
-		b.gridy++;
+		//b.gridy++;
 		b.gridx = 1;
 		b.gridwidth = 1;
 		b.fill = b.NONE;
@@ -332,14 +342,25 @@ public class TSBPanel extends PamBorderPanel {
 		}
 	}
 	
-	class SettingsButtonListener implements ActionListener{
+	class SettingsButtonListener implements ActionListener {
 		public void actionPerformed(ActionEvent e) {
 			TSBSettingsDialog settingsDialog = new TSBSettingsDialog(tsbControl.getPamView().getGuiFrame(), tsbControl);
 			settingsDialog.setVisible(true);
 		}
 	}
 	
-	class LoadButtonListener implements ActionListener{
+	class AudioBatchButtonListener implements ActionListener {
+		public void actionPerformed(ActionEvent e) {
+			if (tsbControl.getSubsetList().size() == 0) {
+				tsbControl.SimpleErrorDialog("Training data must be loaded into the table first.", 250);
+				return;
+			}
+			TSBAudioTestBatchDialog dialog = new TSBAudioTestBatchDialog(tsbControl.getPamView().getGuiFrame(), tsbControl);
+			dialog.setVisible(true);
+		}
+	}
+	
+	class LoadButtonListener implements ActionListener {
 		public void actionPerformed(ActionEvent e) {
 			loadButtonAction();
 		}

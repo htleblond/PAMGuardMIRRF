@@ -55,7 +55,7 @@ public class LCControl extends MIRRFControlledUnit implements PamSettings {
 	}
 	
 	protected void init() {
-		System.out.println("LC: Init happened");
+		//System.out.println("LC: Init happened");
 		PamSettingManager.getInstance().registerSettings(this);
 		
 		//trainPath = "";

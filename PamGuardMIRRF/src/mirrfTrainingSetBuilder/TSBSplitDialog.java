@@ -372,7 +372,7 @@ public class TSBSplitDialog extends PamDialog {
 		newIDDigit2Box.setSelectedItem(newID.substring(1));
 	}
 	
-	class UpdateButtonListener implements ActionListener{
+	protected class UpdateButtonListener implements ActionListener{
 		public void actionPerformed(ActionEvent e) {
 			String newDate = "";
 			try {

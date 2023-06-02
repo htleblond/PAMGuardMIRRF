@@ -8,6 +8,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
@@ -98,6 +99,16 @@ public class TSBControl extends PamControlledUnit implements PamSettings {
 	
 	public ArrayList<String> getUmbrellaClassList() {
 		return umbrellaClassList;
+	}
+	
+	public ArrayList<String> getOutputClassLabels() {
+		ArrayList<String> outp = new ArrayList<String>();
+		Iterator<String> it = getClassMap().values().iterator();
+		while (it.hasNext()) {
+			String next = it.next();
+			if (!outp.contains(next)) outp.add(next);
+		}
+		return outp;
 	}
 	
 	public void setClassMap(HashMap<String, String> inp) {
