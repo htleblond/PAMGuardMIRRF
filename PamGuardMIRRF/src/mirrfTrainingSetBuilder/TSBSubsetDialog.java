@@ -136,7 +136,7 @@ public class TSBSubsetDialog extends PamDialog {
 		c.gridx++;
 		c.anchor = c.WEST;
 		c.fill = c.HORIZONTAL;
-		featuresCSVButton = new JButton("Select .csv");
+		featuresCSVButton = new JButton("Select file");
 		featuresCSVButton.addActionListener(new CSVListener(true));
 		topLeftSubPanel.add(featuresCSVButton, c);
 		c.gridy++;
@@ -151,7 +151,7 @@ public class TSBSubsetDialog extends PamDialog {
 		c.gridx++;
 		c.anchor = c.WEST;
 		c.fill = c.HORIZONTAL;
-		wmntCSVButton = new JButton("Select .csv");
+		wmntCSVButton = new JButton("Select file");
 		wmntCSVButton.addActionListener(new CSVListener(false));
 		topLeftSubPanel.add(wmntCSVButton, c);
 		topLeftPanel.add(topLeftSubPanel);
@@ -313,6 +313,11 @@ public class TSBSubsetDialog extends PamDialog {
 			PamFileChooser fc = new PamFileChooser();
 			fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
 			fc.setMultiSelectionEnabled(false);
+			if (featuresNotWMNT) {
+				fc.addChoosableFileFilter(new FileNameExtensionFilter("MIRRF feature vector data file (*.mirrffe)","mirrffe"));
+			} else {
+				fc.addChoosableFileFilter(new FileNameExtensionFilter("WMNT table export file (*.wmnt)","wmnt"));
+			}
 			fc.addChoosableFileFilter(new FileNameExtensionFilter("Comma-separated values file (*.csv)","csv"));
 			int returnVal = fc.showOpenDialog(parentFrame);
 			if (returnVal == fc.APPROVE_OPTION) {
@@ -870,10 +875,10 @@ public class TSBSubsetDialog extends PamDialog {
 		for (int i = 0; i < checkList.getModel().getSize(); i++) {
 			if (checkList.isSelectedIndex(i)) {
 				ArrayList<TSBDetection> currList = validEntriesList.get(i);
-				if (startDate.length() == 0 || currList.get(0).datetime.compareTo(startDate) < 0) {
+				if (currList.size() > 0 && (startDate.length() == 0 || currList.get(0).datetime.compareTo(startDate) < 0)) {
 					startDate = currList.get(0).datetime;
 				}
-				if (endDate.length() == 0 || currList.get(currList.size()-1).datetime.compareTo(endDate) > 0) {
+				if (currList.size() > 0 && (endDate.length() == 0 || currList.get(currList.size()-1).datetime.compareTo(endDate) > 0)) {
 					endDate = currList.get(currList.size()-1).datetime;
 				}
 				total += currList.size();

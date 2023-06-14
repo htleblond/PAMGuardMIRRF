@@ -801,6 +801,7 @@ public class WMNTPanel {
 			fc = new PamFileChooser();
 			fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
 			fc.setMultiSelectionEnabled(false);
+			fc.addChoosableFileFilter(new FileNameExtensionFilter("WMNT table export file (*.wmnt)","wmnt"));
 			fc.addChoosableFileFilter(new FileNameExtensionFilter("Comma-separated values file (*.csv)","csv"));
 			fc.addChoosableFileFilter(new FileNameExtensionFilter("Text file (*.txt)","txt"));
 			int returnVal = fc.showOpenDialog(wmntControl.getGuiFrame());
@@ -818,20 +819,21 @@ public class WMNTPanel {
 			Scanner sc;
 			try {
 				sc = new Scanner(f);
-				if (f.getName().substring(f.getName().length()-4).equals(".csv")) {
+				if (f.getName().endsWith(".csv") || f.getName().endsWith(".wmnt")) {
 					sc.nextLine();
 				}
 				while (sc.hasNextLine()) {
 					boolean found = false;
 					String[] tokens;
-					if (f.getName().substring(f.getName().length()-4).equals(".csv")) {
+					if (f.getName().endsWith(".csv") || f.getName().endsWith(".wmnt")) {
 						tokens = sc.nextLine().split(",");
 					} else {
 						tokens = sc.nextLine().split("\t");
 					}
 					if (tokens.length >= 6) {
 						for (int i = 0; i < ttable.getRowCount(); i++) {
-							if (tokens[0].equals(String.valueOf(ttable.getValueAt(i, 0))) && tokens[1].equals(String.valueOf(ttable.getValueAt(i, 1)))) {
+							if (tokens[0].equals(String.valueOf(ttable.getValueAt(i, 0))) &&
+									tokens[1].equals(String.valueOf(ttable.getValueAt(i, 1)))) {
 								ttable.setValueAt("", i, 6);
 								ttable.setValueAt("", i, 7);
 								ttable.setValueAt("", i, 8);
@@ -883,6 +885,7 @@ public class WMNTPanel {
 				fc = new PamFileChooser();
 				fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
 				fc.setMultiSelectionEnabled(false);
+				fc.addChoosableFileFilter(new FileNameExtensionFilter("WMNT table export file (*.wmnt)","wmnt"));
 				fc.addChoosableFileFilter(new FileNameExtensionFilter("Comma-separated values file (*.csv)","csv"));
 				fc.addChoosableFileFilter(new FileNameExtensionFilter("Text file (*.txt)","txt"));
 				int returnVal = fc.showSaveDialog(wmntControl.getGuiFrame());
@@ -910,7 +913,7 @@ public class WMNTPanel {
 					}
 					String fn = f.getName();
 					System.out.println(fn);
-					if (fn.substring(fn.length()-4,fn.length()).equals(".csv")) {
+					if (fn.endsWith(".csv") || fn.endsWith(".wmnt")) {
 						try {
 							PrintWriter pw = new PrintWriter(f);
 							StringBuilder sb = new StringBuilder();
@@ -931,14 +934,14 @@ public class WMNTPanel {
 							}
 							pw.close();
 							JOptionPane.showMessageDialog(wmntControl.getGuiFrame(),
-									"Table successfully written to .csv file.",
+									"Table successfully written to file.",
 									"Whistle and Moan Navigation Tool",
 									JOptionPane.INFORMATION_MESSAGE);
 						} catch (Exception e2) {
 							System.out.println(e2);
 							SimpleErrorDialog();
 						}
-					} else if (fn.substring(fn.length()-4,fn.length()).equals(".txt")) {
+					} else if (fn.endsWith(".txt")) {
 						try {
 							PrintWriter pw = new PrintWriter(f);
 							StringBuilder sb = new StringBuilder();
@@ -957,7 +960,7 @@ public class WMNTPanel {
 							}
 							pw.close();
 							JOptionPane.showMessageDialog(wmntControl.getGuiFrame(),
-									"Table successfully written to .txt file.",
+									"Table successfully written to file.",
 									"Whistle and Moan Navigation Tool",
 									JOptionPane.INFORMATION_MESSAGE);
 						} catch (Exception e2) {

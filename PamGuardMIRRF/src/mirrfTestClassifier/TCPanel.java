@@ -7,6 +7,7 @@ import java.awt.event.ActionListener;
 import javax.swing.JPanel;
 import javax.swing.table.DefaultTableModel;
 
+import mirrfLiveClassifier.LCExportDialog;
 import mirrfLiveClassifier.LCPanel;
 import mirrfLiveClassifier.LCWaitingDialogThread;
 
@@ -17,17 +18,6 @@ public class TCPanel extends LCPanel {
 		
 		bestFeaturesButton.removeActionListener(null);
 	}
-	
-	//@Override
-/*	protected class BestFeaturesButtonListener implements ActionListener{
-		public void actionPerformed(ActionEvent e) {
-			if (!control.isTrainingSetLoaded()) {
-				control.SimpleErrorDialog("Training and/or testing sets have not been configured yet.", 250);
-				return;
-			}
-			control.getThreadManager().pythonCommand("tcm.printBestFeatureOrder()");
-		}
-	} */
 	
 	@Override
 	protected void bestFeaturesButtonAction() {
@@ -40,6 +30,12 @@ public class TCPanel extends LCPanel {
 		if (getControl().getThreadManager().initializeBestFeaturesSet())
 			control.getThreadManager().pythonCommand("tcmBest.printBestFeatureOrder()");
 		else wdThread.halt();
+	}
+	
+	@Override
+	protected void exportButtonListenerAction() {
+		TCExportDialog exportDialog = new TCExportDialog(getControl(), getControl().getPamView().getGuiFrame());
+		exportDialog.setVisible(true);
 	}
 	
 	// Only difference is that this one cuts off the bottom two rows of the confusion matrix.

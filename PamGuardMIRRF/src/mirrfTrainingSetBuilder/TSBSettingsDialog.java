@@ -145,7 +145,7 @@ public class TSBSettingsDialog extends PamDialog {
 			JComboBox<String> newBox = new JComboBox<String>();
 			newBox.addItem(classList.get(i));
 			for (int j = 0; j < umbrellaList.size(); j++)
-				newBox.addItem(umbrellaList.get(i));
+				newBox.addItem(umbrellaList.get(j));
 			newBox.setSelectedItem(classMap.get(classList.get(i)));
 			jComboBoxList.add(newBox);
 			bottomPanel.add(jComboBoxList.get(i), c);

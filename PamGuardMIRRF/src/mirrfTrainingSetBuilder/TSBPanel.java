@@ -370,6 +370,7 @@ public class TSBPanel extends PamBorderPanel {
 		PamFileChooser fc = new PamFileChooser();
 		fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
 		fc.setMultiSelectionEnabled(false);
+		fc.addChoosableFileFilter(new FileNameExtensionFilter("MIRRF training set file (*.mirrfts)","mirrfts"));
 		fc.addChoosableFileFilter(new FileNameExtensionFilter("Comma-separated values file (*.csv)","csv"));
 		int returnVal = fc.showOpenDialog(tsbControl.getPamView().getGuiFrame());
 		if (returnVal == fc.CANCEL_OPTION) {
@@ -624,7 +625,8 @@ public class TSBPanel extends PamBorderPanel {
 			PamFileChooser fc = new PamFileChooser();
 			fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
 			fc.setMultiSelectionEnabled(false);
-			fc.addChoosableFileFilter(new FileNameExtensionFilter("Comma-separated values file (*.csv)","csv"));
+			fc.addChoosableFileFilter(new FileNameExtensionFilter("MIRRF training set file (*.mirrfts)","mirrfts"));
+			//fc.addChoosableFileFilter(new FileNameExtensionFilter("Comma-separated values file (*.csv)","csv"));
 			int returnVal = fc.showSaveDialog(tsbControl.getPamView().getGuiFrame());
 			if (returnVal == fc.APPROVE_OPTION) {
 				File f = fc.getSelectedFile();
@@ -633,11 +635,11 @@ public class TSBPanel extends PamBorderPanel {
 					return;
 				}
 				if (f.getPath().length() >= 4) {
-					if (!f.getPath().substring(f.getPath().length()-4).equals(".csv")) {
-						f = new File(f.getPath()+".csv");
+					if (!f.getPath().substring(f.getPath().length()-4).equals(".mirrfts")) {
+						f = new File(f.getPath()+".mirrfts");
 					}
 				} else {
-					f = new File(f.getPath()+".csv");
+					f = new File(f.getPath()+".mirrfts");
 				}
 				if (f.exists()) {
 					int res = JOptionPane.showConfirmDialog(tsbControl.getPamView().getGuiFrame(),
@@ -738,12 +740,12 @@ public class TSBPanel extends PamBorderPanel {
 					}
 					pw.close();
 					JOptionPane.showMessageDialog(tsbControl.getPamView().getGuiFrame(),
-							"Training set successfully written to .csv file.",
+							"Training set successfully written to .mirrfts file.",
 							"MIRRF Training Set Builder",
 							JOptionPane.INFORMATION_MESSAGE);
 				} catch (Exception e2) {
 					System.out.println(e2);
-					tsbControl.SimpleErrorDialog("Could not fully write to .csv file. See console for more details.", 300);
+					tsbControl.SimpleErrorDialog("Could not fully write to .mirrfts file. See console for more details.", 300);
 				}
 			}
 		} else {

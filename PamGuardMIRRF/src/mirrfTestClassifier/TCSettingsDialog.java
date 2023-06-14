@@ -141,12 +141,12 @@ public class TCSettingsDialog extends LCSettingsDialog {
 		c.gridx = 0;
 		c.gridwidth = 4;
 		labelledRB = new JRadioButton();
-		labelledRB.setText("Use labelled testing set from Training Set Builder");
+		labelledRB.setText("Use labelled .mirrfts file as testing set");
 		labelledRB.addActionListener(new ValidationRBListener(ValidationRBListener.TESTSET));
 		validationPanel.add(labelledRB, c);
 		c.gridy++;
 		unlabelledRB = new JRadioButton();
-		unlabelledRB.setText("Use unlabelled testing set from Feature Extractor (TBA)");
+		unlabelledRB.setText("Use unlabelled .mirrffe file as testing set (TBA)");
 		unlabelledRB.addActionListener(new ValidationRBListener(ValidationRBListener.TESTSET));
 		unlabelledRB.setEnabled(false);
 		validationPanel.add(unlabelledRB, c);
@@ -309,11 +309,11 @@ public class TCSettingsDialog extends LCSettingsDialog {
 		return true;
 	}
 	
-	public boolean checkIfTrainingSetIsValid(LCTrainingSetInfo inp, boolean readThroughCSV) {
+	public boolean checkIfTrainingSetIsValid(LCTrainingSetInfo inp, boolean readThroughCSV, boolean showLoadingDialogs) {
 		TCParameters params = generateParameters();
 		LCTrainingSetInfo curr = inp;
 		if (readThroughCSV) {
-			curr = readTrainingSet(false, new File(params.trainPath));
+			curr = readTrainingSet(false, showLoadingDialogs, new File(params.trainPath));
 			if (curr == null) return false;
 			if (!loadedTrainingSet.compare(curr)) {
 				getControl().SimpleErrorDialog("Training set appears to have changed. Re-select it and try again.", 250);
@@ -342,7 +342,7 @@ public class TCSettingsDialog extends LCSettingsDialog {
 		return true;
 	}
 	
-	public boolean checkIfTestingSetIsValid(LCTrainingSetInfo inp, boolean readThroughCSV) {
+	public boolean checkIfTestingSetIsValid(LCTrainingSetInfo inp, boolean readThroughCSV, boolean showLoadingDialogs) {
 		TCParameters params = generateParameters();
 		if (inp == null || inp.pathName.length() == 0) {
 			getControl().SimpleErrorDialog("No testing set has been selected.", 250);
@@ -353,7 +353,7 @@ public class TCSettingsDialog extends LCSettingsDialog {
 			return false;
 		}
 		LCTrainingSetInfo curr = inp;
-		if (readThroughCSV) curr = readTrainingSet(true, new File(params.testPath));
+		if (readThroughCSV) curr = readTrainingSet(true, showLoadingDialogs, new File(params.testPath));
 		if (curr.pathName.equals(loadedTrainingSet.pathName)) {
 			getControl().SimpleErrorDialog("Training and testing sets cannot be the same file.", 250);
 			return false;
@@ -410,7 +410,7 @@ public class TCSettingsDialog extends LCSettingsDialog {
 				return;
 			}
 			if (testSet) {
-				if (checkIfTestingSetIsValid(tsi, false)) {
+				if (checkIfTestingSetIsValid(tsi, false, true)) {
 					loadedTestingSet = tsi;
 					testSetField.setText(tsi.pathName);
 				}
@@ -442,7 +442,7 @@ public class TCSettingsDialog extends LCSettingsDialog {
 	protected boolean checkIfSettingsAreValid() {
 		if (!super.checkIfSettingsAreValid()) return false;
 		if (kFoldRB.isSelected() && (kFoldField.getText().length() == 0 || Integer.valueOf(kFoldField.getText()) < 2)) return false;
-		if ((labelledRB.isSelected() || unlabelledRB.isSelected()) && !checkIfTestingSetIsValid(loadedTestingSet, true)) return false;
+		if ((labelledRB.isSelected() || unlabelledRB.isSelected()) && !checkIfTestingSetIsValid(loadedTestingSet, true, true)) return false;
 		if (testSubsetRB.isSelected() && testSubsetBox.getItemCount() == 0) return false;
 		return true;
 	}

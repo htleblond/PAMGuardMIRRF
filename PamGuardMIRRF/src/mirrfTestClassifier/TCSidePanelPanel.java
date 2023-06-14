@@ -102,13 +102,13 @@ public class TCSidePanelPanel extends PamBorderPanel {
 			TCSettingsDialog dialogInstance = new TCSettingsDialog(getControl().getGuiFrame(), getControl());
 			
 			loadingBar.setString("Verifying training set...");
-			if (!dialogInstance.checkIfTrainingSetIsValid(getControl().getTrainingSetInfo(), true)) {
+			if (!dialogInstance.checkIfTrainingSetIsValid(getControl().getTrainingSetInfo(), true, false)) {
 				loadingBar.setString("Idle");
 				return;
 			}
 			if (params.validation.contains("labelled")) {
 				loadingBar.setString("Verifying testing set...");
-				if (!dialogInstance.checkIfTestingSetIsValid(getControl().getTestingSetInfo(), true)) {
+				if (!dialogInstance.checkIfTestingSetIsValid(getControl().getTestingSetInfo(), true, false)) {
 					loadingBar.setString("Idle");
 					return;
 				}

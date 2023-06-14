@@ -55,7 +55,7 @@ import PamView.dialog.SourcePanel;
  * The settings dialog for the Feature Extractor.
  * @author Taylor LeBlond
  */
-@SuppressWarnings("serial")
+//@SuppressWarnings("serial")
 public class FESettingsDialog extends PamDialog {
 	
 	protected FEControl feControl;
@@ -173,7 +173,7 @@ public class FESettingsDialog extends PamDialog {
 		c.fill = GridBagConstraints.HORIZONTAL;
 		c.anchor = GridBagConstraints.WEST;
 		inputCSVRB = new JRadioButton();
-		inputCSVRB.setText("Input pre-existing data from WMNT-output .csv file");
+		inputCSVRB.setText("Input pre-existing data from .wmnt file");
 		inputCSVRB.addActionListener(new RadioButtonListener(inputCSVRB));
 		inputCSVPanel.add(inputCSVRB, c);
 		inputRBG = new ButtonGroup();
@@ -239,7 +239,7 @@ public class FESettingsDialog extends PamDialog {
 		c.gridwidth = 4;
 		c.fill = GridBagConstraints.HORIZONTAL;
 		outputCSVCheck = new JCheckBox();
-		outputCSVCheck.setText("Output feature data to .csv file");
+		outputCSVCheck.setText("Output feature data to .mirrffe file");
 		outputCSVCheck.addActionListener(new CheckBoxListener(outputCSVCheck));
 		outputCSVPanel.add(outputCSVCheck, c);
 		c.gridy++;
@@ -569,12 +569,12 @@ public class FESettingsDialog extends PamDialog {
 		c.gridy++;
 		c.gridx = 0;
 		c.gridwidth = 4;
-		featureImportLoadedButton = new JButton("Import features from selected .csv output file");
+		featureImportLoadedButton = new JButton("Import features from selected .mirrffe output file");
 		featureImportLoadedButton.setEnabled(false);
 		featureImportLoadedButton.addActionListener(new ImportCSVFeaturesButtonListener(true));
 		featureTablePanel.add(featureImportLoadedButton, c);
 		c.gridy++;
-		featureImportNewButton = new JButton("Import features from other .csv file");
+		featureImportNewButton = new JButton("Import features from other .mirrffe file or .mirrfts file");
 		featureImportNewButton.addActionListener(new ImportCSVFeaturesButtonListener(false));
 		featureTablePanel.add(featureImportNewButton, c);
 		featureFP1.add(featureTablePanel);
@@ -862,7 +862,7 @@ public class FESettingsDialog extends PamDialog {
 	}
 	
 	/**
-	 * For selecting the input .csv file and checking if it's valid or not.
+	 * For selecting the input .csv or .wmnt file and checking if it's valid or not.
 	 */
 	class CSVListener implements ActionListener{
 		
@@ -876,7 +876,12 @@ public class FESettingsDialog extends PamDialog {
 			PamFileChooser fc = new PamFileChooser();
 			fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
 			fc.setMultiSelectionEnabled(false);
-			fc.addChoosableFileFilter(new FileNameExtensionFilter("Comma-separated values file (*.csv)","csv"));
+			if (forOutput) {
+				fc.addChoosableFileFilter(new FileNameExtensionFilter("MIRRF feature vector data file (*.mirrffe)","mirrffe"));
+			} else {
+				fc.addChoosableFileFilter(new FileNameExtensionFilter("WMNT table export file (*.wmnt)","wmnt"));
+				fc.addChoosableFileFilter(new FileNameExtensionFilter("Comma-separated values file (*.csv)","csv"));
+			}
 			int returnVal = fc.showOpenDialog(parentFrame);
 			if (returnVal == JFileChooser.APPROVE_OPTION) {
 				if (forOutput) {
@@ -888,7 +893,7 @@ public class FESettingsDialog extends PamDialog {
 					if (f.exists() == true) {
 						while (!f.canWrite()) {
 							int res = JOptionPane.showConfirmDialog(parentFrame,
-									feControl.makeHTML("The selected .csv file is currently open. "
+									feControl.makeHTML("The selected file is currently open. "
 											+ "Please close the file to proceed.", 250),
 									"MIRRF Feature Extractor",
 									JOptionPane.OK_CANCEL_OPTION);
@@ -921,14 +926,13 @@ public class FESettingsDialog extends PamDialog {
 					}
 					if (!blankFile && matchesFeatures) {
 						int res = JOptionPane.showConfirmDialog(parentFrame,
-								feControl.makeHTML("The selected .csv file matches the currently selected feature vector.\n\n"
+								feControl.makeHTML("The selected file matches the currently selected feature vector.\n\n"
 										+ "Would you like to overwrite the contents? (Selecting Yes will immediately "
 										+ "delete all rows.)", 250),
 								"MIRRF Feature Extractor",
 								JOptionPane.YES_NO_CANCEL_OPTION);
 						if (res == JOptionPane.YES_OPTION) {
 							try {
-								//System.out.println("CSV DELETED?: "+String.valueOf(f.delete()));
 								f.delete();
 								f = new File(f.getPath());
 								f.createNewFile();
@@ -945,7 +949,8 @@ public class FESettingsDialog extends PamDialog {
 						}
 					} else if (!blankFile && !matchesFeatures) {
 						int res = JOptionPane.showOptionDialog(parentFrame,
-								feControl.makeHTML("The first row of the selected .csv file does not match the currently selected feature vector. "
+								feControl.makeHTML("The first row of the selected file does not match the "
+										+ "currently selected feature vector. "
 										+ "Which features do you want to keep?\n\n"
 										+ "(Selecting \"Keep in file\" will replace any features in the table, and "
 										+ "selecting \"Keep in table\" will delete all rows in the file.)", 300),
@@ -1151,7 +1156,7 @@ public class FESettingsDialog extends PamDialog {
 			File f;
 			if (importFromLoadedOutput) {
 				if (outputCSVField.getText().length() == 0) {
-					feControl.SimpleErrorDialog("No output .csv file has been selected.");
+					feControl.SimpleErrorDialog("No output .mirrffe file has been selected.");
 					return;
 				}
 				f = new File(outputCSVField.getText());
@@ -1159,7 +1164,9 @@ public class FESettingsDialog extends PamDialog {
 				PamFileChooser fc = new PamFileChooser();
 				fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
 				fc.setMultiSelectionEnabled(false);
-				fc.addChoosableFileFilter(new FileNameExtensionFilter("Comma-separated values file (*.csv)","csv"));
+				fc.addChoosableFileFilter(new FileNameExtensionFilter("MIRRF feature vector data file (*.mirrffe)","mirrffe"));
+				fc.addChoosableFileFilter(new FileNameExtensionFilter("MIRRF training set file (*.mirrfts)","mirrfts"));
+				//fc.addChoosableFileFilter(new FileNameExtensionFilter("Comma-separated values file (*.csv)","csv"));
 				int returnVal = fc.showOpenDialog(parentFrame);
 				if (returnVal == JFileChooser.CANCEL_OPTION) {
 					return;
@@ -1167,27 +1174,29 @@ public class FESettingsDialog extends PamDialog {
 				f = fc.getSelectedFile();
 			}
 			if (!f.exists()) {
-				feControl.SimpleErrorDialog("Selected .csv file no longer exists.");
+				feControl.SimpleErrorDialog("Selected file no longer exists.");
 				return;
 			}
 			if (!f.canRead()) {
-				feControl.SimpleErrorDialog("Selected .csv file is not readable.");
+				feControl.SimpleErrorDialog("Selected file is not readable.");
 				return;
 			}
 			Scanner sc;
 			try {
 				sc = new Scanner(f);
 				if (!sc.hasNextLine()) {
-					feControl.SimpleErrorDialog("Selected .csv file is blank.");
+					feControl.SimpleErrorDialog("Selected file is blank.");
 					return;
 				}
 				String[] firstLine = sc.nextLine().split(",");
-				if (firstLine.length < 7) {
-					feControl.SimpleErrorDialog("Selected .csv file does not contain any valid feature names.");
+				int startIndex = 6;
+				if (f.getName().endsWith(".mirrftc")) startIndex = 8;
+				if (firstLine.length < startIndex+1) {
+					feControl.SimpleErrorDialog("Selected file does not contain any valid feature names.");
 					return;
 				}
 				ArrayList<String> inp = new ArrayList<String>();
-				for (int i = 6; i < firstLine.length; i++) {
+				for (int i = startIndex; i < firstLine.length; i++) {
 					inp.add(firstLine[i]);
 				}
 				addFeaturesToTable(inp);
@@ -1307,10 +1316,10 @@ public class FESettingsDialog extends PamDialog {
 		}
 		if (invalidFeatures.size() > 0) {
 			if (validFeatures.size() == 0) {
-				feControl.SimpleErrorDialog("Selected .csv file does not contain any valid feature names.");
+				feControl.SimpleErrorDialog("Selected file does not contain any valid feature names.");
 				return false;
 			}
-			String message = "The following features found in the selected .csv file are not valid:\n\n";
+			String message = "The following features found in the selected file are not valid:\n\n";
 			for (int i = 0; i < invalidFeatures.size(); i++) {
 				message += invalidFeatures.get(i)+"\n";
 			}
@@ -1519,16 +1528,16 @@ public class FESettingsDialog extends PamDialog {
 		}
 		if (inputProcessRB.isSelected() && inputSourcePanel.getSourceCount() == 0) {
 			SimpleErrorDialog("No Whistle and Moan Detector module found in current configuration.\n"
-					+ "You should either set one up or import contour data from a .csv file.");
+					+ "You should either set one up or import contour data from a .wmnt file.");
 			return false;
 		} else if (inputCSVRB.isSelected() && inputCSVField.getText() == "No file selected.") {
-			SimpleErrorDialog("No .csv file has been selected as input.");
+			SimpleErrorDialog("No .wmnt file has been selected as input.");
 			return false;
 		} else if (inputCSVRB.isSelected() && inputCSVFileSizeField.getText().length() == 0) {
 			SimpleErrorDialog("Expected audio file size must be an integer.");
 			return false;
 		} else if (outputCSVCheck.isSelected() && outputCSVField.getText() == "No file selected.") {
-			SimpleErrorDialog("No .csv file has been selected for output.");
+			SimpleErrorDialog("No .wmnt file has been selected for output.");
 			return false;
 		} else if (audioSourcePanel.getSourceCount() < 1) {
 			SimpleErrorDialog("No audio source found.\n"
@@ -1617,23 +1626,23 @@ public class FESettingsDialog extends PamDialog {
 									}
 								}
 								if (feControl.getParams().inputCSVEntries.size() == 0) {
-									feControl.SimpleErrorDialog("Selected input .csv file did not contain any valid entries.");
+									feControl.SimpleErrorDialog("Selected input .wmnt file did not contain any valid entries.");
 									return false;
 								}
 							} catch (Exception e) {
-								feControl.SimpleErrorDialog("Error occured when attempting to read selected input .csv file.");
+								feControl.SimpleErrorDialog("Error occured when attempting to read selected input .wmnt file.");
 								return false;
 							}
 						} else {
-							feControl.SimpleErrorDialog("Selected input .csv file is not valid WMNT output.");
+							feControl.SimpleErrorDialog("Selected input .wmnt file is not valid WMNT output.");
 							return false;
 						}
 					} else {
-						feControl.SimpleErrorDialog("Selected input .csv file does not exist.");
+						feControl.SimpleErrorDialog("Selected input .wmnt file does not exist.");
 						return false;
 					}
 				} catch (Exception e) {
-					feControl.SimpleErrorDialog("Error occured when attempting to read selected input .csv file.");
+					feControl.SimpleErrorDialog("Error occured when attempting to read selected input .wmnt file.");
 					return false;
 				}
 				feControl.getParams().inputCSVName = inputCSVField.getText();

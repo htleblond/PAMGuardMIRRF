@@ -429,14 +429,16 @@ public class LCPanel extends PamBorderPanel {
 		for (int i = 0; i < jLabelConfMatrix.length; i++) {
 			for (int j = 0; j < jLabelConfMatrix[i].length; j++) {
 				if (i == 0) {
-					if (j == 0 || j == labelOrder.length+1) {
+					if (j == 0) {
 						jLabelConfMatrix[i][j] = new JLabel("");
+					} else if (j == labelOrder.length+1) {
+						jLabelConfMatrix[i][j] = new JLabel("Recall");
 					} else {
 						jLabelConfMatrix[i][j] = new JLabel(labelOrder[j-1]);
 					}
 				} else if (i == labelOrder.length+1) {
 					if (j == 0) {
-						jLabelConfMatrix[i][j] = new JLabel("");
+						jLabelConfMatrix[i][j] = new JLabel("Precision");
 					} else {
 						jLabelConfMatrix[i][j] = new JLabel("-%");
 					}

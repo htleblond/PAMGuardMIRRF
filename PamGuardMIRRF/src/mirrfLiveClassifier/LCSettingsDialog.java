@@ -646,22 +646,25 @@ public class LCSettingsDialog extends PamDialog {
 		PamFileChooser fc = new PamFileChooser();
 		fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
 		fc.setMultiSelectionEnabled(false);
+		fc.addChoosableFileFilter(new FileNameExtensionFilter("MIRRF training set file (*.mirrfts)","mirrfts"));
 		fc.addChoosableFileFilter(new FileNameExtensionFilter("Comma-separated values file (*.csv)","csv"));
 		int returnVal = fc.showOpenDialog(lcControl.getPamView().getGuiFrame());
 		if (returnVal == fc.APPROVE_OPTION) {
 			File f = getSelectedFileWithExtension(fc);
-			return readTrainingSet(testSet, f);
+			return readTrainingSet(testSet, true, f);
 		}
 		return null;
 	}
 	
-	protected LCTrainingSetInfo readTrainingSet(boolean testSet, File f) {
+	protected LCTrainingSetInfo readTrainingSet(boolean testSet, boolean showLoadingDialogs, File f) {
 		String message = "Validating training set...";
 		if (testSet) message = "Validating testing set...";
 		//WaitThread wt = new WaitThread(message);
 		//wt.start();
-		wdThread = new LCWaitingDialogThread(parentFrame, getControl(), message);
-		wdThread.start();
+		if (showLoadingDialogs) {
+			wdThread = new LCWaitingDialogThread(parentFrame, getControl(), message);
+			wdThread.start();
+		}
 		if (f.exists()) {
 			Scanner sc;
 			try {
