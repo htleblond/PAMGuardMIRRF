@@ -64,7 +64,7 @@ import java.time.format.DateTimeFormatter;
 
 /**
  * The panel where the GUI components are written.
- * @author Taylor LeBlond
+ * @author Holly LeBlond
  */
 public class TSBPanel extends PamBorderPanel {
 	
@@ -230,28 +230,28 @@ public class TSBPanel extends PamBorderPanel {
 		this.add(mainPanel);
 	}
 	
-	class AddButtonListener implements ActionListener{
+	protected class AddButtonListener implements ActionListener{
 		public void actionPerformed(ActionEvent e) {
 			TSBSubsetDialog subsetDialog = new TSBSubsetDialog(tsbControl.getPamView().getGuiFrame(), tsbControl, false);
 			subsetDialog.setVisible(true);
 		}
 	}
 	
-	class EditButtonListener implements ActionListener{
+	protected class EditButtonListener implements ActionListener{
 		public void actionPerformed(ActionEvent e) {
 			TSBSubsetDialog subsetDialog = new TSBSubsetDialog(tsbControl.getPamView().getGuiFrame(), tsbControl, true);
 			subsetDialog.setVisible(true);
 		}
 	}
 	
-	class SplitButtonListener implements ActionListener{
+	protected class SplitButtonListener implements ActionListener{
 		public void actionPerformed(ActionEvent e) {
 			TSBSplitDialog splitDialog = new TSBSplitDialog(tsbControl.getPamView().getGuiFrame(), tsbControl);
 			splitDialog.setVisible(true);
 		}
 	}
 	
-	class MoveButtonListener implements ActionListener{
+	protected class MoveButtonListener implements ActionListener{
 		
 		private boolean up;
 		public MoveButtonListener(boolean up) {
@@ -283,7 +283,7 @@ public class TSBPanel extends PamBorderPanel {
 		}
 	}
 	
-	class DeleteButtonListener implements ActionListener{
+	protected class DeleteButtonListener implements ActionListener {
 		public void actionPerformed(ActionEvent e) {
 			int selection = subsetTable.getSelectedRow();
 			if (selection > -1) {
@@ -317,7 +317,7 @@ public class TSBPanel extends PamBorderPanel {
 		}
 	}
 	
-	class ClearButtonListener implements ActionListener{
+	protected class ClearButtonListener implements ActionListener{
 		public void actionPerformed(ActionEvent e) {
 			if (subsetTable.getRowCount() > 0) {
 				int res = JOptionPane.showConfirmDialog(tsbControl.getPamView().getGuiFrame(),
@@ -342,14 +342,14 @@ public class TSBPanel extends PamBorderPanel {
 		}
 	}
 	
-	class SettingsButtonListener implements ActionListener {
+	protected class SettingsButtonListener implements ActionListener {
 		public void actionPerformed(ActionEvent e) {
 			TSBSettingsDialog settingsDialog = new TSBSettingsDialog(tsbControl.getPamView().getGuiFrame(), tsbControl);
 			settingsDialog.setVisible(true);
 		}
 	}
 	
-	class AudioBatchButtonListener implements ActionListener {
+	protected class AudioBatchButtonListener implements ActionListener {
 		public void actionPerformed(ActionEvent e) {
 			if (tsbControl.getSubsetList().size() == 0) {
 				tsbControl.SimpleErrorDialog("Training data must be loaded into the table first.", 250);
@@ -360,7 +360,7 @@ public class TSBPanel extends PamBorderPanel {
 		}
 	}
 	
-	class LoadButtonListener implements ActionListener {
+	protected class LoadButtonListener implements ActionListener {
 		public void actionPerformed(ActionEvent e) {
 			loadButtonAction();
 		}
@@ -505,6 +505,7 @@ public class TSBPanel extends PamBorderPanel {
 						outp[k] = currLine[k+1];
 					} */
 					try {
+						currLine[0] = currLine[0].substring(3); //TODO MAKE SURE THIS IS OKAY
 						TSBDetection outp = new TSBDetection(tsbControl, firstLine.length-8, currLine);
 						curr.validEntriesList.get(curr.classList.indexOf(currLine[7])).add(outp);
 					} catch (AssertionError | Exception e2) {
@@ -608,7 +609,7 @@ public class TSBPanel extends PamBorderPanel {
 		saveButton.setEnabled(subsetTable.getRowCount() > 0);
 	}
 	
-	class SaveButtonListener implements ActionListener {
+	protected class SaveButtonListener implements ActionListener {
 		public void actionPerformed(ActionEvent e) {
 			saveButtonAction();
 		}
@@ -635,7 +636,7 @@ public class TSBPanel extends PamBorderPanel {
 					return;
 				}
 				if (f.getPath().length() >= 4) {
-					if (!f.getPath().substring(f.getPath().length()-4).equals(".mirrfts")) {
+					if (!f.getPath().endsWith(".mirrfts")) {
 						f = new File(f.getPath()+".mirrfts");
 					}
 				} else {
@@ -660,7 +661,6 @@ public class TSBPanel extends PamBorderPanel {
 					tsbControl.SimpleErrorDialog("Could not create new blank file with selected file name.", 300);
 					return;
 				}
-				//ArrayList<String> outpList = new ArrayList<String>();
 				ArrayList<String[]> outpList = new ArrayList<String[]>();
 				String[] firstLine = new String[8+outputFeatureIndices.length];
 				firstLine[0] = "cluster";
@@ -698,20 +698,11 @@ public class TSBPanel extends PamBorderPanel {
 									nextLine[4] = String.valueOf(currDetection.duration);
 									nextLine[5] = String.valueOf(currDetection.lf);
 									nextLine[6] = String.valueOf(currDetection.hf);
-									//nextLine[7] = curr.classList.get(curr.selectionArray[j]);
 									nextLine[7] = tsbControl.getClassMap().get(currSubset.classList.get(currSubset.selectionArray[j]));
 									for (int l = 0; l < outputFeatureIndices.length; l++) {
 										nextLine[l+8] = String.valueOf(currDetection.featureVector[outputFeatureIndices[l]]);
 									}
 									splitList.add(nextLine);
-								/*	if (i == 0 && j == 0 && k == 0) {
-										String[] firstList = (String[]) curr.validEntriesList.get(curr.selectionArray[j]).get(0);
-										System.out.print(firstList[0]);
-										for (int l = 1; l < firstList.length; l++) {
-											System.out.print(", "+firstList[l]);
-										}
-										System.out.println();
-									} */
 								}
 							}
 						}
@@ -725,6 +716,22 @@ public class TSBPanel extends PamBorderPanel {
 				try {
 					PrintWriter pw = new PrintWriter(f);
 					StringBuilder sb = new StringBuilder();
+					sb.append("EXTRACTOR PARAMS START\n");
+					pw.write(sb.toString());
+					pw.flush();
+					HashMap<String, String> feParamsMap = tsbControl.getFEParamsMap();
+					Iterator<String> it = feParamsMap.keySet().iterator();
+					while (it.hasNext()) {
+						sb = new StringBuilder();
+						String nextKey = it.next();
+						sb.append(nextKey+"="+feParamsMap.get(nextKey)+"\n");
+						pw.write(sb.toString());
+						pw.flush();
+					}
+					sb = new StringBuilder();
+					sb.append("EXTRACTOR PARAMS END\n");
+					pw.write(sb.toString());
+					pw.flush();
 					for (int i = 0; i < outpList.size(); i++) {
 						sb = new StringBuilder();
 						String[] outp = outpList.get(i);

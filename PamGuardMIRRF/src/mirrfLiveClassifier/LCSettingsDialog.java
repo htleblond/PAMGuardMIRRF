@@ -47,6 +47,7 @@ import PamController.PamController;
 import PamUtils.PamFileChooser;
 import mirrfFeatureExtractor.FEDataBlock;
 import mirrfFeatureExtractor.FEDataUnit;
+import mirrfFeatureExtractor.FEParameters;
 import PamView.dialog.GroupedSourcePanel;
 import PamView.dialog.PamDialog;
 import PamView.dialog.PamGridBagContraints;
@@ -61,6 +62,8 @@ public class LCSettingsDialog extends PamDialog {
 	protected SourcePanel inputSourcePanel;
 	protected JTextField trainSetField;
 	protected JButton trainSetButton;
+	protected JTextField tempField;
+	protected JButton tempButton;
 	
 	protected JCheckBox kBestCheck;
 	protected JTextField kBestField;
@@ -121,9 +124,12 @@ public class LCSettingsDialog extends PamDialog {
 	}
 	
 	protected void init() {
+		this.getOkButton().removeActionListener(this.getOkButton().getActionListeners()[0]);
+		this.getOkButton().addActionListener(new OKButtonListener());
+		
 		//featureList = lcControl.featureList;
 		currentColours = new HashMap<String, Color>(lcControl.getParams().labelColours);
-		loadedTrainingSet = lcControl.getTrainingSetInfo();
+		loadedTrainingSet = lcControl.getParams().getTrainingSetInfo();
 		
 		JTabbedPane tabbedPane = new JTabbedPane();
 		tabbedPane.add("Input", createInputPanel());
@@ -148,7 +154,7 @@ public class LCSettingsDialog extends PamDialog {
 		trainSetField = new JTextField(20);
 		trainSetField.setMinimumSize(new Dimension(trainSetField.getPreferredSize().width, trainSetField.getHeight()));
 		trainSetField.setEnabled(false);
-		trainSetField.setText(lcControl.getTrainPath());
+		trainSetField.setText(lcControl.getParams().getTrainPath());
 		GridBagConstraints c = new PamGridBagContraints();
 		trainingSetPanel.add(trainSetField, c);
 		c.gridx++;
@@ -157,6 +163,21 @@ public class LCSettingsDialog extends PamDialog {
 		trainingSetPanel.add(trainSetButton, c);
 		b.gridy++;
 		outp.add(trainingSetPanel, b);
+		
+		b.gridy++;
+		JPanel tempPanel = new JPanel(new GridBagLayout());
+		tempPanel.setBorder(new TitledBorder("Temporary file storage"));
+		tempPanel.setAlignmentX(LEFT_ALIGNMENT);
+		c = new PamGridBagContraints();
+		tempField = new JTextField(20);
+		tempField.setEnabled(false);
+		tempPanel.add(tempField, c);
+		c.gridx++;
+		tempButton = new JButton("Change (TBA)");
+		tempButton.setEnabled(false);
+		// add listener
+		tempPanel.add(tempButton, c);
+		outp.add(tempPanel, b);
 		
 		return outp;
 	}
@@ -587,6 +608,7 @@ public class LCSettingsDialog extends PamDialog {
 	} */
 	
 	public class TrainSetListener implements ActionListener {
+		
 		protected boolean testSet;
 		
 		public TrainSetListener (boolean testSet) {
@@ -594,21 +616,41 @@ public class LCSettingsDialog extends PamDialog {
 		}
 		
 		public void actionPerformed(ActionEvent e) {
-			if (inputSourcePanel.getSourceCount() == 0) {
-				lcControl.SimpleErrorDialog("No Feature Extractor module found. One should be added before selecting the training set.", 300);
-				return;
-			}
-			LCTrainingSetInfo tsi = readTrainingSet(testSet);
-			if (tsi == null) {
-				if (wdThread != null) wdThread.halt();
-				return;
-			}
-			//lcControl.setTrainPath(pathName);
-			loadedTrainingSet = tsi;
-			trainSetField.setText(tsi.pathName);
-			updateLabelList(tsi);
-			if (wdThread != null) wdThread.halt();
+			TrainSetButtonThread tsbThread = new TrainSetButtonThread(testSet);
+			tsbThread.start();
 		}
+	}
+	
+	protected class TrainSetButtonThread extends Thread {
+		
+		protected boolean testSet;
+		
+		protected TrainSetButtonThread(boolean testSet) {
+			this.testSet = testSet;
+		}
+		
+		@Override
+		public void run() {
+			trainSetButtonThreadAction(testSet);
+		}
+	}
+	
+	protected void trainSetButtonThreadAction(boolean testSet) {
+		if (inputSourcePanel.getSourceCount() == 0) {
+			lcControl.SimpleErrorDialog("No Feature Extractor module found. "
+					+ "One should be added before selecting the training set.", 300);
+			return;
+		}
+		LCTrainingSetInfo tsi = readTrainingSet(testSet, true);
+		if (tsi == null) {
+			if (wdThread != null) wdThread.halt();
+			return;
+		}
+		//lcControl.setTrainPath(pathName);
+		loadedTrainingSet = tsi;
+		trainSetField.setText(tsi.pathName);
+		updateLabelList(tsi);
+		if (wdThread != null) wdThread.halt();
 	}
 	
 	protected void updateLabelList(LCTrainingSetInfo tsi) {
@@ -638,7 +680,7 @@ public class LCSettingsDialog extends PamDialog {
 		manageColoursButton.setEnabled(true);
 	}
 	
-	protected LCTrainingSetInfo readTrainingSet(boolean testSet) {
+	protected LCTrainingSetInfo readTrainingSet(boolean testSet, boolean showLoadingDialogs) {
 		if (testSet && loadedTrainingSet == null) {
 			lcControl.SimpleErrorDialog("Training set must be selected first.", 250);
 			return null;
@@ -651,9 +693,45 @@ public class LCSettingsDialog extends PamDialog {
 		int returnVal = fc.showOpenDialog(lcControl.getPamView().getGuiFrame());
 		if (returnVal == fc.APPROVE_OPTION) {
 			File f = getSelectedFileWithExtension(fc);
-			return readTrainingSet(testSet, true, f);
+			return readTrainingSet(testSet, showLoadingDialogs, f);
 		}
 		return null;
+	}
+	
+	protected boolean compareFEFeatures(ArrayList<String> inp, boolean testSet) {
+		FEDataBlock vectorDataBlock = (FEDataBlock) inputSourcePanel.getSource();
+		String failureMessage = "Selected set uses different features than those "
+				+ "currently selected in the Feature Extractor module. You can easily "
+				+ "import these features from the set in the 'Features' tab of the "
+				+ "Feature Extractor's settings.";
+		if (inp.size() == vectorDataBlock.getFeatureList().length) {
+			for (int i = 0; i < inp.size(); i++) {
+				if (!inp.get(i).equals(vectorDataBlock.getFeatureList()[i][1])) {
+					lcControl.SimpleErrorDialog(failureMessage, 350);
+					return false;
+				}
+			}
+		} else {
+			lcControl.SimpleErrorDialog(failureMessage, 350);
+			return false;
+		}
+		return true;
+	}
+	
+	protected boolean compareFEParams(HashMap<String, String> inp, boolean testSet) {
+		FEDataBlock vectorDataBlock = (FEDataBlock) inputSourcePanel.getSource();
+		FEParameters feParams = vectorDataBlock.getParamsClone();
+		if (feParams.findUnmatchedParameters(inp, false).size() == 0) return true;
+		int res = JOptionPane.showConfirmDialog(this,
+				lcControl.makeHTML("The selected set contains Feature Extractor settings information that "
+				+ "does not match the Feature Extractor's current settings. "
+				+ "It can still be used (as long as the features match), but it will likely "
+				+ "not produce optimal results. Proceed?", 350),
+				lcControl.getUnitName(),
+				JOptionPane.OK_CANCEL_OPTION,
+				JOptionPane.WARNING_MESSAGE,
+				null);
+		return res == JOptionPane.OK_OPTION;
 	}
 	
 	protected LCTrainingSetInfo readTrainingSet(boolean testSet, boolean showLoadingDialogs, File f) {
@@ -665,7 +743,114 @@ public class LCSettingsDialog extends PamDialog {
 			wdThread = new LCWaitingDialogThread(parentFrame, getControl(), message);
 			wdThread.start();
 		}
-		if (f.exists()) {
+		if (!f.exists()) {
+			lcControl.SimpleErrorDialog("Selected file does not exist.", 250);
+			return null;
+		}
+		LCTrainingSetInfo outp = new LCTrainingSetInfo(f.getPath());
+		Scanner sc;
+		try {
+			sc = new Scanner(f);
+			if (!sc.hasNextLine()) {
+				sc.close();
+				lcControl.SimpleErrorDialog("Selected set is a blank file.", 250);
+				return null;
+			}
+			String nextLine = sc.nextLine();
+			if (nextLine.startsWith("cluster,uid,location,date,duration,lf,hf,label,")) {
+				int res = JOptionPane.showConfirmDialog(this,
+						lcControl.makeHTML("The selected set contains no Feature Extractor settings information. "
+						+ "It can still be used (as long as the features match), but may have "
+						+ "used different audio settings, thus, it will likely not produce "
+						+ "optimal results. Proceed?", 350),
+						lcControl.getUnitName(),
+						JOptionPane.OK_CANCEL_OPTION,
+						JOptionPane.WARNING_MESSAGE,
+						null);
+				if (res != JOptionPane.OK_OPTION) {
+					sc.close();
+					return null;
+				}
+			} else if (nextLine.equals("EXTRACTOR PARAMS START")) {
+				HashMap<String, String> paramsMap = new HashMap<String, String>();
+				while (true) {
+					if (!sc.hasNextLine()) {
+						sc.close();
+						lcControl.SimpleErrorDialog("Selected set is not properly formatted.", 250);
+						return null;
+					}
+					nextLine = sc.nextLine();
+					if (nextLine.equals("EXTRACTOR PARAMS END")) break;
+					String[] nextSplit = nextLine.split("=");
+					if (nextSplit.length < 2) continue;
+					paramsMap.put(nextSplit[0], nextSplit[1]);
+				}
+				nextLine = sc.nextLine();
+				if (!nextLine.startsWith("cluster,uid,location,date,duration,lf,hf,label,")) {
+					sc.close();
+					lcControl.SimpleErrorDialog("Selected set is not properly formatted.", 250);
+					return null;
+				}
+				if (!compareFEParams(paramsMap, testSet)) {
+					sc.close();
+					return null;
+				}
+				outp.feParamsMap = paramsMap;
+			} else {
+				sc.close();
+				lcControl.SimpleErrorDialog("Selected set is not properly formatted.", 250);
+				return null;
+			}
+			String[] firstSplit = nextLine.split(",");
+			ArrayList<String> features = new ArrayList<String>();
+			for (int i = 8; i < firstSplit.length; i++) features.add(firstSplit[i]);
+			if (!compareFEFeatures(features, testSet)) {
+				sc.close();
+				return null;
+			}
+			ArrayList<String[]> dataLines = new ArrayList<String[]>();
+			while (sc.hasNextLine()) {
+				String[] nextSplit = sc.nextLine().split(",");
+				if (nextSplit.length != firstSplit.length) continue;
+				boolean allValid = true;
+				if (nextSplit[0].length() < 2) continue;
+				for (int i = 0; i < nextSplit.length; i++) {
+					try {
+						if ((i < 4 && i != 3) || i == 7) {
+							assert nextSplit[i].length() > 0;
+						} else if (i != 3) {
+							double test = Double.valueOf(nextSplit[i]);
+						}
+					} catch (Exception e2) {
+						allValid = false;
+						break;
+					}
+				}
+				if (allValid) {
+					outp.addBatchID(nextSplit[0].substring(0,2));
+					dataLines.add(nextSplit);
+					outp.addLabel(nextSplit[7]);
+				}
+			}
+			sc.close();
+			if (dataLines.size() == 0) {
+				lcControl.SimpleErrorDialog("Selected set does not contain any valid data.", 250);;
+				return null;
+			}
+			if (!(outp.labelCounts.size() > 1 || (testSet && outp.labelCounts.size() > 0))) {
+				lcControl.SimpleErrorDialog("Selected training set must include at least two classes.", 250);
+				sc.close();
+				return null;
+			}
+			for (int i = 8; i < firstSplit.length; i++) outp.featureList.add(firstSplit[i]);
+		} catch (Exception e2) {
+			e2.printStackTrace();
+			lcControl.SimpleErrorDialog("Scanning error encountered when attempting to load set.", 250);
+			return null;
+		}
+		return outp;
+		
+	/*	if (f.exists()) {
 			Scanner sc;
 			try {
 				LCTrainingSetInfo outp = new LCTrainingSetInfo(f.getPath());
@@ -707,7 +892,7 @@ public class LCSettingsDialog extends PamDialog {
 						if (dataLines.size() > 0) {
 							if (outp.labelCounts.size() > 1 || (testSet && outp.labelCounts.size() > 0)) {
 								//lcControl.trainPath = f.getPath();
-								//trainSetField.setText(lcControl.trainPath);
+								//trainSetField.setText(lcControl.trainPath); */
 							/*	featureList = new String[firstLine.length-8];
 								for (int i = 8; i < firstLine.length; i++) {
 									featureList[i-8] = firstLine[i];
@@ -723,7 +908,7 @@ public class LCSettingsDialog extends PamDialog {
 								currentColours = lcControl.getParams().generateColours(labelArr);
 								manageColoursButton.setEnabled(true);
 								return f.getPath(); */
-								for (int i = 8; i < firstLine.length; i++) {
+	/*							for (int i = 8; i < firstLine.length; i++) {
 									outp.featureList.add(firstLine[i]);
 								}
 								sc.close();
@@ -755,10 +940,10 @@ public class LCSettingsDialog extends PamDialog {
 			}
 		}
 		lcControl.SimpleErrorDialog("Selected file does not exist.", 250);
-		return null;
+		return null; */
 	}
 	
-	class ColourListener implements ActionListener {
+	protected class ColourListener implements ActionListener {
 		private LCSettingsDialog sDialog;
 		
 		public ColourListener(LCSettingsDialog sDialog) {
@@ -767,14 +952,19 @@ public class LCSettingsDialog extends PamDialog {
 		
 		@Override
 		public void actionPerformed(ActionEvent e) {
-			LCColourDialog cDialog = new LCColourDialog(parentFrame, lcControl, sDialog);
-			cDialog.setVisible(true);
+			colourListenerAction(sDialog);
 		}
+	}
+	
+	protected void colourListenerAction(LCSettingsDialog sDialog) {
+		LCColourDialog cDialog = new LCColourDialog(parentFrame, lcControl, sDialog, false);
+		cDialog.setVisible(true);
 	}
 	
 	public void actuallyGetParams() {
 		LCParameters params = lcControl.getParams();
 		inputSourcePanel.setSource(params.inputProcessName);
+		tempField.setText(params.tempFolder);
 		kBestCheck.setSelected(params.selectKBest);
 		kBestField.setEnabled(params.selectKBest);
 		kBestField.setText(String.valueOf(params.kBest));
@@ -838,7 +1028,7 @@ public class LCSettingsDialog extends PamDialog {
 		// TODO
 	}
 	
-	class CheckBoxListener implements ActionListener {
+	protected class CheckBoxListener implements ActionListener {
 		private JCheckBox box;
 		public CheckBoxListener(JCheckBox box) {
 			this.box = box;
@@ -848,13 +1038,13 @@ public class LCSettingsDialog extends PamDialog {
 		}
 	}
 	
-	class samplingRBListener implements ActionListener {
+	protected class samplingRBListener implements ActionListener {
 		public void actionPerformed(ActionEvent e) {
 			setMaxField.setEnabled(setMaxRB.isSelected());
 		}
 	}
 	
-	class clusterSizeListener implements ActionListener {
+	protected class clusterSizeListener implements ActionListener {
 		@Override
 		public void actionPerformed(ActionEvent e) {
 			clusterSizeField.setEnabled(clusterSizeCheck.isSelected());
@@ -884,7 +1074,7 @@ public class LCSettingsDialog extends PamDialog {
 	    return file;
 	}
 	
-	class RadioButtonListener implements ActionListener {
+	protected class RadioButtonListener implements ActionListener {
 		private JRadioButton rb;
 		public RadioButtonListener(JRadioButton rb) {
 			this.rb = rb;
@@ -1157,26 +1347,46 @@ public class LCSettingsDialog extends PamDialog {
 		return params;
 	}
 	
-	@Override
-	public boolean getParams() {
-		if (!checkIfSettingsAreValid()) {
-			return false;
+	protected class OKButtonListener implements ActionListener {
+		public void actionPerformed(ActionEvent e) {
+			OKButtonThread okThread = new OKButtonThread();
+			okThread.start();
 		}
+	}
+	
+	protected class OKButtonThread extends Thread {
+		
+		protected OKButtonThread() {}
+		
+		@Override
+		public void run() {
+			if (validateTrainingSet()) {
+				okButtonPressed();
+			}
+		}
+	}
+	
+	protected boolean validateTrainingSet() {
+		if (!checkIfSettingsAreValid()) return false;
 		
 		lcControl.setTrainingSetStatus(false);
 		
-		FEDataBlock vectorDataBlock = (FEDataBlock) inputSourcePanel.getSource();
+	/*	FEDataBlock vectorDataBlock = (FEDataBlock) inputSourcePanel.getSource();
 		if (loadedTrainingSet.featureList.size() == vectorDataBlock.getFeatureList().length) {
 			for (int i = 0; i < loadedTrainingSet.featureList.size(); i++) {
 				if (!loadedTrainingSet.featureList.get(i).equals(vectorDataBlock.getFeatureList()[i][1])) {
-					lcControl.SimpleErrorDialog("Selected features in the Feature Extractor do not match the features in the selected training set.", 250);
+					lcControl.SimpleErrorDialog("Selected features in the Feature Extractor do not match the "
+							+ "features in the selected training set.", 250);
 					return false;
 				}
 			}
 		} else {
-			lcControl.SimpleErrorDialog("Selected features in the Feature Extractor do not match the features in the selected training set.", 250);
+			lcControl.SimpleErrorDialog("Selected features in the Feature Extractor do not match the "
+					+ "features in the selected training set.", 250);
 			return false;
-		}
+		} */
+		
+		if (!compareFEFeatures(loadedTrainingSet.featureList, false));
 		
 		LCParameters params = generateParameters();
 		
@@ -1220,19 +1430,27 @@ public class LCSettingsDialog extends PamDialog {
         if (!lcControl.isTrainingSetLoaded()) {
         	wdThread.halt();
         	lcControl.SimpleErrorDialog("Training model initialization failed. See console for details.", 250);
-        	lcControl.getParams().trainPath = "";
-        	lcControl.setTrainingSetInfo(new LCTrainingSetInfo(""));
+        	//lcControl.getParams().trainPath = "";
+        	lcControl.getParams().setTrainingSetInfo(new LCTrainingSetInfo(""));
     		return false;
         }
-        params.trainPath = trainSetField.getText();
-        lcControl.setTrainingSetInfo(loadedTrainingSet);
+        //params.trainPath = trainSetField.getText();
+        params.setTrainingSetInfo(loadedTrainingSet);
         
 		// TODO Set GUI signal ?????
     	lcControl.setParams(params);
-    	lcControl.getProcess().setParentDataBlock(vectorDataBlock, true);
+    	lcControl.getProcess().setParentDataBlock((FEDataBlock) inputSourcePanel.getSource(), true);
     	lcControl.getTabPanel().getPanel().createMatrices(params.labelOrder);
     	wdThread.halt();
     	return true;
+	}
+	
+	/**
+	 * Note that the OK button starts a thread and runs validateTrainingSet() before reaching this.
+	 */
+	@Override
+	public boolean getParams() {
+		return true;
 	}
 
 	@Override

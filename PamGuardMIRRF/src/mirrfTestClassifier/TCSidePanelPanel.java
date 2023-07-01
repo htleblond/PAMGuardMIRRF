@@ -47,7 +47,7 @@ public class TCSidePanelPanel extends PamBorderPanel {
 		mainPanel.add(loadingBar, b);
 		b.gridx++;
 		startButton = new JButton("Start");
-		startButton.setEnabled(false);
+		//startButton.setEnabled(false);
 		startButton.addActionListener(new StartButtonListener());
 		mainPanel.add(startButton, b);
 		
@@ -92,35 +92,6 @@ public class TCSidePanelPanel extends PamBorderPanel {
 		
 	}
 	
-	protected class StartThread extends Thread {
-		protected StartThread() {}
-		@Override
-		public void run() {
-			TCParameters params = getControl().getParams();
-			
-			// Not meant to be visible - I'm only using some functions from it.
-			TCSettingsDialog dialogInstance = new TCSettingsDialog(getControl().getGuiFrame(), getControl());
-			
-			loadingBar.setString("Verifying training set...");
-			if (!dialogInstance.checkIfTrainingSetIsValid(getControl().getTrainingSetInfo(), true, false)) {
-				loadingBar.setString("Idle");
-				return;
-			}
-			if (params.validation.contains("labelled")) {
-				loadingBar.setString("Verifying testing set...");
-				if (!dialogInstance.checkIfTestingSetIsValid(getControl().getTestingSetInfo(), true, false)) {
-					loadingBar.setString("Idle");
-					return;
-				}
-			}
-			
-			if (!getControl().getThreadManager().initializeTrainingSets()) return;
-			getControl().getThreadManager().startPredictions(100);
-			startButton.setText("Start");
-			startButton.setEnabled(true);
-		}
-	}
-	
 	protected void start() {
 		if (getControl().getTabPanel().getPanel().getTableModel().getRowCount() > 0) {
 			int result = JOptionPane.showConfirmDialog(this, 
@@ -132,19 +103,54 @@ public class TCSidePanelPanel extends PamBorderPanel {
 		errorField.setText("0");
 		ignoreField.setText("0");
 		startButton.setEnabled(false);
+		getControl().getTabPanel().getPanel().createMatrices(getControl().getParams().labelOrder);
 		getControl().getTabPanel().getPanel().clearTable();
 		getControl().getProcess().clearOutputDataBlock();
 		loadingBar.setValue(0);
 		loadingBar.setString("Verifying settings...");
 		TCParameters params = getControl().getParams();
-		if (getControl().loadedTestingSetInfo == null ||
-				(params.validation.contains("labelled") && getControl().loadedTestingSetInfo == null)) {
+		if (params.loadedTestingSetInfo == null ||
+				(params.validation >= params.LABELLED && params.loadedTestingSetInfo == null)) {
 			loadingBar.setString("Idle");
 			getControl().SimpleErrorDialog("Training/testing sets have not been configured.", 250);
 			return;
 		}
 		StartThread startThread = new StartThread();
 		startThread.start();
+	}
+	
+	protected class StartThread extends Thread {
+		protected StartThread() {}
+		@Override
+		public void run() {
+			TCParameters params = getControl().getParams();
+			
+			// Not meant to be visible - I'm only using some functions from it.
+			TCSettingsDialog dialogInstance = new TCSettingsDialog(getControl().getGuiFrame(), getControl());
+			
+			loadingBar.setString("Verifying training set...");
+			if (!dialogInstance.checkIfTrainingSetIsValid(params.getTrainingSetInfo(), true, false)) {
+				loadingBar.setString("Idle");
+				startButton.setEnabled(true);
+				return;
+			}
+			if (params.validation >= params.LABELLED) {
+				loadingBar.setString("Verifying testing set...");
+				if (!dialogInstance.checkIfTestingSetIsValid(params.getTestingSetInfo(), true, false)) {
+					loadingBar.setString("Idle");
+					startButton.setEnabled(true);
+					return;
+				}
+			}
+			
+			if (!getControl().getThreadManager().initializeTrainingSets()) {
+				startButton.setEnabled(true);
+				return;
+			}
+			getControl().getThreadManager().startPredictions(100);
+			//startButton.setText("Start");
+			//startButton.setEnabled(true);
+		}
 	}
 	
 	protected void stop() {

@@ -1,7 +1,7 @@
 /* 
  * MIRRF Feature Plotter
  * Version 1.01 
- * By Taylor LeBlond
+ * By Holly LeBlond
  * Fisheries and Oceans Canada
  * August 2022
  */
@@ -10,15 +10,57 @@ package mirrfFeaturePlotter;
 
 import PamModel.PamDependency;
 import PamModel.PamPluginInterface;
+//import mirrf.MIRRFPlugin;
+//import mirrfFeatureExtractor.FEPlugin;
 
 /**
  * Music Information Retrieval Random Forest (MIRRF) Classifier - Feature Plotter
  * (Write description here.)
- * @author Taylor LeBlond
+ * @author Holly LeBlond
  */
 public class FPPlugin implements PamPluginInterface {
 	
 	String jarFile;
+	
+	@Override
+	public String getDescription() {
+		return getDefaultName();
+	}
+
+	@Override
+	public void setJarFile(String jarFile) {
+		this.jarFile = jarFile;
+	}
+
+	@Override
+	public String getJarFile() {
+		return jarFile;
+	}
+
+	@Override
+	public String getDeveloperName() {
+		return "Holly LeBlond";
+	}
+
+	@Override
+	public String getContactEmail() {
+		return "wtleblond@gmail.com";
+	}
+
+	@Override
+	public String getVersion() {
+		return "0.02b";
+	}
+
+	@Override
+	public String getPamVerDevelopedOn() {
+		return "2.02.09";
+	}
+
+	@Override
+	public String getPamVerTestedOn() {
+		return "2.02.09";
+	}
 
 	@Override
 	public String getClassName() {
@@ -27,11 +69,6 @@ public class FPPlugin implements PamPluginInterface {
 
 	@Override
 	public String getDefaultName() {
-		return "MIRRF Feature Plotter";
-	}
-
-	@Override
-	public String getDescription() {
 		return "MIRRF Feature Plotter";
 	}
 
@@ -73,41 +110,6 @@ public class FPPlugin implements PamPluginInterface {
 	@Override
 	public String getHelpSetName() {
 		return null;
-	}
-
-	@Override
-	public void setJarFile(String jarFile) {
-		this.jarFile = jarFile;
-	}
-
-	@Override
-	public String getJarFile() {
-		return jarFile;
-	}
-
-	@Override
-	public String getDeveloperName() {
-		return "Taylor LeBlond";
-	}
-
-	@Override
-	public String getContactEmail() {
-		return "wtleblond@gmail.com";
-	}
-
-	@Override
-	public String getVersion() {
-		return "1.01";
-	}
-
-	@Override
-	public String getPamVerDevelopedOn() {
-		return "2.01.05da";
-	}
-
-	@Override
-	public String getPamVerTestedOn() {
-		return "2.02.02";
 	}
 
 	@Override

@@ -4,7 +4,7 @@ import PamguardMVC.PamDataBlock;
 
 /**
  * The data block for the Feature Extractor.
- * @author Taylor LeBlond
+ * @author Holly LeBlond
  */
 public class FEDataBlock extends PamDataBlock<FEDataUnit> {
 	
@@ -57,6 +57,13 @@ public class FEDataBlock extends PamDataBlock<FEDataUnit> {
 	 */
 	public String[][] getFeatureList() {
 		return feControl.getParams().featureList;
+	}
+	
+	/**
+	 * @return A clone of the module's FEParameters.
+	 */
+	public FEParameters getParamsClone() {
+		return feControl.getParams().clone();
 	}
 	
 	/**

@@ -18,7 +18,7 @@ import PamView.dialog.SourcePanel;
 
 /**
  * The actual side panel.
- * @author Taylor LeBlond
+ * @author Holly LeBlond
  */
 public class FEPanel {
 	

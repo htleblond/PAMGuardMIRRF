@@ -1,21 +1,24 @@
 package mirrfLiveClassifier;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 
-public class LCTrainingSetInfo {
+public class LCTrainingSetInfo implements Serializable, Cloneable {
 	public String pathName;
 	public ArrayList<String> featureList;
 	public HashMap<String, Integer> labelCounts;
 	public HashMap<String, Integer> subsetCounts;
+	public HashMap<String, String> feParamsMap;
 	
 	public LCTrainingSetInfo(String pathName) {
 		this.pathName = pathName;
 		this.featureList = new ArrayList<String>();
 		this.labelCounts = new HashMap<String, Integer>();
 		this.subsetCounts = new HashMap<String, Integer>();
+		this.feParamsMap = new HashMap<String, String>();
 	}
 	
 	public void addFeature(String feature) {

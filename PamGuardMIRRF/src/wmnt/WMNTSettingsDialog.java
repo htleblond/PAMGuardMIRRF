@@ -28,7 +28,7 @@ import wmnt.WMNTPanel.SpeciesListener;
 
 /**
  * The settings dialog for the WMNT.
- * @author Taylor LeBlond
+ * @author Holly LeBlond
  */
 public class WMNTSettingsDialog extends PamDialog {
 	

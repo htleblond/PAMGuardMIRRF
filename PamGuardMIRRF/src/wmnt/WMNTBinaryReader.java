@@ -5,7 +5,7 @@ import java.io.*;
 
 /**
  * This is the class used for reading the contents of binary files into the table in the side panel.
- * @author Taylor LeBlond
+ * @author Holly LeBlond
  */
 public class WMNTBinaryReader extends BinaryInputStream {
 	

@@ -7,9 +7,9 @@ import java.io.Serializable;
  * specified "join distance" should be contained in the same call cluster.
  * <br><br>
  * This object is meant to be placed in an FEDataUnit.
- * @author Taylor LeBlond
+ * @author Holly LeBlond
  */
-@SuppressWarnings("serial")
+//@SuppressWarnings("serial")
 public class FECallCluster implements Serializable, Cloneable {
 	
 	public String clusterID;

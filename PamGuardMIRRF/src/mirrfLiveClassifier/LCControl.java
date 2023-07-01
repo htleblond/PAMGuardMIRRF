@@ -23,14 +23,14 @@ import PamController.PamControlledUnitSettings;
 import PamController.PamSettingManager;
 import PamController.PamSettings;
 import PamguardMVC.PamDataBlock;
-import mirrfFeatureExtractor.MIRRFControlledUnit;
-import mirrfFeatureExtractor.MIRRFParameters;
-import mirrfFeatureExtractor.MIRRFTempFolderDialog;
+import mirrf.MIRRFControlledUnit;
+import mirrf.MIRRFParameters;
+import mirrf.MIRRFTempFolderDialog;
 
 /**
  * The controller class for the MIRRF Live Classifier.
  * Is a subclass of PamControlledUnit.
- * @author Taylor LeBlond
+ * @author Holly LeBlond
  */
 public class LCControl extends MIRRFControlledUnit implements PamSettings {
 	
@@ -45,7 +45,7 @@ public class LCControl extends MIRRFControlledUnit implements PamSettings {
 	
 	//protected String trainPath;
 	//protected String[] featureList;
-	protected LCTrainingSetInfo loadedTrainingSetInfo;
+	//protected LCTrainingSetInfo loadedTrainingSetInfo;
 	protected volatile boolean trainingSetLoaded;
 	protected volatile boolean modelFittingFinished;
 	
@@ -60,7 +60,7 @@ public class LCControl extends MIRRFControlledUnit implements PamSettings {
 		
 		//trainPath = "";
 		//featureList = new String[0];
-		loadedTrainingSetInfo = new LCTrainingSetInfo("");
+		//loadedTrainingSetInfo = new LCTrainingSetInfo("");
 		trainingSetLoaded = false;
 		modelFittingFinished = true;
 		
@@ -93,6 +93,11 @@ public class LCControl extends MIRRFControlledUnit implements PamSettings {
 		
 		if (this.getParams().timeZone == null) {
 			showTimeZoneDialog();
+		}
+		
+		if (!this.isViewer && this.getParams().getSubsetCounts().size() > 0) {
+			LCSettingsDialog dialog = new LCSettingsDialog(null, this);
+			dialog.validateTrainingSet();
 		}
 	}
 	
@@ -226,29 +231,30 @@ public class LCControl extends MIRRFControlledUnit implements PamSettings {
 		featureList = inp;
 	} */
 	
-	public LCTrainingSetInfo getTrainingSetInfo() {
-		return loadedTrainingSetInfo;
+	// The following six functions have been moved to LCParameters:
+/*	public LCTrainingSetInfo getTrainingSetInfo() {
+		return getParams().loadedTrainingSetInfo;
 	}
 	
 	public void setTrainingSetInfo(LCTrainingSetInfo inp) {
-		loadedTrainingSetInfo = inp;
+		getParams().loadedTrainingSetInfo = inp;
 	}
 	
 	public String getTrainPath() {
-		return loadedTrainingSetInfo.pathName;
+		return getParams().loadedTrainingSetInfo.pathName;
 	}
 	
 	public ArrayList<String> getFeatureList() {
-		return loadedTrainingSetInfo.featureList;
+		return getParams().loadedTrainingSetInfo.featureList;
 	}
 	
 	public HashMap<String, Integer> getLabelCounts() {
-		return loadedTrainingSetInfo.labelCounts;
+		return getParams().loadedTrainingSetInfo.labelCounts;
 	}
 	
 	public HashMap<String, Integer> getSubsetCounts() {
-		return loadedTrainingSetInfo.subsetCounts;
-	}
+		return getParams().loadedTrainingSetInfo.subsetCounts;
+	} */
 	
 	public boolean isTrainingSetLoaded() {
 		return trainingSetLoaded;
@@ -325,7 +331,7 @@ public class LCControl extends MIRRFControlledUnit implements PamSettings {
 	protected void settingsDialog(Frame parentFrame) {
 		LCSettingsDialog settingsDialog = new LCSettingsDialog(this.getPamView().getGuiFrame(), this);
 		if (this.isViewer()) {
-			LCColourDialog colourDialog = new LCColourDialog(this.getPamView().getGuiFrame(), this, settingsDialog);
+			LCColourDialog colourDialog = new LCColourDialog(this.getPamView().getGuiFrame(), this, settingsDialog, true);
 			colourDialog.setVisible(true);
 		} else {
 			settingsDialog.setVisible(true);

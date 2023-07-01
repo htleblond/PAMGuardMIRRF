@@ -7,7 +7,7 @@ import PamView.PamSidePanel;
 /**
  * The side panel for the Feature Extractor.
  * Note that virtually all the GUI stuff of the side panel is actually in FEPanel.
- * @author Taylor LeBlond
+ * @author Holly LeBlond
  */
 public class FESidePanel implements PamSidePanel {
 

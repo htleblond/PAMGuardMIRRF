@@ -22,7 +22,7 @@ import whistlesAndMoans.*;
 
 /**
  * The controller class for the Whistle and Moan Navigation Tool.
- * @author Taylor LeBlond
+ * @author Holly LeBlond
  */
 public class WMNTControl extends PamControlledUnit implements PamSettings {
 	
@@ -59,7 +59,7 @@ public class WMNTControl extends PamControlledUnit implements PamSettings {
 	
 	/**
 	 * Streamlined error dialog.
-	 * @author Taylor LeBlond
+	 * @author Holly LeBlond
 	 */
 	public void SimpleErrorDialog() {
 		JOptionPane.showMessageDialog(this.getGuiFrame(),
@@ -70,7 +70,7 @@ public class WMNTControl extends PamControlledUnit implements PamSettings {
 	
 	/**
 	 * Streamlined error dialog with an editable message.
-	 * @author Taylor LeBlond
+	 * @author Holly LeBlond
 	 */
 	public void SimpleErrorDialog(String inptext) {
 		JOptionPane.showMessageDialog(this.getGuiFrame(),
@@ -82,7 +82,7 @@ public class WMNTControl extends PamControlledUnit implements PamSettings {
 	/**
 	 * Used to set the time zone for converting binary dates/times from set time zone to UTC.
 	 * @param inpstr - Valid time zone name from java.utils.TimeZone. (String)
-	 * @author Taylor LeBlond
+	 * @author Holly LeBlond
 	 */
 /*	public void setTimezone(String inpstr) {
 		timezone = inpstr;
@@ -91,7 +91,7 @@ public class WMNTControl extends PamControlledUnit implements PamSettings {
 	/**
 	 * Getter function for the time zone.
 	 * @return String - time offset from UTC.
-	 * @author Taylor LeBlond
+	 * @author Holly LeBlond
 	 */
 /*	public String getTimezone() {
 		return timezone;

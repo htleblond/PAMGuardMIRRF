@@ -1,0 +1,14 @@
+mirrf_0.02 CHANGELOG
+June 30th, 2023
+Holly LeBlond
+
+(May include stuff added in 0.01, I lost track)
+
+- Created new file extensions:
+	- .wmnt (WMNT export)
+	- .mirrffe (Feature Extractor output)
+	- .mirrfts (training set)
+- Added FE audio settings info to .mirrffe and .mirrfts files
+- Fixed loading dialogs in classifiers
+- Made it possible to initiate pre-loaded training sets in both LC and TC
+- Fixed TC start/stop button (though the code for it is a mess)

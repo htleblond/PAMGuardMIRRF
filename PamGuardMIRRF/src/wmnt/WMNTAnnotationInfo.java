@@ -3,7 +3,7 @@ package wmnt;
 /**
  * Object containing species, callType and comment information to be passed to a MIRRF Classifier
  * whenever the table is updated.
- * @author Taylor LeBlond
+ * @author Holly LeBlond
  */
 public class WMNTAnnotationInfo {
 	
@@ -13,7 +13,7 @@ public class WMNTAnnotationInfo {
 	
 	/**
 	 * Sets all variables to empty strings.
-	 * @author Taylor LeBlond
+	 * @author Holly LeBlond
 	 */
 	public WMNTAnnotationInfo() {
 		species = "";

@@ -26,7 +26,9 @@ import javax.swing.border.TitledBorder;
 
 import PamView.dialog.PamGridBagContraints;
 import PamView.dialog.SourcePanel;
+import mirrfFeatureExtractor.FEDataBlock;
 import mirrfFeatureExtractor.FEDataUnit;
+import mirrfFeatureExtractor.FEParameters;
 import mirrfLiveClassifier.LCControl;
 import mirrfLiveClassifier.LCParameters;
 import mirrfLiveClassifier.LCSettingsDialog;
@@ -60,7 +62,7 @@ public class TCSettingsDialog extends LCSettingsDialog {
 	@Override
 	protected void init() {
 		super.init();
-		loadedTestingSet = getControl().getTestingSetInfo();
+		loadedTestingSet = getControl().getParams().getTestingSetInfo();
 		System.out.println("TCSettingsDialog: Init happened");
 	}
 	
@@ -79,12 +81,12 @@ public class TCSettingsDialog extends LCSettingsDialog {
 		trainSetField = new JTextField(20);
 		trainSetField.setMinimumSize(new Dimension(trainSetField.getPreferredSize().width, trainSetField.getHeight()));
 		trainSetField.setEnabled(false);
-		trainSetField.setText(getControl().getTrainPath());
+		trainSetField.setText(getControl().getParams().getTrainPath());
 		GridBagConstraints c = new PamGridBagContraints();
 		trainingSetPanel.add(trainSetField, c);
 		c.gridx++;
 		trainSetButton = new JButton("Select file");
-		trainSetButton.addActionListener(new TCTrainSetListener(false));
+		trainSetButton.addActionListener(new TrainSetListener(false));
 		trainingSetPanel.add(trainSetButton, c);
 		outp.add(trainingSetPanel, b);
 		
@@ -93,12 +95,12 @@ public class TCSettingsDialog extends LCSettingsDialog {
 		testSetField = new JTextField(20);
 		testSetField.setMinimumSize(new Dimension(testSetField.getPreferredSize().width, testSetField.getHeight()));
 		testSetField.setEnabled(false);
-		testSetField.setText(getControl().getTestPath());
+		testSetField.setText(getControl().getParams().getTestPath());
 		c = new PamGridBagContraints();
 		testingSetPanel.add(testSetField, c);
 		c.gridx++;
 		testSetButton = new JButton("Select file");
-		testSetButton.addActionListener(new TCTrainSetListener(true));
+		testSetButton.addActionListener(new TrainSetListener(true));
 		testingSetPanel.add(testSetButton, c);
 		b.gridy++;
 		outp.add(testingSetPanel, b);
@@ -159,7 +161,59 @@ public class TCSettingsDialog extends LCSettingsDialog {
 		b.gridy++;
 		outp.add(validationPanel, b);
 		
+		b.gridy++;
+		JPanel tempPanel = new JPanel(new GridBagLayout());
+		tempPanel.setBorder(new TitledBorder("Temporary file storage"));
+		tempPanel.setAlignmentX(LEFT_ALIGNMENT);
+		c = new PamGridBagContraints();
+		tempField = new JTextField(20);
+		tempField.setEnabled(false);
+		tempPanel.add(tempField, c);
+		c.gridx++;
+		tempButton = new JButton("Change (TBA)");
+		tempButton.setEnabled(false);
+		// add listener
+		tempPanel.add(tempButton, c);
+		outp.add(tempPanel, b);
+		
 		return outp;
+	}
+	
+	@Override
+	protected boolean compareFEFeatures(ArrayList<String> inp, boolean testSet) {
+		if (!testSet) return true;
+		if (loadedTrainingSet.featureList.size() != inp.size()) return false;
+		for (int i = 0; i < inp.size(); i++) {
+			if (!loadedTrainingSet.featureList.get(i).equals(inp.get(i))) {
+				lcControl.SimpleErrorDialog("Features found in testing set do not match those "
+						+ "found in training set.", 250);
+				return false;
+			}
+		}
+		return true;
+	}
+	
+	@Override
+	protected boolean compareFEParams(HashMap<String, String> inp, boolean testSet) {
+		if (!testSet) return true;
+		HashMap<String, String> currMap = loadedTrainingSet.feParamsMap;
+		Iterator<String> it = currMap.keySet().iterator();
+		while (it.hasNext()) {
+			String nextKey = it.next();
+			if (!inp.containsKey(nextKey) || !currMap.get(nextKey).equals(inp.get(nextKey))) {
+				int res = JOptionPane.showConfirmDialog(this,
+						"The selected set contains Feature Extractor settings information that "
+						+ "does not match those found in the training set. "
+						+ "It can still be used (as long as the features match), but it will likely "
+						+ "not produce optimal results. Proceed?",
+						lcControl.getUnitName(),
+						JOptionPane.OK_CANCEL_OPTION,
+						JOptionPane.WARNING_MESSAGE,
+						null);
+				return res == JOptionPane.OK_OPTION;
+			}
+		}
+		return true;
 	}
 	
 	protected void fillTestSubsetBox() {
@@ -313,7 +367,7 @@ public class TCSettingsDialog extends LCSettingsDialog {
 		TCParameters params = generateParameters();
 		LCTrainingSetInfo curr = inp;
 		if (readThroughCSV) {
-			curr = readTrainingSet(false, showLoadingDialogs, new File(params.trainPath));
+			curr = readTrainingSet(false, showLoadingDialogs, new File(loadedTrainingSet.pathName));
 			if (curr == null) return false;
 			if (!loadedTrainingSet.compare(curr)) {
 				getControl().SimpleErrorDialog("Training set appears to have changed. Re-select it and try again.", 250);
@@ -332,11 +386,11 @@ public class TCSettingsDialog extends LCSettingsDialog {
 			getControl().SimpleErrorDialog("Training set must contain at least two features.", 250);
 			return false;
 		}
-		if (params.validation.equals("leaveoneout")) {
+		if (params.validation == params.LEAVEONEOUT) {
 			if (!checkClassSpread(curr, false, false)) return false;
-		} else if (params.validation.equals("kfold")) {
+		} else if (params.validation == params.KFOLD) {
 			if (!checkClassSpread(curr, true, false)) return false;
-		} else if (params.validation.equals("testsubset")) {
+		} else if (params.validation == params.TESTSUBSET) {
 			if (!checkClassSpread(curr, false, true)) return false;
 		}
 		return true;
@@ -353,7 +407,7 @@ public class TCSettingsDialog extends LCSettingsDialog {
 			return false;
 		}
 		LCTrainingSetInfo curr = inp;
-		if (readThroughCSV) curr = readTrainingSet(true, showLoadingDialogs, new File(params.testPath));
+		if (readThroughCSV) curr = readTrainingSet(true, showLoadingDialogs, new File(loadedTestingSet.pathName));
 		if (curr.pathName.equals(loadedTrainingSet.pathName)) {
 			getControl().SimpleErrorDialog("Training and testing sets cannot be the same file.", 250);
 			return false;
@@ -396,45 +450,38 @@ public class TCSettingsDialog extends LCSettingsDialog {
 		return true;
 	}
 	
-	public class TCTrainSetListener extends TrainSetListener {
-		
-		public TCTrainSetListener (boolean testSet) {
-			super(testSet);
-		}
-		
-		@Override
-		public void actionPerformed(ActionEvent e) {
-			LCTrainingSetInfo tsi = readTrainingSet(testSet);
-			if (tsi == null) {
-				if (wdThread != null) wdThread.halt();
-				return;
-			}
-			if (testSet) {
-				if (checkIfTestingSetIsValid(tsi, false, true)) {
-					loadedTestingSet = tsi;
-					testSetField.setText(tsi.pathName);
-				}
-			} else {
-				loadedTrainingSet = tsi;
-				trainSetField.setText(tsi.pathName);
-				fillTestSubsetBox();
-				loadedTestingSet = getControl().getTestingSetInfo();
-				testSetField.setText(getControl().getTestPath());
-				updateLabelList(tsi);
-			}
+	@Override
+	protected void trainSetButtonThreadAction(boolean testSet) {
+		LCTrainingSetInfo tsi = readTrainingSet(testSet, true);
+		if (tsi == null) {
 			if (wdThread != null) wdThread.halt();
+			return;
 		}
+		if (testSet) {
+			if (checkIfTestingSetIsValid(tsi, false, true)) {
+				loadedTestingSet = tsi;
+				testSetField.setText(tsi.pathName);
+			}
+		} else {
+			loadedTrainingSet = tsi;
+			trainSetField.setText(tsi.pathName);
+			fillTestSubsetBox();
+			loadedTestingSet = getControl().getParams().getTestingSetInfo();
+			testSetField.setText(getControl().getParams().getTestPath());
+			updateLabelList(tsi);
+		}
+		if (wdThread != null) wdThread.halt();
 	}
 	
 	@Override
 	public void actuallyGetParams() {
 		super.actuallyGetParams();
 		TCParameters params = getControl().getParams();
-		if (params.validation.equals("leaveoneout")) leaveOneOutRB.doClick();
-		else if (params.validation.equals("kfold")) kFoldRB.doClick();
-		else if (params.validation.equals("testsubset")) testSubsetRB.doClick();
-		else if (params.validation.equals("labelled")) labelledRB.doClick();
-		else if (params.validation.equals("unlabelled")) unlabelledRB.doClick();
+		if (params.validation == params.LEAVEONEOUT) leaveOneOutRB.doClick();
+		else if (params.validation == params.KFOLD) kFoldRB.doClick();
+		else if (params.validation == params.TESTSUBSET) testSubsetRB.doClick();
+		else if (params.validation == params.LABELLED) labelledRB.doClick();
+		else if (params.validation == params.UNLABELLED) unlabelledRB.doClick();
 		kFoldField.setText(String.valueOf(params.kNum));
 	}
 	
@@ -451,44 +498,54 @@ public class TCSettingsDialog extends LCSettingsDialog {
 	public TCParameters generateParameters() {
 		TCParameters params = (TCParameters) super.generateParameters();
 		if (leaveOneOutRB.isSelected()) {
-			params.validation = "leaveoneout";
+			params.validation = params.LEAVEONEOUT;
 		} else if (kFoldRB.isSelected()) {
-			params.validation = "kfold";
+			params.validation = params.KFOLD;
 			params.kNum = Integer.valueOf(kFoldField.getText());
 		} else if (testSubsetRB.isSelected()) {
-			params.validation = "testsubset";
+			params.validation = params.TESTSUBSET;
 			String testSubset = (String) testSubsetBox.getSelectedItem();
 			if (testSubset.contains("All from ")) params.testSubset = testSubset.substring(9);
 			else params.testSubset = testSubset;
 		} else if (labelledRB.isSelected()) {
-			params.validation = "labelled";
-			params.testPath = loadedTestingSet.pathName;
+			params.validation = params.LABELLED;
+			//params.testPath = loadedTestingSet.pathName;
 		} else if (unlabelledRB.isSelected()) {
-			params.validation = "unlabelled";
-			params.testPath = loadedTestingSet.pathName;
+			params.validation = params.UNLABELLED;
+			//params.testPath = loadedTestingSet.pathName;
 		}
 		return params;
 	}
 	
 	@Override
-	public boolean getParams() {
+	protected boolean validateTrainingSet() {
 		if (!checkIfSettingsAreValid()) {
+			if (wdThread != null) wdThread.halt();
 			return false;
 		}
 		getControl().setTrainingSetStatus(false);
 		TCParameters params = generateParameters();
-		params.trainPath = trainSetField.getText();
-        getControl().setTrainingSetInfo(loadedTrainingSet);
+		//params.trainPath = trainSetField.getText();
+        params.setTrainingSetInfo(loadedTrainingSet);
         if (labelledRB.isSelected() || unlabelledRB.isSelected()) {
-			params.testPath = testSetField.getText();
-			getControl().setTestingSetInfo(loadedTestingSet);
+			//params.testPath = testSetField.getText();
+			params.setTestingSetInfo(loadedTestingSet);
 		}
         
 		// TODO Set GUI signal ?????
         getControl().setParams(params);
         getControl().getTabPanel().getPanel().createMatrices(params.labelOrder);
-    	getControl().getSidePanel().getTCSidePanelPanel().startButton.setEnabled(true);
+    	//getControl().getSidePanel().getTCSidePanelPanel().startButton.setEnabled(true);
+    	if (wdThread != null) wdThread.halt();
     	return true;
+	}
+	
+	/**
+	 * Note that the OK button starts a thread a runs validateTrainingSet() before reaching this.
+	 */
+	@Override
+	public boolean getParams() {
+		return true;
 	}
 	
 	@Override

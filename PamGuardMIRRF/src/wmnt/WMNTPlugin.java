@@ -1,7 +1,7 @@
 /*
  * Whistle and Moan Navigation Tool
  * Version 1.05 
- * By Taylor LeBlond
+ * By Holly LeBlond
  * Fisheries and Oceans Canada
  * May 2022
  */
@@ -10,6 +10,8 @@ package wmnt;
 
 import PamModel.PamDependency;
 import PamModel.PamPluginInterface;
+//import mirrfFeatureExtractor.FEPlugin;
+//import mirrf.MIRRFPlugin;
 
 /**
  * "Whistles and Moans Navigation Tool" (WMNT)
@@ -18,11 +20,51 @@ import PamModel.PamPluginInterface;
  * pre-existing Whistle and Moan Detector in PamGuard. However, it is also very useful for simply
  * navigating through the spectrogram for viewing WMD contours. It was originally designed for use by the
  * Marine Mammals Unit at the Pacific Biological Station in Nanaimo, BC as an external plugin.
- * @author Taylor LeBlond
+ * @author Holly LeBlond
  */
 public class WMNTPlugin implements PamPluginInterface {
 	
 	String jarFile;
+	
+	@Override
+	public String getDescription() {
+		return getDefaultName();
+	}
+
+	@Override
+	public void setJarFile(String jarFile) {
+		this.jarFile = jarFile;
+	}
+
+	@Override
+	public String getJarFile() {
+		return jarFile;
+	}
+
+	@Override
+	public String getDeveloperName() {
+		return "Holly LeBlond";
+	}
+
+	@Override
+	public String getContactEmail() {
+		return "wtleblond@gmail.com";
+	}
+
+	@Override
+	public String getVersion() {
+		return "0.02b";
+	}
+
+	@Override
+	public String getPamVerDevelopedOn() {
+		return "2.02.09";
+	}
+
+	@Override
+	public String getPamVerTestedOn() {
+		return "2.02.09";
+	}
 
 	@Override
 	public String getClassName() {
@@ -31,11 +73,6 @@ public class WMNTPlugin implements PamPluginInterface {
 
 	@Override
 	public String getDefaultName() {
-		return "Whistle and Moan Navigation Tool";
-	}
-
-	@Override
-	public String getDescription() {
 		return "Whistle and Moan Navigation Tool";
 	}
 
@@ -78,41 +115,6 @@ public class WMNTPlugin implements PamPluginInterface {
 	@Override
 	public String getHelpSetName() {
 		return null;
-	}
-
-	@Override
-	public void setJarFile(String jarFile) {
-		this.jarFile = jarFile;
-	}
-
-	@Override
-	public String getJarFile() {
-		return jarFile;
-	}
-
-	@Override
-	public String getDeveloperName() {
-		return "Taylor LeBlond";
-	}
-
-	@Override
-	public String getContactEmail() {
-		return "wtleblond@gmail.com";
-	}
-
-	@Override
-	public String getVersion() {
-		return "1.10";
-	}
-
-	@Override
-	public String getPamVerDevelopedOn() {
-		return "2.02.03";
-	}
-
-	@Override
-	public String getPamVerTestedOn() {
-		return "2.02.03";
 	}
 
 	@Override

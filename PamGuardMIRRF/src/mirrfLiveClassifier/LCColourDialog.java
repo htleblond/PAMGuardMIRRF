@@ -71,7 +71,7 @@ public class LCColourDialog extends PamDialog {
 	
 	protected SourcePanel updateSourcePanel;
 
-	public LCColourDialog(Window parentFrame, LCControl lcControl, LCSettingsDialog dialog) {
+	public LCColourDialog(Window parentFrame, LCControl lcControl, LCSettingsDialog dialog, boolean includeWMNTOption) {
 		super(parentFrame, "MIRRF Live Classifier", true);
 		this.lcControl = lcControl;
 		this.dialog = dialog;
@@ -112,7 +112,7 @@ public class LCColourDialog extends PamDialog {
 		b.anchor = b.NORTH;
 		p0.add(mainPanel0, b);
 		
-		if (lcControl.isViewer()) {
+		if (includeWMNTOption) {
 			JPanel mainPanel1 = new JPanel(new FlowLayout(FlowLayout.CENTER));
 			mainPanel1.setBorder(new TitledBorder("Time zone"));
 			

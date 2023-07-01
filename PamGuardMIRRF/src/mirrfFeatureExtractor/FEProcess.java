@@ -14,6 +14,8 @@ import java.util.concurrent.TimeUnit;
 
 import javax.sound.sampled.AudioFormat;
 
+import org.docx4j.org.apache.poi.poifs.storage.RawDataBlock;
+
 import Acquisition.AcquisitionControl;
 import warnings.PamWarning;
 import clipgenerator.localisation.ClipDelays;
@@ -34,7 +36,7 @@ import annotation.handler.ManualAnnotationHandler;
  * A modified version of clipGenerator.ClipProcess that creates sound clips
  * when Whistle and Moan Detector contours occur and sends them to the
  * thread manager for extracting feature data via a Python script.
- * @author Taylor LeBlond (original code by Doug Gillespie)
+ * @author Holly LeBlond (original code by Doug Gillespie)
  */
 public class FEProcess extends PamProcess {
 	
@@ -92,7 +94,7 @@ public class FEProcess extends PamProcess {
 	 * into the ClipBlockProcesses which started them since there is a 
 	 * certain amount of bookkeeping which needs to be done at the
 	 * individual block level.
-	 * @author Doug Gillespie (modified by Taylor LeBlond)
+	 * @author Doug Gillespie (modified by Holly LeBlond)
 	 */
 	protected void processRequestList() {
 		if (PamController.getInstance().getRunMode() != PamController.RUN_NORMAL &&
@@ -202,7 +204,7 @@ public class FEProcess extends PamProcess {
 	 * Sets up a queue for processing clips when using the CSV input option.
 	 * Adds entries to queue if they occur between the start time of the current
 	 * audio file and the expected end of the file as specified in the settings.
-	 * @author Taylor LeBlond
+	 * @author Holly LeBlond
 	 */
 	protected void fillClipRequestQueueViaCSV() {
 		AcquisitionControl ac = null;
@@ -254,7 +256,7 @@ public class FEProcess extends PamProcess {
 	
 	/**
 	 * Called at end of setup of after settings dialog to subscribe data blocks. 
-	 * @author Doug Gillespie (modified by Taylor LeBlond)
+	 * @author Doug Gillespie (modified by Holly LeBlond)
 	 */
 	public synchronized void subscribeDataBlocks() {
 		unSubscribeDataBlocks();
@@ -290,7 +292,7 @@ public class FEProcess extends PamProcess {
 	}
 	
 	/**
-	 * @author Doug Gillespie (modified by Taylor LeBlond)
+	 * @author Doug Gillespie (modified by Holly LeBlond)
 	 */
 	public class ClipBlockProcess extends PamObserverAdapter {
 		
@@ -316,7 +318,7 @@ public class FEProcess extends PamProcess {
 		 * output folder. 
 		 * @param clipRequest clip request information
 		 * @return 0 if OK or the cause from RawDataUnavailableException if data are not available. 
-		 * @author Doug Gillespie (modified by Taylor LeBlond)
+		 * @author Doug Gillespie (modified by Holly LeBlond)
 		 */
 		protected int processClipRequest(ClipRequest clipRequest) { 
 			PamDataUnit dataUnit = (PamDataUnit) clipRequest.dataUnit;
@@ -346,6 +348,8 @@ public class FEProcess extends PamProcess {
 				try {
 					nrData = rawDataBlock.getSamples(rawStart-params.audioNRStart, params.audioNRLength, channelMap);
 				} catch (RawDataUnavailableException e) {
+					System.out.println("Start sample in block: "+String.valueOf(rawDataBlock.getLastUnit().getStartSample()));
+					System.out.println("Start sample of NR clip: "+String.valueOf(rawStart-params.audioNRStart));
 					e.printStackTrace(); // TODO Remove?
 					return e.getDataCause();
 				}
@@ -363,6 +367,8 @@ public class FEProcess extends PamProcess {
 				else rawData = rawDataBlock.getSamples(rawStart, (int) (rawStart + params.audioClipLength), channelMap);
 			}
 			catch (RawDataUnavailableException e) {
+				System.out.println("Start sample in block: "+String.valueOf(rawDataBlock.getLastUnit().getStartSample()));
+				System.out.println("Start sample of raw data: "+String.valueOf(rawStart));
 				e.printStackTrace(); // TODO Remove?
 				return e.getDataCause();
 			}
@@ -458,7 +464,7 @@ public class FEProcess extends PamProcess {
 	
 	/**
 	 * Data needed for a clip request. 
-	 * @author Doug Gillespie (modified by Taylor LeBlond)
+	 * @author Doug Gillespie (modified by Holly LeBlond)
 	 */
 	public class ClipRequest {
 		
@@ -474,7 +480,7 @@ public class FEProcess extends PamProcess {
 		
 		/**
 		 * @return The UID in the data unit
-		 * @author Taylor LeBlond
+		 * @author Holly LeBlond
 		 */
 		public long getUID() {
 			return dataUnit.getUID();
@@ -482,7 +488,7 @@ public class FEProcess extends PamProcess {
 		
 		/**
 		 * @return The start time in the data unit
-		 * @author Taylor LeBlond
+		 * @author Holly LeBlond
 		 */
 		public long getTimeInDataUnit() {
 			return dataUnit.getTimeMilliseconds();
@@ -490,7 +496,7 @@ public class FEProcess extends PamProcess {
 		
 		/**
 		 * @return The end time in the data unit
-		 * @author Taylor LeBlond
+		 * @author Holly LeBlond
 		 */
 		public long getEndTimeInDataUnit() {
 			return dataUnit.getEndTimeInMilliseconds();
@@ -500,7 +506,7 @@ public class FEProcess extends PamProcess {
 	/**
 	 * Used for signaling the thread manager that the audio has loaded past the current cluster plus the join distance.
 	 * Also used for putting CSV-loaded input data into the clipRequestQueue when the audio has loaded far enough.
-	 * @author Taylor LeBlond
+	 * @author Holly LeBlond
 	 */
 	public class RawDataBlockCheckerThread extends Thread {
 		protected RawDataBlockCheckerThread() {}
@@ -553,7 +559,7 @@ public class FEProcess extends PamProcess {
 	 * @param uid
 	 * @param clusterCount
 	 * @param underscore - Whether or not it uses a dash or an underscore.
-	 * @author Taylor LeBlond
+	 * @author Holly LeBlond
 	 */
 	public String createClusterID(long uid, int clusterCount, boolean underscore) {
 		if (underscore) {
@@ -567,7 +573,7 @@ public class FEProcess extends PamProcess {
 	 * @param uid
 	 * @param clusterCount
 	 * @param isNR - If the file is supposed to be used for noise removal (true) or if it's the actual contour clip (false).
-	 * @author Taylor LeBlond
+	 * @author Holly LeBlond
 	 */
 	public String createClipPath(long uid, int clusterCount, boolean isNR) {
 		String fp = getClipFileFolder();
@@ -618,7 +624,7 @@ public class FEProcess extends PamProcess {
 	
 	/**
 	 * @return The output data block.
-	 * @author Taylor LeBlond
+	 * @author Holly LeBlond
 	 */
 	public FEDataBlock getVectorDataBlock() {
 		return vectorDataBlock;
@@ -626,7 +632,7 @@ public class FEProcess extends PamProcess {
 	
 	/**
 	 * Adds a data unit containing vector data to the output data block.
-	 * @author Taylor LeBlond
+	 * @author Holly LeBlond
 	 */
 	public void addVectorData(FEDataUnit du) {
 		vectorDataBlock.addPamData(du);

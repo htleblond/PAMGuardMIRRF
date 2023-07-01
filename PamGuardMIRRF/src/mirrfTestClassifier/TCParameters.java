@@ -2,21 +2,31 @@ package mirrfTestClassifier;
 
 import PamModel.parametermanager.PamParameterSet;
 import mirrfLiveClassifier.LCParameters;
+import mirrfLiveClassifier.LCTrainingSetInfo;
 
 public class TCParameters extends LCParameters {
 	
-	public String testPath;
+	// validation params
+	public static final int LEAVEONEOUT = 0;
+	public static final int KFOLD = 1;
+	public static final int TESTSUBSET = 2;
+	public static final int LABELLED = 3;
+	public static final int UNLABELLED = 4;
 	
-	public String validation;
+	//public String testPath;
+	public LCTrainingSetInfo loadedTestingSetInfo;
+	
+	public int validation;
 	public int kNum;
 	public String testSubset;
 	
 	public TCParameters() {
 		super();
 		
-		testPath = "";
+		//testPath = "";
+		loadedTestingSetInfo = new LCTrainingSetInfo("");
 		
-		validation = "leaveoneout"; // Can also be "kfold", "testsubset", "labelled", or "unlabelled"
+		validation = LEAVEONEOUT;
 		kNum = 10; // Must be int > 1, only used if validation == "kfold"
 		testSubset = "";
 	}
@@ -30,6 +40,18 @@ public class TCParameters extends LCParameters {
 		outp += super.outputPythonParamsToText().substring(1);
 		return outp;
 	} */
+	
+	public LCTrainingSetInfo getTestingSetInfo() {
+		return loadedTestingSetInfo;
+	}
+	
+	public void setTestingSetInfo(LCTrainingSetInfo inp) {
+		loadedTestingSetInfo = inp;
+	}
+	
+	public String getTestPath() {
+		return loadedTestingSetInfo.pathName;
+	}
 	
 	@Override
 	public PamParameterSet getParameterSet() {

@@ -1,4 +1,4 @@
-package mirrfFeatureExtractor;
+package mirrf;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -9,9 +9,9 @@ import org.apache.commons.io.FileUtils;
 
 /**
  * Extracts Python scripts from the plugin's .jar file.
- * @author Taylor LeBlond
+ * @author Holly LeBlond
  */
-public class JarExtractor {
+public class MIRRFJarExtractor {
 	
 	public boolean extract(String resourceName, String destFolderName, String destFileName, boolean delete) {
 		InputStream inpStream = this.getClass().getClassLoader().getResourceAsStream(resourceName);
@@ -49,8 +49,8 @@ public class JarExtractor {
 							}
 						}
 					}
-				} else {
-					System.out.println("Warning: JarExtractor could not locate selected folder.");
+				} else if (!destFolder.mkdir()){
+					System.out.println("Warning: JarExtractor could not locate or create selected folder.");
 					return false;
 				}
 			

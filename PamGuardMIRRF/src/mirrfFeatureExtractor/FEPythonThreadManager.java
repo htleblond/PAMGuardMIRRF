@@ -16,11 +16,13 @@ import java.util.Scanner;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 
+import mirrf.MIRRFJarExtractor;
+
 /**
  * Creates an instance of a Python interpreter, sends clips to the
  * Python script for processing, and manages communication between
  * Java and Python.
- * @author Taylor LeBlond
+ * @author Holly LeBlond
  */
 public class FEPythonThreadManager {
 	
@@ -434,10 +436,11 @@ public class FEPythonThreadManager {
 				}
 			}
 			pythonOutpList.get(slot).add(tokens);
+			// The blankfile/matchesfeatures checks are pretty much already taken care of in FESettingsDialog now.
 			if (params.outputCSVChecked) {
 				File f = new File(params.outputCSVName);
 				f.setWritable(true, false);
-				boolean matchesFeatures = false;
+			/*	boolean matchesFeatures = false;
 				boolean blankFile = true;
 				if (f.exists()) {
 					Scanner sc;
@@ -457,6 +460,7 @@ public class FEPythonThreadManager {
 								matchesFeatures = false;
 							}
 						}
+						sc.close();
 					} catch (FileNotFoundException e1) {
 						e1.printStackTrace();
 						return false;
@@ -479,8 +483,9 @@ public class FEPythonThreadManager {
 						return false;
 					}
 				}
-				if (blankFile) {
-					try {
+				System.out.println("Blankfile: "+String.valueOf(blankFile));
+				if (blankFile) { */
+				/*	try {
 						String firstLine = "cluster,uid,date,duration,lf,hf";
 						for (int i = 0; i < params.featureList.length; i++) {
 							firstLine += ","+params.featureList[i][1];
@@ -495,8 +500,12 @@ public class FEPythonThreadManager {
 					} catch (Exception e2) {
 						System.out.println("ERROR: Could not write to selected .csv file.");
 						return false;
-					}
-				}
+					} */
+					
+					// TODO MAKE SURE THIS DOESN'T CAUSE ANY PROBLEMS !!!!!
+			/*		FESettingsDialog dialogInstance = new FESettingsDialog(feControl.getGuiFrame(), feControl);
+					dialogInstance.clearFileAndAddSettingsInfo(params);
+				} */
 				String outp = "";
 				outp += tokens[0].substring(1, tokens[0].length()-1);
 				outp += ","+tokens[1];
@@ -746,7 +755,7 @@ public class FEPythonThreadManager {
 	 * @return Whether or not the JarExtractor succeeded.
 	 */
 	public boolean setActive() {
-		active = new JarExtractor().extract("src/mirrfFeatureExtractor/FEPythonThread.py",
+		active = new MIRRFJarExtractor().extract("src/mirrfFeatureExtractor/FEPythonThread.py",
 				feControl.getParams().tempFolder, "FEPythonThread.py", true);
 		System.out.println("JarExtractor completed.");
 		return active;

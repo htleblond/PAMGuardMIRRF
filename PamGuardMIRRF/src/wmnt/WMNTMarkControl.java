@@ -22,7 +22,7 @@ import detectiongrouplocaliser.DetectionGroupSummary;
 /**
  * The WMNT's drag selection tool. Dragging the box over contours in the spectrogram
  * will select their corresponding rows in the table.
- * @author Taylor LeBlond
+ * @author Holly LeBlond
  */
 public class WMNTMarkControl extends SpectrogramAnnotationModule {
 	

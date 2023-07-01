@@ -16,7 +16,7 @@ import PamView.*;
 
 /**
  * Opens the dialog window when 'Select by search' is pressed.
- * @author Taylor LeBlond
+ * @author Holly LeBlond
  */
 public class WMNTSearchDialog extends PamDialog {
 
@@ -411,7 +411,7 @@ public class WMNTSearchDialog extends PamDialog {
 	 * Enables text fields and drop-down lists in a panel when its box is checked.
 	 * @param panelNum - Which panel is being enabled/disabled. (int)
 	 * @param boo - Enable or disable. (boolean)
-	 * @author Taylor LeBlond
+	 * @author Holly LeBlond
 	 */
 	protected void onSwitch(int panelNum, boolean boo) {
 		if (panelNum == 0 || panelNum == 1) {
@@ -462,7 +462,7 @@ public class WMNTSearchDialog extends PamDialog {
 	/**
 	 * Automatically fills the UID fields with the lowest and highest UIDs in the table, respectively.
 	 * @param ttable
-	 * @author Taylor LeBlond
+	 * @author Holly LeBlond
 	 */
 	protected void fillUIDs(PamTable ttable) {
 		if (ttable.getRowCount() <= 0) {
@@ -487,7 +487,7 @@ public class WMNTSearchDialog extends PamDialog {
 	/**
 	 * Automatically fills the date/time fields with the earliest and latest times, respectively.
 	 * @param ttable
-	 * @author Taylor LeBlond
+	 * @author Holly LeBlond
 	 */
 	protected void fillDates(PamTable ttable) {
 		if (ttable.getRowCount() <= 0) {
@@ -532,7 +532,7 @@ public class WMNTSearchDialog extends PamDialog {
 	/**
 	 * Automatically fills the low and high frequency fields with the lowest and highest instances in the table.
 	 * @param ttable
-	 * @author Taylor LeBlond
+	 * @author Holly LeBlond
 	 */
 	protected void fillFreqs(PamTable ttable) {
 		if (ttable.getRowCount() <= 0) {
@@ -568,7 +568,7 @@ public class WMNTSearchDialog extends PamDialog {
 	/**
 	 * Automatically fills the low and high duration fields with the lowest and highest instances in the table.
 	 * @param ttable
-	 * @author Taylor LeBlond
+	 * @author Holly LeBlond
 	 */
 	protected void fillDurs(PamTable ttable) {
 		if (ttable.getRowCount() <= 0) {
@@ -593,7 +593,7 @@ public class WMNTSearchDialog extends PamDialog {
 	/**
 	 * Automatically fills the low and high amplitude fields with the lowest and highest instances in the table.
 	 * @param ttable
-	 * @author Taylor LeBlond
+	 * @author Holly LeBlond
 	 */
 	protected void fillAmps(PamTable ttable) {
 		if (ttable.getRowCount() <= 0) {
@@ -618,7 +618,7 @@ public class WMNTSearchDialog extends PamDialog {
 	/**
 	 * Fills the species drop-down list with values that exist in the table.
 	 * @param ttable
-	 * @author Taylor LeBlond
+	 * @author Holly LeBlond
 	 */
 	protected void fillSpecies(PamTable ttable) {
 		if (ttable.getRowCount() <= 0) {
@@ -639,7 +639,7 @@ public class WMNTSearchDialog extends PamDialog {
 	/**
 	 * Fills the call type drop-down list with values that exist in the table.
 	 * @param ttable
-	 * @author Taylor LeBlond
+	 * @author Holly LeBlond
 	 */
 	protected void fillClass(PamTable ttable) {
 		if (ttable.getRowCount() <= 0) {
@@ -659,7 +659,7 @@ public class WMNTSearchDialog extends PamDialog {
 	
 	/**
 	 * The listener for each checkbox.
-	 * @author Taylor LeBlond
+	 * @author Holly LeBlond
 	 */
 	class CheckListener implements ItemListener{
 		private int panelNum;
@@ -681,7 +681,7 @@ public class WMNTSearchDialog extends PamDialog {
 	 * Performs the search and returns the indexes to select.
 	 * @param ttable
 	 * @return Array of integers being the indexes in the table for selecting.
-	 * @author Taylor LeBlond
+	 * @author Holly LeBlond
 	 */
 	public int[] performSearch(PamTable ttable) {
 		int[] selectArr = new int[ttable.getRowCount()];
@@ -860,7 +860,7 @@ public class WMNTSearchDialog extends PamDialog {
 	 * Makes the selections in the table following results from performSearch.
 	 * @param selections
 	 * @param ttable
-	 * @author Taylor LeBlond
+	 * @author Holly LeBlond
 	 */
 	public void confirmSearch(int[] selections, PamTable ttable) {
 		ttable.clearSelection();
@@ -876,7 +876,7 @@ public class WMNTSearchDialog extends PamDialog {
 	/**
 	 * Formats the input into the date/time fields as parsable strings.
 	 * @return String[] - Array containing the Strings for the lower limit and the higher limit.
-	 * @author Taylor LeBlond
+	 * @author Holly LeBlond
 	 */
 	public String[] fillOutDateString() {
 		String s1 = "";

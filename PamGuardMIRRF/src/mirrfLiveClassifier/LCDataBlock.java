@@ -82,7 +82,7 @@ public class LCDataBlock extends PamDataBlock<LCDataUnit> {
 	 * @param clusterID
 	 * @param datetime - Start date and time of cluster in UTC as string formatted as "yyyy-MM-dd HH:mm:ss+SSS".
 	 * @return LCDataUnit
-	 * @author Taylor LeBlond
+	 * @author Holly LeBlond
 	 */
 	public LCDataUnit retrieveDataUnit(String clusterID, String datetime) {
 		for (int i = 0; i < this.getUnitsCount(); i++) {
@@ -103,7 +103,7 @@ public class LCDataBlock extends PamDataBlock<LCDataUnit> {
 	 * @param clusterID
 	 * @param datetime - Start date and time of cluster in UTC as a long.
 	 * @return LCDataUnit
-	 * @author Taylor LeBlond
+	 * @author Holly LeBlond
 	 */
 	public LCDataUnit retrieveDataUnit(String clusterID, Long datetime) {
 		return retrieveDataUnit(clusterID, lcControl.convertLocalLongToUTC(datetime));
@@ -116,7 +116,7 @@ public class LCDataBlock extends PamDataBlock<LCDataUnit> {
 	 * The date/time string should be formatted as "yyyy-MM-dd HH:mm:ss+SSS".
 	 * @param idsAndDates
 	 * @return HashMap<String, LCDataUnit>
-	 * @author Taylor LeBlond
+	 * @author Holly LeBlond
 	 */
 	public HashMap<String, LCDataUnit> retrieveDataUnitsByIDandDate(ArrayList<String> idsAndDates) {
 		HashMap<String, LCDataUnit> outp = new HashMap<String, LCDataUnit>();

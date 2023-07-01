@@ -38,9 +38,9 @@ import PamView.dialog.PamGridBagContraints;
 
 /**
  * The dialog for choosing which features are in the vector.
- * @author Taylor LeBlond
+ * @author Holly LeBlond
  */
-@SuppressWarnings("serial")
+//@SuppressWarnings("serial")
 public class FEFeatureDialog extends PamDialog {
 	
 	protected FEControl feControl;

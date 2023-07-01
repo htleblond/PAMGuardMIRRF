@@ -8,14 +8,15 @@ import java.util.HashMap;
 import PamModel.parametermanager.ManagedParameters;
 import PamModel.parametermanager.PamParameterSet;
 import PamView.GroupedSourceParameters;
-import mirrfFeatureExtractor.MIRRFParameters;
+import mirrf.MIRRFParameters;
 
 import org.apache.commons.text.WordUtils;
 
 //@SuppressWarnings("serial")
 public class LCParameters extends MIRRFParameters {
 	
-	public String trainPath; // This should be accessed from loadedTrainingSetInfo in control in most cases.
+	//public String trainPath; // This should be accessed from loadedTrainingSetInfo in control in most cases.
+	protected LCTrainingSetInfo loadedTrainingSetInfo;
 	
 	public String inputProcessName;
 	public String updateProcessName;
@@ -57,7 +58,8 @@ public class LCParameters extends MIRRFParameters {
 	
 	public LCParameters() {
 		
-		this.trainPath = "";
+		//this.trainPath = "";
+		this.loadedTrainingSetInfo = new LCTrainingSetInfo("");
 		
 		this.inputProcessName = "";
 		this.updateProcessName = "";
@@ -146,7 +148,7 @@ public class LCParameters extends MIRRFParameters {
 	}
 	
 	public HashMap<String, Color> generateColours(String[] newLabels) {
-		Color[] defaultColours = new Color[] {new Color(0,255,0), new Color(0,0,255), new Color(255,0,0), new Color(255,175,0), new Color(255,0,255),
+		Color[] defaultColours = new Color[] {new Color(0,255,0), new Color(255,0,0), new Color(0,0,255), new Color(255,175,0), new Color(255,0,255),
 											  new Color(0,255,0), new Color(0,255,255), new Color(255,150,150), new Color(150,150,150), new Color(255,255,255)};
 		HashMap<String, Color> newColours = new HashMap<String, Color>();
 		for (int i = 0 ; i < newLabels.length; i++) {
@@ -196,6 +198,30 @@ public class LCParameters extends MIRRFParameters {
 		ArrayList<String> outp = new ArrayList<String>();
 		for (int i = 0; i < labelOrder.length; i++) outp.add(labelOrder[i]);
 		return outp;
+	}
+	
+	public LCTrainingSetInfo getTrainingSetInfo() {
+		return loadedTrainingSetInfo;
+	}
+	
+	public void setTrainingSetInfo(LCTrainingSetInfo inp) {
+		loadedTrainingSetInfo = inp;
+	}
+	
+	public String getTrainPath() {
+		return loadedTrainingSetInfo.pathName;
+	}
+	
+	public ArrayList<String> getFeatureList() {
+		return loadedTrainingSetInfo.featureList;
+	}
+	
+	public HashMap<String, Integer> getLabelCounts() {
+		return loadedTrainingSetInfo.labelCounts;
+	}
+	
+	public HashMap<String, Integer> getSubsetCounts() {
+		return loadedTrainingSetInfo.subsetCounts;
 	}
 
 	@Override

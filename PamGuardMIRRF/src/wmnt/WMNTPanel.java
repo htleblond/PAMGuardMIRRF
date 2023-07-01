@@ -41,7 +41,7 @@ import java.time.format.DateTimeFormatter;
 /**
  * The panel where the GUI components of the WMNT are written.
  * Contains the JTable and is connected to most functions of the module.
- * @author Taylor LeBlond
+ * @author Holly LeBlond
  */
 public class WMNTPanel {
 
@@ -354,7 +354,7 @@ public class WMNTPanel {
 	
 	/**
 	 * Removes all elements from the JTable.
-	 * @author Taylor LeBlond
+	 * @author Holly LeBlond
 	 */
 	public void ClearTable() {
 		dtmodel.setRowCount(0);
@@ -362,7 +362,7 @@ public class WMNTPanel {
 	
 	/**
 	 * The listener for the 'Select all' button.
-	 * @author Taylor LeBlond
+	 * @author Holly LeBlond
 	 */
 	class SelectAllListener implements ActionListener{
 		public void actionPerformed(ActionEvent e) {
@@ -372,7 +372,7 @@ public class WMNTPanel {
 	
 	/**
 	 * The listener for the 'Clear all' button.
-	 * @author Taylor LeBlond
+	 * @author Holly LeBlond
 	 */
 	class ClearSelectionListener implements ActionListener{
 		public void actionPerformed(ActionEvent e) {
@@ -382,7 +382,7 @@ public class WMNTPanel {
 	
 	/**
 	 * The listener for the 'Select within start interval' button.
-	 * @author Taylor LeBlond
+	 * @author Holly LeBlond
 	 */
 	class SelectStartListener implements ActionListener{
 		public void actionPerformed(ActionEvent e) {
@@ -407,7 +407,7 @@ public class WMNTPanel {
 	
 	/**
 	 * The listener for the 'Select by search' button.
-	 * @author Taylor LeBlond
+	 * @author Holly LeBlond
 	 */
 	class SearchListener implements ActionListener{
 		public void actionPerformed(ActionEvent e) {
@@ -425,7 +425,7 @@ public class WMNTPanel {
 	
 	/**
 	 * The listener for the 'Species' button.
-	 * @author Taylor LeBlond
+	 * @author Holly LeBlond
 	 */
 	class SpeciesListener implements ActionListener{
 		public void actionPerformed(ActionEvent e) {
@@ -445,7 +445,7 @@ public class WMNTPanel {
 	
 	/**
 	 * The listener for the 'Call type' button.
-	 * @author Taylor LeBlond
+	 * @author Holly LeBlond
 	 */
 	class CalltypeListener implements ActionListener{
 		public void actionPerformed(ActionEvent e) {
@@ -465,7 +465,7 @@ public class WMNTPanel {
 	
 	/**
 	 * The listener for the 'Comment' button and text field.
-	 * @author Taylor LeBlond
+	 * @author Holly LeBlond
 	 */
 	class CommentListener implements ActionListener{
 		public void actionPerformed(ActionEvent e) {
@@ -485,7 +485,7 @@ public class WMNTPanel {
 	
 	/**
 	 * The listener for the 'Enter all' button.
-	 * @author Taylor LeBlond
+	 * @author Holly LeBlond
 	 */
 	class AllListener implements ActionListener{
 		public void actionPerformed(ActionEvent e) {
@@ -509,7 +509,7 @@ public class WMNTPanel {
 	
 	/**
 	 * The listener for the 'Connect to database' button.
-	 * @author Taylor LeBlond
+	 * @author Holly LeBlond
 	 */
 	class ConnectListener implements ActionListener{
 		public void actionPerformed(ActionEvent e) {
@@ -550,7 +550,7 @@ public class WMNTPanel {
 	
 	/**
 	 * The listener for the 'Load data' button.
-	 * @author Taylor LeBlond
+	 * @author Holly LeBlond
 	 */
 	class OpenListener implements ActionListener{
 		public void actionPerformed(ActionEvent e) {
@@ -561,7 +561,7 @@ public class WMNTPanel {
 	
 	/**
 	 * Thread used for running the loading bar window.
-	 * @author Taylor LeBlond
+	 * @author Holly LeBlond
 	 */
 	protected class LoadingBarThread extends Thread {
 		protected LoadingBarThread() {}
@@ -574,7 +574,7 @@ public class WMNTPanel {
 	/**
 	 * Thread used for loading binary file data into the table, 
 	 * and to allow the loading bar window to function properly.
-	 * @author Taylor LeBlond
+	 * @author Holly LeBlond
 	 */
 	protected class OpenerThread extends Thread {
 		protected OpenerThread() {}
@@ -669,7 +669,7 @@ public class WMNTPanel {
 	/**
 	 * Reads from a .pgdf file that contains Whistle and Moan Detector contours and loads them into the JTable.
 	 * @param inpfile - The File being read from.
-	 * @author Taylor LeBlond
+	 * @author Holly LeBlond
 	 */
 	protected void PopulateTable(File inpfile) {
 		try {
@@ -775,7 +775,7 @@ public class WMNTPanel {
 	
 	/**
 	 * The listener for the 'Import table' button.
-	 * @author Taylor LeBlond
+	 * @author Holly LeBlond
 	 */
 	class ImportListener implements ActionListener{
 		public void actionPerformed(ActionEvent e) {
@@ -877,7 +877,7 @@ public class WMNTPanel {
 	
 	/**
 	 * The listener for the 'Export table' button.
-	 * @author Taylor LeBlond
+	 * @author Holly LeBlond
 	 */
 	class ExportListener implements ActionListener{
 		public void actionPerformed(ActionEvent e) {
@@ -979,7 +979,7 @@ public class WMNTPanel {
 	
 	/**
 	 * The listener for the 'Check database for alignment' button.
-	 * @author Taylor LeBlond
+	 * @author Holly LeBlond
 	 */
 	class CheckListener implements ActionListener {
 		public void actionPerformed(ActionEvent e) {
@@ -1014,7 +1014,7 @@ public class WMNTPanel {
 	
 	/**
 	 * The listener for the 'Commit to database' button.
-	 * @author Taylor LeBlond
+	 * @author Holly LeBlond
 	 */
 	class CommitListener implements ActionListener {
 		public void actionPerformed(ActionEvent e) {
@@ -1025,7 +1025,7 @@ public class WMNTPanel {
 	
 	/**
 	 * The listener for the 'Scroll to selection on spectrogram' button.
-	 * @author Taylor LeBlond
+	 * @author Holly LeBlond
 	 */
 	class ScrollListener implements ActionListener {
 		public void actionPerformed(ActionEvent e) {
@@ -1061,7 +1061,7 @@ public class WMNTPanel {
 	
 	/**
 	 * The listener for the 'Undo' button.
-	 * @author Taylor LeBlond
+	 * @author Holly LeBlond
 	 */
 	class UndoListener implements ActionListener {
 		public void actionPerformed(ActionEvent e) {
@@ -1071,7 +1071,7 @@ public class WMNTPanel {
 	
 	/**
 	 * Saves the selected values in 'backupIndexes' and their index numbers in 'backupValues'. 
-	 * @author Taylor LeBlond
+	 * @author Holly LeBlond
 	 */
 	private void createBackup() {
 		if (ttable.getRowCount() > 0) {
@@ -1090,7 +1090,7 @@ public class WMNTPanel {
 	
 	/**
 	 * Undoes the last change to the table. Currently only goes back once.
-	 * @author Taylor LeBlond
+	 * @author Holly LeBlond
 	 */
 	private void undo() {
 		if (backupIndexes != null && backupValues != null) {
@@ -1123,7 +1123,7 @@ public class WMNTPanel {
 	
 	/**
 	 * Streamlined error dialog.
-	 * @author Taylor LeBlond
+	 * @author Holly LeBlond
 	 */
 	public void SimpleErrorDialog() {
 		JOptionPane.showMessageDialog(wmntControl.getGuiFrame(),
@@ -1134,7 +1134,7 @@ public class WMNTPanel {
 	
 	/**
 	 * Streamlined error dialog with an editable message.
-	 * @author Taylor LeBlond
+	 * @author Holly LeBlond
 	 */
 	public void SimpleErrorDialog(String inptext) {
 		JOptionPane.showMessageDialog(wmntControl.getGuiFrame(),
@@ -1217,7 +1217,7 @@ public class WMNTPanel {
 	/**
 	 * Returns all rows in the table as a 2D Object array.
 	 * @return The table as a 2D Object array (Object[][]).
-	 * @author Taylor LeBlond
+	 * @author Holly LeBlond
 	 */
 	public Object[][] getTableRowsAsArray(){
 		Object[][] outp = new Object[ttable.getModel().getRowCount()][ttable.getModel().getColumnCount()];
@@ -1233,7 +1233,7 @@ public class WMNTPanel {
 	 * Returns original index of row in table.
 	 * @param rowIndex - The current index of the row in the table.
 	 * @return The original index of the row in the initial table before any sorting (Integer).
-	 * @author Taylor LeBlond
+	 * @author Holly LeBlond
 	 */
 	public int getOriginalIndex(int rowIndex) {
 		Object[] row = new Object[2];
@@ -1251,7 +1251,7 @@ public class WMNTPanel {
 	 * Returns an array of false booleans.
 	 * @param len - Desired length of array.
 	 * @return An array of false booleans (boolean[]).
-	 * @author Taylor LeBlond
+	 * @author Holly LeBlond
 	 */
 	public boolean[] resetChangeLog(int len) {
 		boolean[] outp = new boolean[len];
@@ -1266,7 +1266,7 @@ public class WMNTPanel {
 	 * If all values are identical, its respective boolean in tableChangeLog is set to false; otherwise it is set to true.
 	 * @param currIndex - Index of row in current table (in case of sorting).
 	 * @param origIndex - Index of row in initial table.
-	 * @author Taylor LeBlond
+	 * @author Holly LeBlond
 	 */
 	public void fixChangeLog(int currIndex, int origIndex) {
 		if (currIndex > -1 && origIndex > -1) {
@@ -1285,7 +1285,7 @@ public class WMNTPanel {
 	/**
 	 * Returns the current format of the last loaded binary file. Default is 6.
 	 * @return int - The current format of the loaded binary files.
-	 * @author Taylor LeBlond
+	 * @author Holly LeBlond
 	 */
 	public int getCurrFormat() {
 		return currformat;

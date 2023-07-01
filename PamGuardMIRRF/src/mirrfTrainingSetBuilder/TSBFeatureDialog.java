@@ -62,7 +62,7 @@ import java.time.format.DateTimeFormatter;
 
 /**
  * The panel where the GUI components are written.
- * @author Taylor LeBlond
+ * @author Holly LeBlond
  */
 public class TSBFeatureDialog extends PamDialog {
 	

@@ -13,10 +13,11 @@ import PamController.PamControlledUnit;
 import PamController.PamControlledUnitSettings;
 import PamController.PamSettingManager;
 import PamController.PamSettings;
+import mirrf.MIRRFControlledUnit;
 
 /**
  * The controller class for the MIRRF Feature Extractor.
- * @author Taylor LeBlond
+ * @author Holly LeBlond
  */
 public class FEControl extends MIRRFControlledUnit implements PamSettings {
 	
@@ -135,6 +136,10 @@ public class FEControl extends MIRRFControlledUnit implements PamSettings {
 	
 	public FEParameters getParams() {
 		return feParameters;
+	}
+	
+	public void setParams(FEParameters inp) {
+		feParameters = inp;
 	}
 	
 	public FESettingsDialog getSettingsDialog() {

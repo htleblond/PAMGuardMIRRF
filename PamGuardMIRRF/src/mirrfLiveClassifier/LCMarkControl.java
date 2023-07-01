@@ -19,7 +19,7 @@ import detectiongrouplocaliser.DetectionGroupSummary;
  * The drag selection tool.
  * Based off of annotationMark.SpectrogramAnnotationModule, but edited to select rows
  * in resultsTable in the LCPanel rather than opening an annotation dialog.
- * @author Taylor LeBlond (with some leftover code from whoever made the SpectrogramAnnotationModule)
+ * @author Holly LeBlond (with some leftover code from whoever made the SpectrogramAnnotationModule)
  */
 public class LCMarkControl extends SpectrogramAnnotationModule {
 	

@@ -304,6 +304,7 @@ public class LCExportDialog extends PamDialog {
 	
 	protected StringBuilder produceFeatureExtractorInfo(StringBuilder sb) {
 		FEParameters feParams = null;
+		LCParameters lcParams = lcControl.getParams();
 		for (int i = 0; i < lcControl.getPamController().getDataBlocks().size(); i++) {
 			PamDataBlock db = lcControl.getPamController().getDataBlocks().get(i);
 			if (db.getDataName().equals(lcControl.getParams().inputProcessName)) {
@@ -314,90 +315,152 @@ public class LCExportDialog extends PamDialog {
 			}
 		}
 		sb = new StringBuilder();
+		boolean printFEParamsFoundInTrainingSet = false;
+		if (feParams != null && feParams.findUnmatchedParameters(lcParams.getTrainingSetInfo().feParamsMap, true).size() > 0) {
+			printFEParamsFoundInTrainingSet = true;
+			sb.append("NOTE - Different Feature Extractor parameters were found in the training set file.\n\n");
+		}
 		sb.append("FEATURE EXTRACTOR PARAMETERS\n\n");
 		if (feParams == null) {
 			sb.append("(Feature Extractor module not found.)\n\n");
-			if (lcControl.getTrainingSetInfo() != null) {
-				sb.append("Features (from training set): "+String.valueOf(lcControl.getFeatureList().size()));
-				for (int i = 0; i < lcControl.getFeatureList().size(); i++) {
-					sb.append("\t"+lcControl.getFeatureList().get(i)+"\n");
+			if (lcParams.getTrainingSetInfo() != null) {
+				sb.append("Features (from training set): "+String.valueOf(lcParams.getFeatureList().size()));
+				for (int i = 0; i < lcParams.getFeatureList().size(); i++) {
+					sb.append("\t"+lcParams.getFeatureList().get(i)+"\n");
 				}
 				sb.append("\n");
 			}
 		} else {
-			if (feParams.inputFromCSV) {
-				sb.append("Input source: CSV file\n");
-				sb.append("Input source name: "+feParams.inputCSVName+"\n");
-			} else {
-				sb.append("Input source: Live data from Whistle and Moan Detector\n");
-				sb.append("Input source name: "+feParams.inputProcessName+"\n");
-			}
-			sb.append("Audio data source: "+feParams.audioSourceProcessName+"\n");
-			sb.append("Audio sampling rate: "+String.valueOf(feParams.sr)+" Hz\n");
-			if (feParams.audioAutoClipLength) {
-				sb.append("Audio clip length: Full length of contour\n");
-			} else {
-				sb.append("Audio clip length: "+String.valueOf(feParams.audioClipLength)+" samples\n");
-			}
-			sb.append("STFT length: "+String.valueOf(feParams.audioSTFTLength)+" bins\n");
-			sb.append("STFT hop size: "+String.valueOf(feParams.audioHopSize)+" samples\n");
-			sb.append("STFT window function: "+feParams.audioWindowFunction+"\n");
-			sb.append("STFT normalized: "+String.valueOf(feParams.audioNormalizeChecked)+"\n");
-			if (feParams.audioHPFChecked) {
-				sb.append("High-pass filter: On\n");
-				sb.append("High-pass filter threshold: "+String.valueOf(feParams.audioHPFThreshold)+" Hz\n");
-				sb.append("High-pass filter magnitude: "+String.valueOf(feParams.audioHPFMagnitude)+"\n");
-			} else {
-				sb.append("High-pass filter: Off\n");
-			}
-			if (feParams.audioLPFChecked) {
-				sb.append("Low-pass filter: On\n");
-				sb.append("Low-pass filter threshold: "+String.valueOf(feParams.audioLPFThreshold)+" Hz\n");
-				sb.append("Low-pass filter magnitude: "+String.valueOf(feParams.audioLPFMagnitude)+"\n");
-			} else {
-				sb.append("Low-pass filter: Off\n");
-			}
-			if (feParams.audioNRChecked) {
-				sb.append("Noise reduction: On\n");
-				sb.append("Noise reduction clip start time: "+String.valueOf(feParams.audioNRStart)+" samples\n");
-				sb.append("Noise reduction clip length: "+String.valueOf(feParams.audioNRLength)+" samples\n");
-				sb.append("Noise reduction scalar: "+String.valueOf(feParams.audioNRScalar)+"\n");
-			} else {
-				sb.append("Noise reduction: Off\n");
-			}
-			sb.append("Features: "+String.valueOf(feParams.featureList.length)+"\n");
-			for (int i = 0; i < feParams.featureList.length; i++) {
-				sb.append("\t"+feParams.featureList[i][1]+"\n");
-			}
-			sb.append("Contours sorted into clusters: "+String.valueOf(feParams.miscClusterChecked)+"\n");
-			if (feParams.miscClusterChecked) {
-				sb.append("Maximum cluster join distance: "+String.valueOf(feParams.miscJoinDistance)+" ms\n");
-			}
-			if (feParams.miscIgnoreFileStartChecked) {
-				sb.append("All processed contours occur after: "+String.valueOf(feParams.miscIgnoreFileStartLength)+" ms\n");
-			}
-			if (feParams.miscIgnoreLowFreqChecked) {
-				sb.append("All processed contours are higher than: "+String.valueOf(feParams.miscIgnoreLowFreq)+" Hz\n");
-			}
-			if (feParams.miscIgnoreHighFreqChecked) {
-				sb.append("All processed contours are lower than: "+String.valueOf(feParams.miscIgnoreHighFreq)+" Hz\n");
-			}
-			if (feParams.miscIgnoreShortDurChecked) {
-				sb.append("All processed contours are longer than: "+String.valueOf(feParams.miscIgnoreShortDur)+" ms\n");
-			}
-			if (feParams.miscIgnoreLongDurChecked) {
-				sb.append("All processed contours are shorter than: "+String.valueOf(feParams.miscIgnoreLongDur)+" ms\n");
-			}
-			if (feParams.miscIgnoreQuietAmpChecked) {
-				sb.append("All processed contours are louder than: "+String.valueOf(feParams.miscIgnoreQuietAmp)+" dB re SPSL\n");
-			}
-			if (feParams.miscIgnoreLoudAmpChecked) {
-				sb.append("All processed contours are quieter than: "+String.valueOf(feParams.miscIgnoreLoudAmp)+" dB re SPSL\n");
-			}
-			sb.append("\n");
+			sb = printParamsFromFEParametersObject(sb, feParams);
+		}
+		if (printFEParamsFoundInTrainingSet) {
+			sb = printFEParamsFromTrainingSetFile(sb, lcParams.getTrainingSetInfo().feParamsMap, feParams,
+					"CONTRADICTORY FEATURE EXTRACTOR PARAMETERS FOUND IN TRAINING SET FILE");
 		}
 		pw.write(sb.toString());
 		pw.flush();
+		return sb;
+	}
+	
+	protected StringBuilder printParamsFromFEParametersObject(StringBuilder sb, FEParameters feParams) {
+		if (feParams.inputFromCSV) {
+			sb.append("Input source: CSV file\n");
+			sb.append("Input source name: "+feParams.inputCSVName+"\n");
+		} else {
+			sb.append("Input source: Live data from Whistle and Moan Detector\n");
+			sb.append("Input source name: "+feParams.inputProcessName+"\n");
+		}
+		sb.append("Audio data source: "+feParams.audioSourceProcessName+"\n");
+		sb.append("Audio sampling rate: "+String.valueOf(feParams.sr)+" Hz\n");
+		if (feParams.audioAutoClipLength) {
+			sb.append("Audio clip length: Full length of contour\n");
+		} else {
+			sb.append("Audio clip length: "+String.valueOf(feParams.audioClipLength)+" samples\n");
+		}
+		sb.append("STFT length: "+String.valueOf(feParams.audioSTFTLength)+" bins\n");
+		sb.append("STFT hop size: "+String.valueOf(feParams.audioHopSize)+" samples\n");
+		sb.append("STFT window function: "+feParams.audioWindowFunction+"\n");
+		sb.append("STFT normalized: "+String.valueOf(feParams.audioNormalizeChecked)+"\n");
+		if (feParams.audioHPFChecked) {
+			sb.append("High-pass filter: On\n");
+			sb.append("High-pass filter threshold: "+String.valueOf(feParams.audioHPFThreshold)+" Hz\n");
+			sb.append("High-pass filter magnitude: "+String.valueOf(feParams.audioHPFMagnitude)+"\n");
+		} else {
+			sb.append("High-pass filter: Off\n");
+		}
+		if (feParams.audioLPFChecked) {
+			sb.append("Low-pass filter: On\n");
+			sb.append("Low-pass filter threshold: "+String.valueOf(feParams.audioLPFThreshold)+" Hz\n");
+			sb.append("Low-pass filter magnitude: "+String.valueOf(feParams.audioLPFMagnitude)+"\n");
+		} else {
+			sb.append("Low-pass filter: Off\n");
+		}
+		if (feParams.audioNRChecked) {
+			sb.append("Noise reduction: On\n");
+			sb.append("Noise reduction clip start time: "+String.valueOf(feParams.audioNRStart)+" samples\n");
+			sb.append("Noise reduction clip length: "+String.valueOf(feParams.audioNRLength)+" samples\n");
+			sb.append("Noise reduction scalar: "+String.valueOf(feParams.audioNRScalar)+"\n");
+		} else {
+			sb.append("Noise reduction: Off\n");
+		}
+		sb.append("Features: "+String.valueOf(feParams.featureList.length)+"\n");
+		for (int i = 0; i < feParams.featureList.length; i++) {
+			sb.append("\t"+feParams.featureList[i][1]+"\n");
+		}
+		sb.append("Contours sorted into clusters: "+String.valueOf(feParams.miscClusterChecked)+"\n");
+		if (feParams.miscClusterChecked) {
+			sb.append("Maximum cluster join distance: "+String.valueOf(feParams.miscJoinDistance)+" ms\n");
+		}
+		if (feParams.miscIgnoreFileStartChecked) {
+			sb.append("All processed contours occur after: "+String.valueOf(feParams.miscIgnoreFileStartLength)+" ms\n");
+		}
+		if (feParams.miscIgnoreLowFreqChecked) {
+			sb.append("All processed contours are higher than: "+String.valueOf(feParams.miscIgnoreLowFreq)+" Hz\n");
+		}
+		if (feParams.miscIgnoreHighFreqChecked) {
+			sb.append("All processed contours are lower than: "+String.valueOf(feParams.miscIgnoreHighFreq)+" Hz\n");
+		}
+		if (feParams.miscIgnoreShortDurChecked) {
+			sb.append("All processed contours are longer than: "+String.valueOf(feParams.miscIgnoreShortDur)+" ms\n");
+		}
+		if (feParams.miscIgnoreLongDurChecked) {
+			sb.append("All processed contours are shorter than: "+String.valueOf(feParams.miscIgnoreLongDur)+" ms\n");
+		}
+		if (feParams.miscIgnoreQuietAmpChecked) {
+			sb.append("All processed contours are louder than: "+String.valueOf(feParams.miscIgnoreQuietAmp)+" dB re SPSL\n");
+		}
+		if (feParams.miscIgnoreLoudAmpChecked) {
+			sb.append("All processed contours are quieter than: "+String.valueOf(feParams.miscIgnoreLoudAmp)+" dB re SPSL\n");
+		}
+		sb.append("\n");
+		return sb;
+	}
+	
+	protected StringBuilder printFEParamsFromTrainingSetFile(StringBuilder sb, HashMap<String, String> map, 
+			FEParameters feParams, String message) {
+		ArrayList<String> unmatched = new ArrayList<String>();
+		if (feParams != null) {
+			unmatched = feParams.findUnmatchedParameters(map, true);
+		} else {
+			Iterator<String> it = map.keySet().iterator();
+			while (it.hasNext()) unmatched.add(it.next());
+		}
+		if (unmatched.size() > 0) {
+			sb.append(message+"\n\n");
+			if (unmatched.contains("sr")) sb.append("Audio sampling rate: "+map.get("sr")+"\n");
+			if (unmatched.contains("audioAutoClipLength")) {
+				if (Boolean.valueOf(map.get("audioAutoClipLength"))) sb.append("Audio clip length: Full length of contour\n");
+				else {
+					if (unmatched.contains("audioClipLength"))
+						sb.append("Audio clip length: "+map.get("audioClipLength")+" samples\n");
+					else sb.append("Audio clip length: ?\n");
+				}
+			} else if (unmatched.contains("audioClipLength")) sb.append("Audio clip length: "+map.get("audioClipLength")+" samples\n");
+			if (unmatched.contains("audioSTFTLength")) sb.append("STFT length: "+map.get("audioSTFTLength")+" bins\n");
+			if (unmatched.contains("audioHopSize")) sb.append("STFT hop size: "+map.get("audioHopSize")+" samples\n");
+			if (unmatched.contains("audioWindowFunction")) sb.append("STFT window function: "+map.get("audioWindowFunction")+"\n");
+			if (unmatched.contains("audioNormalizeChecked")) sb.append("STFT normalized: "+map.get("audioNormalizeChecked")+"\n");
+			if (unmatched.contains("audioHPFChecked")) {
+				if (Boolean.valueOf(map.get("audioHPFChecked"))) sb.append("High-pass filter: On\n");
+				else sb.append("High-pass filter: Off\n");
+			}
+			if (unmatched.contains("audioHPFThreshold")) sb.append("High-pass filter threshold: "+map.get("audioHPFThreshold")+"\n");
+			if (unmatched.contains("audioHPFMagnitude")) sb.append("High-pass filter magnitude: "+map.get("audioHPFMagnitude")+"\n");
+			if (unmatched.contains("audioLPFChecked")) {
+				if (Boolean.valueOf(map.get("audioLPFChecked"))) sb.append("Low-pass filter: On\n");
+				else sb.append("Low-pass filter: Off\n");
+			}
+			if (unmatched.contains("audioLPFThreshold")) sb.append("Low-pass filter threshold: "+map.get("audioLPFThreshold")+"\n");
+			if (unmatched.contains("audioLPFMagnitude")) sb.append("Low-pass filter magnitude: "+map.get("audioLPFMagnitude")+"\n");
+			if (unmatched.contains("audioNRChecked")) {
+				if (Boolean.valueOf(map.get("audioNRChecked"))) sb.append("Noise reduction: On\n");
+				else sb.append("Noise reduction: Off\n");
+			}
+			if (unmatched.contains("audioNRStart")) sb.append("Noise reduction clip start time: "+map.get("audioNRStart")+" samples\n");
+			if (unmatched.contains("audioNRLength")) sb.append("Noise reduction clip length: "+map.get("audioNRLength")+" samples\n");
+			if (unmatched.contains("audioNRScalar")) sb.append("Noise reduction scalar: "+map.get("audioNRScalar")+"\n");
+			sb.append("\n");
+		}
 		return sb;
 	}
 	
@@ -406,7 +469,7 @@ public class LCExportDialog extends PamDialog {
 		sb.append("LIVE CLASSIFIER PARAMETERS\n\n");
 		LCParameters params = lcControl.getParams();
 		sb.append("Feature vector data source: "+params.inputProcessName+"\n");
-		sb.append("Training set: "+lcControl.getTrainPath()+"\n");
+		sb.append("Training set: "+lcControl.getParams().getTrainPath()+"\n");
 		if (params.selectKBest) {
 			sb.append("k-Best feature selection: On (k = "+String.valueOf(params.kBest)+")\n");
 		} else {

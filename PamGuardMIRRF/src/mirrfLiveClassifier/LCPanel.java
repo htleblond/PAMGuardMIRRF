@@ -34,7 +34,7 @@ import PamView.PamTable;
 
 /**
  * The panel where the GUI components are written.
- * @author Taylor LeBlond
+ * @author Holly LeBlond
  */
 public class LCPanel extends PamBorderPanel {
 	
@@ -262,7 +262,7 @@ public class LCPanel extends PamBorderPanel {
 		}
 		wdThread = new LCWaitingDialogThread(control.getGuiFrame(), control, "Waiting for response from Python script...");
 		wdThread.start();
-		control.getThreadManager().pythonCommand("tcm.printBestFeatureOrder()");
+		control.getThreadManager().pythonCommand("tcm.printBestFeatureOrder()", false);
 	}
 	
 	/**

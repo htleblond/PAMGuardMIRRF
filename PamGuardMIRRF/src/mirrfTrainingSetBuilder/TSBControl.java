@@ -32,7 +32,7 @@ import PamController.PamSettings;
 /**
  * The controller class for the MIRRF Training Set Builder.
  * Is a subclass of PamControlledUnit.
- * @author Taylor LeBlond
+ * @author Holly LeBlond
  */
 public class TSBControl extends PamControlledUnit implements PamSettings {
 	
@@ -44,6 +44,7 @@ public class TSBControl extends PamControlledUnit implements PamSettings {
 	protected HashMap<String, String> classMap;
 	protected ArrayList<TSBSubset> subsetList;
 	protected ArrayList<String> featureList;
+	protected HashMap<String, String> feParamsMap;
 	public boolean includeCallType;
 
 	public TSBControl(String unitName) {
@@ -56,6 +57,7 @@ public class TSBControl extends PamControlledUnit implements PamSettings {
 		
 		subsetList = new ArrayList<TSBSubset>();
 		featureList = new ArrayList<String>();
+		feParamsMap = new HashMap<String, String>();
 		includeCallType = false;
 	}
 	
@@ -137,6 +139,14 @@ public class TSBControl extends PamControlledUnit implements PamSettings {
 	
 	public void resetSubsetList() {
 		subsetList = new ArrayList<TSBSubset>();
+	}
+	
+	public HashMap<String, String> getFEParamsMap() {
+		return feParamsMap;
+	}
+	
+	public void setFEParamsMap(HashMap<String, String> inp) {
+		feParamsMap = inp;
 	}
 		
 	@Override

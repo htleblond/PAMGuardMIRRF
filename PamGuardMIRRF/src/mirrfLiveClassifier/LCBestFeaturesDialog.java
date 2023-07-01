@@ -23,7 +23,7 @@ public class LCBestFeaturesDialog extends PamDialog {
 	protected PamTable featureTable;
 	
 	public LCBestFeaturesDialog(Window parentFrame, LCControl lcControl, String pythonOutput) {
-		super(parentFrame, "MIRRF Live Classifier", true);
+		super(parentFrame, lcControl.getUnitName(), true);
 		this.lcControl = lcControl;
 		
 		this.getCancelButton().setVisible(false);

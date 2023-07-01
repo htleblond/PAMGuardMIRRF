@@ -1,4 +1,4 @@
-package mirrfFeatureExtractor;
+package mirrf;
 
 import java.io.Serializable;
 

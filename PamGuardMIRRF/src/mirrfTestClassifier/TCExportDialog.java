@@ -2,6 +2,7 @@ package mirrfTestClassifier;
 
 import java.awt.Window;
 
+import mirrfFeatureExtractor.FEParameters;
 import mirrfLiveClassifier.LCControl;
 import mirrfLiveClassifier.LCExportDialog;
 import mirrfLiveClassifier.LCParameters;
@@ -18,7 +19,7 @@ public class TCExportDialog extends LCExportDialog {
 	
 	@Override
 	protected StringBuilder produceFeatureExtractorInfo(StringBuilder sb) {
-		sb = new StringBuilder();
+	/*	sb = new StringBuilder();
 		sb.append("FEATURE INFO\n\n");
 		sb.append("Features (from training set): "+String.valueOf(getControl().getFeatureList().size()));
 		for (int i = 0; i < getControl().getFeatureList().size(); i++) {
@@ -27,6 +28,23 @@ public class TCExportDialog extends LCExportDialog {
 		sb.append("\n");
 		pw.write(sb.toString());
 		pw.flush();
+		return sb; */
+		
+		sb = new StringBuilder();
+		TCParameters params = getControl().getParams();
+		boolean printTestSetParamsToo = false;
+		if (params.validation >= params.LABELLED) {
+			FEParameters feParams = new FEParameters();
+			if (feParams.findUnmatchedParameters(params.getTrainingSetInfo().feParamsMap, 
+					params.getTestingSetInfo().feParamsMap, false).size() > 0) {
+				printTestSetParamsToo = true;
+				sb.append("NOTE - The training and testing sets have contradictory Feature Extractor settings.\n\n");
+			}
+		}
+		sb = this.printFEParamsFromTrainingSetFile(sb, params.getTrainingSetInfo().feParamsMap,
+				null, "FEATURE EXTRACTOR PARAMETERS FOUND IN TRAINING SET");
+		if (printTestSetParamsToo) sb = this.printFEParamsFromTrainingSetFile(sb, params.getTestingSetInfo().feParamsMap,
+				null, "FEATURE EXTRACTOR PARAMETERS FOUND IN TESTING SET");
 		return sb;
 	}
 	
@@ -36,19 +54,22 @@ public class TCExportDialog extends LCExportDialog {
 		sb.append("TEST CLASSIFIER PARAMETERS\n\n");
 		TCParameters params = getControl().getParams();
 		
-		if (params.validation.equals("leaveoneout")) {
+		if (params.validation == params.LEAVEONEOUT) {
 			sb.append("Validation: Leave-one-out cross-validation (by subset ID)");
-			sb.append("Number of subsets: "+String.valueOf(getControl().getTrainingSetInfo().subsetCounts));
-		} else if (params.validation.equals("kfold")) {
+			sb.append("Number of subsets: "+String.valueOf(params.getTrainingSetInfo().subsetCounts));
+		} else if (params.validation == params.KFOLD) {
 			sb.append("Validation: k-fold cross-validation");
 			sb.append("Number of k-folds: "+String.valueOf(params.kNum));
-		} else if (params.validation.equals("labelled")) {
+		} else if (params.validation == params.TESTSUBSET) {
+			sb.append("Validation: Testing on a single subset or set of subsets");
+			sb.append("Test subset(s): "+String.valueOf(params.testSubset));
+		} else if (params.validation == params.LABELLED) {
 			sb.append("Validation: Labelled testing set");
-		} else if (params.validation.equals("unlabelled")) {
+		} else if (params.validation == params.UNLABELLED) {
 			sb.append("Validation: Unlabelled testing set");
 		}
-		sb.append("Training set: "+getControl().getTrainPath());
-		if (params.validation.contains("labelled")) sb.append("Testing set: "+getControl().getTestPath());
+		sb.append("Training set: "+params.getTrainPath());
+		if (params.validation >= params.LABELLED) sb.append("Testing set: "+params.getTestPath());
 		
 		// Everything below here should be the same as in LC
 		if (params.selectKBest) {

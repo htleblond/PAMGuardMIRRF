@@ -21,14 +21,15 @@ public class TCPanel extends LCPanel {
 	
 	@Override
 	protected void bestFeaturesButtonAction() {
-		if (getControl().getTrainingSetInfo() == null || getControl().getTrainPath().equals("")) {
+		TCParameters params = getControl().getParams();
+		if (params.getTrainingSetInfo() == null || params.getTrainPath().equals("")) {
 			control.SimpleErrorDialog("Training and/or testing sets have not been configured yet.", 250);
 			return;
 		}
 		wdThread = new LCWaitingDialogThread(getControl().getGuiFrame(), getControl(), "Waiting for response from Python script...");
 		wdThread.start();
 		if (getControl().getThreadManager().initializeBestFeaturesSet())
-			control.getThreadManager().pythonCommand("tcmBest.printBestFeatureOrder()");
+			control.getThreadManager().pythonCommand("tcmBest.printBestFeatureOrder()", false);
 		else wdThread.halt();
 	}
 	

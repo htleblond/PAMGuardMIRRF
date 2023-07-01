@@ -8,7 +8,7 @@ import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
-import mirrfFeatureExtractor.JarExtractor;
+import mirrf.MIRRFJarExtractor;
 
 public class LCPythonThreadManager{
 	protected LCControl lcControl;
@@ -51,6 +51,8 @@ public class LCPythonThreadManager{
 	
 	protected void initializePython() throws Exception {
 		try {
+			commandList = new ArrayList<String>();
+			LCParameters lcParams = lcControl.getParams();
 			ProcessBuilder pb = new ProcessBuilder("python", "-i");
 			pr = pb.start();
 		    br = new BufferedReader(new InputStreamReader(pr.getInputStream()));
@@ -59,44 +61,44 @@ public class LCPythonThreadManager{
 	        
 	        startPrintThreads();
 	        
-	        pythonCommand("import os");
-	        pythonCommand("os.chdir(r\""+pathname+"\")");
-	        pythonCommand("os.getcwd()");
-	        pythonCommand("import numpy as np");
+	        pythonCommand("import os", false);
+	        pythonCommand("os.chdir(r\""+pathname+"\")", false);
+	        pythonCommand("os.getcwd()", false);
+	        pythonCommand("import numpy as np", false);
 	        String pyParams = lcControl.getParams().outputPythonParamsToText();
-	        if (lcControl.getFeatureList().size() > 0) {
-	        	pyParams += "\""+lcControl.getFeatureList().get(0)+"\"";
-				for (int i = 1; i < lcControl.getFeatureList().size(); i++) {
-					pyParams += ",\""+lcControl.getFeatureList().get(i)+"\"";
+	        if (lcParams.getFeatureList().size() > 0) {
+	        	pyParams += "\""+lcParams.getFeatureList().get(0)+"\"";
+				for (int i = 1; i < lcParams.getFeatureList().size(); i++) {
+					pyParams += ",\""+lcParams.getFeatureList().get(i)+"\"";
 				}
 			}
 	        pyParams += "]";
 	        pyParams += "]";
 	        if (pyParams.length() > 0) {
-	            pythonCommand("txtParams = "+pyParams);
+	            pythonCommand("txtParams = "+pyParams, false);
 	        } else {
-	            pythonCommand("txtParams = []");
+	            pythonCommand("txtParams = []", false);
 	        }
-	        pythonCommand("import sys");
-	        pythonCommand("import gc");
+	        pythonCommand("import sys", false);
+	        pythonCommand("import gc", false);
 		} catch (Exception e) {
 			throw e;
 		}
 	}
 	
 	protected class PythonInterpreterThread extends Thread {
-		protected PythonInterpreterThread() {}
+		public PythonInterpreterThread() {}
 		@Override
 		public void run() {
 			try {
 				// Kudos to this: https://stackoverflow.com/questions/25041529/how-to-run-the-python-interpreter-and-get-its-output-using-java
 				if (setActive()) {
 					initializePython();
-			        pythonCommand("import "+scriptClassName);
+			        pythonCommand("import "+scriptClassName, false);
 			        
 			        while (active || commandList.size() > 0) {
 			        	if (commandList.size() > 0) {
-			        		pythonCommand(commandList.get(0));
+			        		pythonCommand(commandList.get(0), true);
 				            commandList.remove(0);
 			        	}
 			        	try {
@@ -118,10 +120,10 @@ public class LCPythonThreadManager{
 		commandList.add(inp);
 	}
 	
-	public void pythonCommand(String command) {
+	public void pythonCommand(String command, boolean toPrint) {
 		if (bw != null) {
 			try {
-				System.out.println("COMMAND: "+command);
+				if (toPrint) System.out.println("COMMAND: "+command);
 				if (command != null) {
 					bw.write(command);
 					bw.newLine();
@@ -252,7 +254,7 @@ public class LCPythonThreadManager{
 	}
 	
 	public boolean setActive() {
-		active = new JarExtractor().extract("src/mirrfLiveClassifier/LCPythonScript.py",
+		active = new MIRRFJarExtractor().extract("src/mirrfLiveClassifier/LCPythonScript.py",
 				lcControl.getParams().tempFolder, "LCPythonScript.py", true);
 		System.out.println("JarExtractor completed.");
 		return active;

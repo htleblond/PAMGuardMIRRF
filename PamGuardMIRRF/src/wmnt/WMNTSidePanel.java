@@ -7,7 +7,7 @@ import PamView.PamSidePanel;
 /**
  * The side panel for WMNT.
  * Note that virtually all the GUI stuff of the side panel is actually in WMNTPanel.
- * @author Taylor LeBlond
+ * @author Holly LeBlond
  */
 public class WMNTSidePanel implements PamSidePanel {
 
@@ -31,7 +31,7 @@ public class WMNTSidePanel implements PamSidePanel {
 	/**
 	 * Getter function for the WMNTPanel.
 	 * @return WMNTPanel
-	 * @author Taylor LeBlond
+	 * @author Holly LeBlond
 	 */
 	public WMNTPanel getWMNTPanel() {
 		return wmntPanel;

@@ -121,14 +121,14 @@ public class LCProcess extends PamProcess {
 			return;
 		}
 		String[][] feFeatures = fedb.getFeatureList();
-		if (feFeatures.length != lcControl.getFeatureList().size()) {
+		if (feFeatures.length != lcControl.getParams().getFeatureList().size()) {
 			lcControl.setTrainingSetStatus(false);
 			lcControl.SimpleErrorDialog("Live Classifier Error: The features of the selected Feature Extractor and the features "
 					+ "in the loaded training set do not match. The Live Classifier cannot function until this is fixed.", 250);
 			return;
 		}
 		for (int i = 0; i < feFeatures.length; i++) {
-			if (!feFeatures[i][1].equals(lcControl.getFeatureList().get(i))) {
+			if (!feFeatures[i][1].equals(lcControl.getParams().getFeatureList().get(i))) {
 				lcControl.setTrainingSetStatus(false);
 				lcControl.SimpleErrorDialog("Live Classifier Error: The features of the selected Feature Extractor and the features "
 						+ "in the loaded training set do not match. The Live Classifier cannot function until this is fixed.", 250);
@@ -171,7 +171,7 @@ public class LCProcess extends PamProcess {
 			System.out.println("Sleep exception.");
 			e.printStackTrace();
 		}
-		lcControl.getThreadManager().pythonCommand("tcm.runLast()");
+		lcControl.getThreadManager().pythonCommand("tcm.runLast()", false);
 		while (!lcControl.getThreadManager().getFinished()) {
 			try {
 				System.out.println("Waiting for RUNLAST");

@@ -28,7 +28,7 @@ import PamController.PamSettings;
 /**
  * The controller class for the MIRRF Training Set Builder.
  * Is a subclass of PamControlledUnit.
- * @author Taylor LeBlond
+ * @author Holly LeBlond
  */
 public class FPControl extends PamControlledUnit implements PamSettings {
 	

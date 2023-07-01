@@ -1,7 +1,7 @@
 /* 
  * MIRRF Feature Extractor
  * Version 1.01 
- * By Taylor LeBlond
+ * By Holly LeBlond
  * Fisheries and Oceans Canada
  * Started May 2022
  * Uploaded May 2023
@@ -14,11 +14,51 @@ import PamModel.PamPluginInterface;
 
 /**
  * Music Information Retrieval Random Forest (MIRRF) Classifier - Feature Extractor
- * @author Taylor LeBlond
+ * @author Holly LeBlond
  */
 public class FEPlugin implements PamPluginInterface {
 	
 	String jarFile;
+	
+	@Override
+	public String getDescription() {
+		return getDefaultName();
+	}
+
+	@Override
+	public void setJarFile(String jarFile) {
+		this.jarFile = jarFile;
+	}
+
+	@Override
+	public String getJarFile() {
+		return jarFile;
+	}
+
+	@Override
+	public String getDeveloperName() {
+		return "Holly LeBlond";
+	}
+
+	@Override
+	public String getContactEmail() {
+		return "wtleblond@gmail.com";
+	}
+
+	@Override
+	public String getVersion() {
+		return "0.02b";
+	}
+
+	@Override
+	public String getPamVerDevelopedOn() {
+		return "2.02.09";
+	}
+
+	@Override
+	public String getPamVerTestedOn() {
+		return "2.02.09";
+	}
 
 	@Override
 	public String getClassName() {
@@ -27,11 +67,6 @@ public class FEPlugin implements PamPluginInterface {
 
 	@Override
 	public String getDefaultName() {
-		return "MIRRF Feature Extractor";
-	}
-
-	@Override
-	public String getDescription() {
 		return "MIRRF Feature Extractor";
 	}
 
@@ -74,41 +109,6 @@ public class FEPlugin implements PamPluginInterface {
 	@Override
 	public String getHelpSetName() {
 		return null;
-	}
-
-	@Override
-	public void setJarFile(String jarFile) {
-		this.jarFile = jarFile;
-	}
-
-	@Override
-	public String getJarFile() {
-		return jarFile;
-	}
-
-	@Override
-	public String getDeveloperName() {
-		return "Taylor LeBlond";
-	}
-
-	@Override
-	public String getContactEmail() {
-		return "wtleblond@gmail.com";
-	}
-
-	@Override
-	public String getVersion() {
-		return "1.01";
-	}
-
-	@Override
-	public String getPamVerDevelopedOn() {
-		return "2.01.05da";
-	}
-
-	@Override
-	public String getPamVerTestedOn() {
-		return "2.02.06";
 	}
 
 	@Override

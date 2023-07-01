@@ -63,7 +63,16 @@ class TCModel():
             traceback.print_exc()
             
     def createXy(self):
-        trainList = pd.read_csv(self.trainFN).values.tolist()
+        skipLine = -1
+        with open(self.trainFN) as f:
+            lines = [line for line in f]
+            for i in np.arange(len(lines)):
+                if "cluster,uid,location,date,duration,lf,hf,label," in lines[i]:
+                    skipLine = i
+                    break
+        if skipLine == -1:
+            raise Exception("Input training/testing set does not contain an appropriate header.")
+        trainList = pd.read_csv(self.trainFN, skiprows=np.arange(i)).values.tolist()
         clusterList = []
         clusterSizes = {}
         for i in np.arange(len(trainList)):

@@ -1,8 +1,11 @@
 package mirrfFeatureExtractor;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
 
 import PamModel.parametermanager.PamParameterSet;
+import mirrf.MIRRFParameters;
 
 import org.apache.commons.text.WordUtils;
 
@@ -18,11 +21,12 @@ public class FEParameters extends MIRRFParameters {
 	public ArrayList<Integer> inputCSVIndexes;
 	public int inputCSVExpectedFileSize;
 	public boolean inputIgnoreBlanks;
+	public boolean inputIgnore2SecondGlitch;
 	public boolean inputIgnoreFalsePositives;
+	public boolean inputIgnoreUnk;
 	
 	public boolean outputCSVChecked;
 	public String outputCSVName;
-	//public boolean outputCSVOverwrite;
 	
 	public String audioSourceProcessName;
 	public boolean audioAutoClipLength;
@@ -71,12 +75,13 @@ public class FEParameters extends MIRRFParameters {
 		this.inputCSVEntries = new ArrayList<String[]>();
 		this.inputCSVIndexes = new ArrayList<Integer>();
 		this.inputCSVExpectedFileSize = 10;
-		this.inputIgnoreBlanks = false;
-		this.inputIgnoreFalsePositives = false;
+		this.inputIgnoreBlanks = true;
+		this.inputIgnore2SecondGlitch = true;
+		this.inputIgnoreFalsePositives = true;
+		this.inputIgnoreUnk = true;
 		
 		this.outputCSVChecked = false;
 		this.outputCSVName = "";
-		//this.outputCSVOverwrite = true;
 		
 		this.audioSourceProcessName = "";
 		this.audioAutoClipLength = true;
@@ -114,6 +119,87 @@ public class FEParameters extends MIRRFParameters {
 		this.miscIgnoreQuietAmp = 0;
 		this.miscIgnoreLoudAmpChecked = false;
 		this.miscIgnoreLoudAmp = 0;
+	}
+	
+	public String getFeatureAbbrsAsString() {
+		String outp = "";
+		for (int i = 0; i < featureList.length; i++) {
+			outp += featureList[i][1];
+			if (i < featureList.length-1) outp += ",";
+		}
+		return outp;
+	}
+	
+	public HashMap<String, String> outputParamsToHashMap() {
+		HashMap<String, String> outp = new HashMap<String, String>();
+		outp.put("sr", String.valueOf(sr)); // TODO THIS WILL PROBABLY CAUSE ISSUES
+		outp.put("audioAutoClipLength", String.valueOf(audioAutoClipLength));
+		if (!audioAutoClipLength) {
+			outp.put("audioClipLength", String.valueOf(audioClipLength));
+		}
+		outp.put("audioSTFTLength", String.valueOf(audioSTFTLength));
+		outp.put("audioHopSize", String.valueOf(audioHopSize));
+		outp.put("audioWindowFunction", String.valueOf(audioWindowFunction));
+		outp.put("audioNormalizeChecked", String.valueOf(audioNormalizeChecked));
+		outp.put("audioHPFChecked", String.valueOf(audioHPFChecked));
+		if (audioHPFChecked) {
+			outp.put("audioHPFThreshold", String.valueOf(audioHPFThreshold));
+			outp.put("audioHPFMagnitude", String.valueOf(audioHPFMagnitude));
+		}
+		outp.put("audioLPFChecked", String.valueOf(audioLPFChecked));
+		if (audioLPFChecked) {
+			outp.put("audioLPFThreshold", String.valueOf(audioLPFThreshold));
+			outp.put("audioLPFMagnitude", String.valueOf(audioLPFMagnitude));
+		}
+		outp.put("audioNRChecked", String.valueOf(audioNRChecked));
+		if (audioNRChecked) {
+			outp.put("audioNRStart", String.valueOf(audioNRStart));
+			outp.put("audioNRLength", String.valueOf(audioNRLength));
+			outp.put("audioNRScalar", String.valueOf(audioNRScalar));
+		}
+		//outp.put("featureList", getFeatureAbbrsAsString());
+		
+		// TODO Re-consider the following:
+	/*	outp.put("miscClusterChecked", String.valueOf(miscClusterChecked));
+		if (miscClusterChecked) outp.put("miscJoinDistance", String.valueOf(miscJoinDistance));
+		outp.put("miscIgnoreFileStartChecked", String.valueOf(miscIgnoreFileStartChecked));
+		if (miscIgnoreFileStartChecked) outp.put("miscIgnoreFileStartLength", String.valueOf(miscIgnoreFileStartLength));
+		outp.put("miscIgnoreLowFreqChecked", String.valueOf(miscIgnoreLowFreqChecked));
+		if (miscIgnoreLowFreqChecked) outp.put("miscIgnoreLowFreq", String.valueOf(miscIgnoreLowFreq));
+		outp.put("miscIgnoreHighFreqChecked", String.valueOf(miscIgnoreHighFreqChecked));
+		if (miscIgnoreHighFreqChecked) outp.put("miscIgnoreHighFreq", String.valueOf(miscIgnoreHighFreq));
+		outp.put("miscIgnoreShortDurChecked", String.valueOf(miscIgnoreShortDurChecked));
+		if (miscIgnoreShortDurChecked) outp.put("miscIgnoreShortDur", String.valueOf(miscIgnoreShortDur));
+		outp.put("miscIgnoreLongDurChecked", String.valueOf(miscIgnoreLongDurChecked));
+		if (miscIgnoreLongDurChecked) outp.put("miscIgnoreLongDur", String.valueOf(miscIgnoreLongDur));
+		outp.put("miscIgnoreQuietAmpChecked", String.valueOf(miscIgnoreQuietAmpChecked));
+		if (miscIgnoreQuietAmpChecked) outp.put("miscIgnoreQuietAmp", String.valueOf(miscIgnoreQuietAmp));
+		outp.put("miscIgnoreLoudAmpChecked", String.valueOf(miscIgnoreLoudAmpChecked));
+		if (miscIgnoreLoudAmpChecked) outp.put("miscIgnoreLoudAmp", String.valueOf(miscIgnoreLoudAmp)); */
+		
+		return outp;
+	}
+	
+	public ArrayList<String> findUnmatchedParameters(HashMap<String, String> newMap, boolean fromFile) {
+		HashMap<String, String> currMap = outputParamsToHashMap();
+		return findUnmatchedParameters(currMap, newMap, fromFile);
+	}
+	
+	public ArrayList<String> findUnmatchedParameters(HashMap<String, String> currMap, HashMap<String, String> newMap, boolean fromFile) {
+		ArrayList<String> outp = new ArrayList<String>();
+		HashMap<String, String> map1 = currMap;
+		HashMap<String, String> map2 = newMap;
+		if (fromFile) {
+			map1 = newMap;
+			map2 = currMap;
+		}
+		Iterator<String> it = map1.keySet().iterator();
+		while (it.hasNext()) {
+			String nextKey = it.next();
+			if (!map2.containsKey(nextKey)) outp.add(nextKey);
+			else if (!map1.get(nextKey).equals(map2.get(nextKey))) outp.add(nextKey);
+		}
+		return outp;
 	}
 	
 	@Override

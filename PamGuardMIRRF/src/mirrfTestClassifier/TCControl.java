@@ -3,28 +3,19 @@ package mirrfTestClassifier;
 import java.awt.Frame;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.File;
 import java.io.Serializable;
-import java.util.TimeZone;
 
 import javax.swing.JMenuItem;
-import javax.swing.JOptionPane;
 
 import PamController.PamControlledUnitSettings;
 import PamController.PamSettingManager;
 import mirrfLiveClassifier.LCControl;
 import mirrfLiveClassifier.LCMarkControl;
-import mirrfLiveClassifier.LCProcess;
-import mirrfLiveClassifier.LCPythonThreadManager;
-import mirrfLiveClassifier.LCTabPanel;
-import mirrfLiveClassifier.LCTempFolderDialog;
-import mirrfLiveClassifier.LCTrainingSetInfo;
-import mirrfLiveClassifier.LCUpdateProcess;
 
 public class TCControl extends LCControl {
 	
 	//protected TCParameters parameters = new TCParameters();
-	protected LCTrainingSetInfo loadedTestingSetInfo;
+	//protected LCTrainingSetInfo loadedTestingSetInfo;
 	protected TCSidePanel sidePanel;
 	
 	public TCControl(String unitName) {
@@ -39,8 +30,8 @@ public class TCControl extends LCControl {
 		if (parameters == null || !(parameters instanceof TCParameters)) parameters = new TCParameters();
 		PamSettingManager.getInstance().registerSettings(this);
 		
-		loadedTrainingSetInfo = new LCTrainingSetInfo("");
-		loadedTestingSetInfo = new LCTrainingSetInfo("");
+		//loadedTrainingSetInfo = new LCTrainingSetInfo("");
+		//loadedTestingSetInfo = new LCTrainingSetInfo("");
 		tabPanel = new TCTabPanel(this);
 		sidePanel = new TCSidePanel(this);
 		
@@ -89,7 +80,8 @@ public class TCControl extends LCControl {
 		return (TCProcess) process;
 	}
 	
-	public LCTrainingSetInfo getTestingSetInfo() {
+	// The following are now in TCParameters.
+/*	public LCTrainingSetInfo getTestingSetInfo() {
 		return loadedTestingSetInfo;
 	}
 	
@@ -99,7 +91,7 @@ public class TCControl extends LCControl {
 	
 	public String getTestPath() {
 		return loadedTestingSetInfo.pathName;
-	}
+	} */
 	
 	public boolean isTrainingSetLoaded() {
 		return trainingSetLoaded;

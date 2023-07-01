@@ -5,7 +5,7 @@ import PamguardMVC.PamDataUnit;
 /**
  * The Feature Extractor's output data unit.
  * Contains feature vector info for each contour stored in an FECallCluster.
- * @author Taylor LeBlond
+ * @author Holly LeBlond
  */
 public class FEDataUnit extends PamDataUnit {
 	

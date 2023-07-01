@@ -6,7 +6,7 @@ import PamguardMVC.PamProcess;
 
 /**
  * Doesn't really do anything other than hold the output data block, as the WMNT only opens in Viewer Mode.
- * @author Taylor LeBlond
+ * @author Holly LeBlond
  */
 public class WMNTProcess extends PamProcess {
 

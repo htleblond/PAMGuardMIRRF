@@ -11,11 +11,13 @@ import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Scanner;
 import java.util.TimeZone;
 import java.util.Comparator;
@@ -50,10 +52,11 @@ import whistlesAndMoans.AbstractWhistleDataUnit;
 import PamView.dialog.PamDialog;
 import PamView.dialog.PamGridBagContraints;
 import PamView.dialog.SourcePanel;
+import PamguardMVC.PamDataBlock;
 
 /**
  * The settings dialog for the Feature Extractor.
- * @author Taylor LeBlond
+ * @author Holly LeBlond
  */
 //@SuppressWarnings("serial")
 public class FESettingsDialog extends PamDialog {
@@ -69,7 +72,9 @@ public class FESettingsDialog extends PamDialog {
 	protected JButton inputCSVButton;
 	protected JTextField inputCSVFileSizeField;
 	protected JCheckBox inputIgnoreBlanksCheck;
+	protected JCheckBox inputIgnore2SecondGlitchCheck;
 	protected JCheckBox inputIgnoreFalsePositivesCheck;
+	protected JCheckBox inputIgnoreUnkCheck;
 	
 	protected JCheckBox outputCSVCheck;
 	protected JTextField outputCSVField;
@@ -124,7 +129,7 @@ public class FESettingsDialog extends PamDialog {
 	protected JTextField miscTempField;
 	protected JButton miscTempButton;
 	
-	@SuppressWarnings("static-access")
+	//@SuppressWarnings("static-access")
 	public FESettingsDialog(Window parentFrame, FEControl feControl) {
 		super(parentFrame, "MIRRF Feature Extractor", true);
 		this.feControl = feControl;
@@ -212,9 +217,17 @@ public class FESettingsDialog extends PamDialog {
 		inputIgnoreBlanksCheck.setText("Ignore entries with no species label");
 		inputCSVPanel.add(inputIgnoreBlanksCheck, c);
 		c.gridy++;
+		inputIgnore2SecondGlitchCheck = new JCheckBox();
+		inputIgnore2SecondGlitchCheck.setText("Ignore entries with '2-second glitch' label");
+		inputCSVPanel.add(inputIgnore2SecondGlitchCheck, c);
+		c.gridy++;
 		inputIgnoreFalsePositivesCheck = new JCheckBox();
 		inputIgnoreFalsePositivesCheck.setText("Ignore entries with 'False Positive' label");
 		inputCSVPanel.add(inputIgnoreFalsePositivesCheck, c);
+		c.gridy++;
+		inputIgnoreUnkCheck = new JCheckBox();
+		inputIgnoreUnkCheck.setText("Ignore entries with 'Unk' or 'Unknown' labels");
+		inputCSVPanel.add(inputIgnoreUnkCheck, c);
 		inputFP2.add(inputCSVPanel);
 		mainPanel.add(inputFP2, b);
 		
@@ -570,7 +583,7 @@ public class FESettingsDialog extends PamDialog {
 		c.gridx = 0;
 		c.gridwidth = 4;
 		featureImportLoadedButton = new JButton("Import features from selected .mirrffe output file");
-		featureImportLoadedButton.setEnabled(false);
+		//featureImportLoadedButton.setEnabled(false);
 		featureImportLoadedButton.addActionListener(new ImportCSVFeaturesButtonListener(true));
 		featureTablePanel.add(featureImportLoadedButton, c);
 		c.gridy++;
@@ -757,7 +770,9 @@ public class FESettingsDialog extends PamDialog {
 			this.inputCSVRB.setEnabled(false);
 			this.inputCSVButton.setEnabled(false);
 			this.inputIgnoreBlanksCheck.setEnabled(false);
+			this.inputIgnore2SecondGlitchCheck.setEnabled(false);
 			this.inputIgnoreFalsePositivesCheck.setEnabled(false);
+			this.inputIgnoreUnkCheck.setEnabled(false);
 			
 			this.outputCSVCheck.setEnabled(false);
 			this.outputCSVButton.setEnabled(false);
@@ -819,13 +834,17 @@ public class FESettingsDialog extends PamDialog {
 			inputCSVButton.setEnabled(!boo);
 			inputCSVFileSizeField.setEnabled(!boo);
 			inputIgnoreBlanksCheck.setEnabled(!boo);
+			inputIgnore2SecondGlitchCheck.setEnabled(!boo);
 			inputIgnoreFalsePositivesCheck.setEnabled(!boo);
+			inputIgnoreUnkCheck.setEnabled(!boo);
 		} else if (box.equals(inputCSVRB)) {
 			inputSourcePanel.setEnabled(!boo);
 			inputCSVButton.setEnabled(boo);
 			inputCSVFileSizeField.setEnabled(boo);
 			inputIgnoreBlanksCheck.setEnabled(boo);
+			inputIgnore2SecondGlitchCheck.setEnabled(boo);
 			inputIgnoreFalsePositivesCheck.setEnabled(boo);
+			inputIgnoreUnkCheck.setEnabled(boo);
 		} else if (box.equals(outputCSVCheck)) {
 			outputCSVButton.setEnabled(boo);
 		} else if (box.equals(dynamicRB)) {
@@ -887,7 +906,8 @@ public class FESettingsDialog extends PamDialog {
 				if (forOutput) {
 					File f = getSelectedFileWithExtension(fc);
 					f.setWritable(true, false);
-					String[] firstLine = new String[0];
+					// All this is done in getParams() now.
+				/*	String[] firstLine = new String[0];
 					boolean matchesFeatures = false;
 					boolean blankFile = true;
 					if (f.exists() == true) {
@@ -990,7 +1010,8 @@ public class FESettingsDialog extends PamDialog {
 					} else {
 						outputCSVField.setText(f.getPath());
 						return;
-					}
+					} */
+					outputCSVField.setText(f.getPath());
 				} else {
 					File f = getSelectedFileWithExtension(fc);
 					if (f.exists()) {
@@ -1185,19 +1206,39 @@ public class FESettingsDialog extends PamDialog {
 			try {
 				sc = new Scanner(f);
 				if (!sc.hasNextLine()) {
+					sc.close();
 					feControl.SimpleErrorDialog("Selected file is blank.");
 					return;
 				}
-				String[] firstLine = sc.nextLine().split(",");
+				String[] firstSplit = new String[0];
+				if (importFromLoadedOutput || f.getName().endsWith(".mirrffe")) {
+					boolean featureLineFound = false;
+					while (sc.hasNextLine()) {
+						String nextLine = sc.nextLine();
+						if (nextLine.startsWith("cluster,uid,date,duration,lf,hf,")) {
+							featureLineFound = true;
+							firstSplit = nextLine.split(",");
+							break;
+						}
+					}
+					if (!featureLineFound) {
+						sc.close();
+						feControl.SimpleErrorDialog("Selected file does not contain any valid feature names.");
+						return;
+					}
+				} else {
+					firstSplit = sc.nextLine().split(",");
+				}
+				sc.close();
 				int startIndex = 6;
-				if (f.getName().endsWith(".mirrftc")) startIndex = 8;
-				if (firstLine.length < startIndex+1) {
+				if (f.getName().endsWith(".mirrfts")) startIndex = 8;
+				if (firstSplit.length < startIndex+1) {
 					feControl.SimpleErrorDialog("Selected file does not contain any valid feature names.");
 					return;
 				}
 				ArrayList<String> inp = new ArrayList<String>();
-				for (int i = startIndex; i < firstLine.length; i++) {
-					inp.add(firstLine[i]);
+				for (int i = startIndex; i < firstSplit.length; i++) {
+					inp.add(firstSplit[i]);
 				}
 				addFeaturesToTable(inp);
 			} catch (FileNotFoundException e1) {
@@ -1447,15 +1488,17 @@ public class FESettingsDialog extends PamDialog {
 		}
 		inputCSVFileSizeField.setText(String.valueOf(params.inputCSVExpectedFileSize));
 		inputIgnoreBlanksCheck.setSelected(params.inputIgnoreBlanks);
+		inputIgnore2SecondGlitchCheck.setSelected(params.inputIgnore2SecondGlitch);
 		inputIgnoreFalsePositivesCheck.setSelected(params.inputIgnoreFalsePositives);
+		inputIgnoreUnkCheck.setSelected(params.inputIgnoreUnk);
 		outputCSVCheck.setSelected(params.outputCSVChecked);
 		switchOn(outputCSVCheck, params.outputCSVChecked);
 		if (params.outputCSVName.length() > 0) {
 			outputCSVField.setText(params.outputCSVName);
-			featureImportLoadedButton.setEnabled(true);
+			//featureImportLoadedButton.setEnabled(true);
 		} else {
 			outputCSVField.setText("No file selected.");
-			featureImportLoadedButton.setEnabled(false);
+			//featureImportLoadedButton.setEnabled(false);
 		}
 		if (params.audioSourceProcessName.length() > 0) {
 			if (!audioSourcePanel.setSource(params.audioSourceProcessName)) {
@@ -1521,6 +1564,148 @@ public class FESettingsDialog extends PamDialog {
 		return true;
 	}
 	
+	public ArrayList<String> checkForUnmatchedOutputCSVSettings(FEParameters newParams) {
+		ArrayList<String> outp = new ArrayList<String>();
+		Scanner sc;
+		File f = new File(outputCSVField.getText());
+		if (!f.exists()) {
+			outp.add("Error 1");
+			return outp;
+		}
+		HashMap<String, String> newMap = newParams.outputParamsToHashMap();
+		HashMap<String, String> fileMap = new HashMap<String, String>();
+		boolean ended = false;
+		try {
+			sc = new Scanner(f);
+			if (!sc.hasNextLine()) {
+				sc.close();
+				outp.add("Error 2");
+				return outp;
+			}
+			String nextLine = sc.nextLine();
+			if (!nextLine.equals("EXTRACTOR PARAMS START")) {
+				sc.close();
+				outp.add("Error 3");
+				return outp;
+			}
+			while (sc.hasNextLine()) {
+				nextLine = sc.nextLine();
+				if (nextLine.equals("EXTRACTOR PARAMS END")) {
+					if (!sc.hasNextLine()) {
+						sc.close();
+						outp.add("Error 4");
+						return outp;
+					}
+					nextLine = sc.nextLine();
+					if (!nextLine.equals("cluster,uid,date,duration,lf,hf,"+newParams.getFeatureAbbrsAsString())) {
+						sc.close();
+						outp.add("Error 5");
+						return outp;
+					} else if (!nextLine.startsWith("cluster,uid,date,duration,lf,hf,")) {
+						sc.close();
+						outp.add("Error 6");
+						return outp;
+					}
+					ended = true;
+					break;
+				}
+				String[] split = nextLine.split("=");
+				if (split.length < 2) continue;
+				if (!newMap.containsKey(split[0])) continue;
+				fileMap.put(split[0], split[1]);
+			}
+			sc.close();
+			if (!ended) {
+				outp.add("Error 7");
+				return outp;
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			outp.add("Error 8");
+			return outp;
+		}
+		
+	/*	Iterator<String> it = newMap.keySet().iterator();
+		while (it.hasNext()) {
+			String next = it.next();
+			
+			if (next.equals("audioClipLength") && newParams.audioAutoClipLength == true) continue;
+			if (next.equals("audioHPFThreshold") && newParams.audioHPFChecked == false) continue;
+			if (next.equals("audioHPFMagnitude") && newParams.audioHPFChecked == false) continue;
+			if (next.equals("audioLPFThreshold") && newParams.audioLPFChecked == false) continue;
+			if (next.equals("audioLPFMagnitude") && newParams.audioLPFChecked == false) continue;
+			if (next.equals("audioNRStart") && newParams.audioNRChecked == false) continue;
+			if (next.equals("audioNRLength") && newParams.audioNRChecked == false) continue;
+			if (next.equals("audioNRScalar") && newParams.audioNRChecked == false) continue;
+			if (next.equals("miscJoinDistance") && newParams.miscClusterChecked == false) continue;
+			if (next.equals("miscIgnoreFileStartLength") && newParams.miscIgnoreFileStartChecked == false) continue;
+			if (next.equals("miscIgnoreLowFreq") && newParams.miscIgnoreLowFreqChecked == false) continue;
+			if (next.equals("miscIgnoreHighFreq") && newParams.miscIgnoreHighFreqChecked == false) continue;
+			if (next.equals("miscIgnoreShortDur") && newParams.miscIgnoreShortDurChecked == false) continue;
+			if (next.equals("miscIgnoreLongDur") && newParams.miscIgnoreLongDurChecked == false) continue;
+			if (next.equals("miscIgnoreQuietAmp") && newParams.miscIgnoreQuietAmpChecked == false) continue;
+			if (next.equals("miscIgnoreLoudAmp") && newParams.miscIgnoreLoudAmpChecked == false) continue;
+			
+			if (!fileMap.containsKey(next) || !newMap.get(next).equals(fileMap.get(next))) outp.add(next);
+		} */
+		outp = newParams.findUnmatchedParameters(fileMap, false);
+		
+		return outp;
+	}
+	
+	protected boolean clearFileAndAddSettingsInfo(FEParameters newParams) {
+		File f = new File(outputCSVField.getText());
+		if (!f.exists()) {
+			try {
+				f.createNewFile();
+			} catch (IOException e) {
+				e.printStackTrace();
+				feControl.SimpleErrorDialog("Could not create output file.", 250);
+				return false;
+			}
+		}
+		if (!f.delete()) {
+			feControl.SimpleErrorDialog("Could not clear output file.", 250);
+			return false;
+		}
+		try {
+			f.createNewFile();
+		} catch (IOException e) {
+			e.printStackTrace();
+			feControl.SimpleErrorDialog("Could not create output file.", 250);
+			return false;
+		}
+		PrintWriter pw;
+		StringBuilder sb;
+		try {
+			pw = new PrintWriter(f);
+			sb = new StringBuilder();
+			sb.append("EXTRACTOR PARAMS START\n");
+			pw.write(sb.toString());
+			pw.flush();
+			HashMap<String, String> newMap = newParams.outputParamsToHashMap();
+			Iterator<String> it = newMap.keySet().iterator();
+			while (it.hasNext()) {
+				String nextKey = it.next();
+				sb = new StringBuilder();
+				sb.append(nextKey+"="+newMap.get(nextKey)+"\n");
+				pw.write(sb.toString());
+				pw.flush();
+			}
+			sb = new StringBuilder();
+			sb.append("EXTRACTOR PARAMS END\n");
+			sb.append("cluster,uid,date,duration,lf,hf,"+newParams.getFeatureAbbrsAsString()+"\n");
+			pw.write(sb.toString());
+			pw.flush();
+			pw.close();
+		} catch (Exception e) {
+			e.printStackTrace();
+			feControl.SimpleErrorDialog("Error while writing settings info to file.", 250);
+			return false;
+		}
+		return true;
+	}
+	
 	@Override
 	public boolean getParams() {
 		if (feControl.isViewer()) {
@@ -1556,12 +1741,15 @@ public class FESettingsDialog extends PamDialog {
 			SimpleErrorDialog("No features have been selected.");
 			return false;
 		}
-		feControl.getParams().inputFromCSV = inputCSVRB.isSelected();
+		
+		FEParameters newParams = feControl.getParams().clone();
+		
+		newParams.inputFromCSV = inputCSVRB.isSelected();
 		if (inputProcessRB.isSelected()) {
 			if (inputSourcePanel.getSourceIndex() > -1) {
-				feControl.getParams().inputProcessName = (String) inputSourcePanel.getSourceName();
+				newParams.inputProcessName = (String) inputSourcePanel.getSourceName();
 			} else {
-				feControl.getParams().inputProcessName = "";
+				newParams.inputProcessName = "";
 			}
 			feControl.getSidePanel().getFEPanel().getReloadCSVButton().setEnabled(false);
 		} else if (inputCSVRB.isSelected()) {
@@ -1595,7 +1783,7 @@ public class FESettingsDialog extends PamDialog {
 							e1.printStackTrace();
 						}
 						if (validWMNT) {
-							feControl.getParams().inputCSVEntries = new ArrayList<String[]>();
+							newParams.inputCSVEntries = new ArrayList<String[]>();
 							try {
 								sc = new Scanner(f);
 								while(sc.hasNextLine()) {
@@ -1605,7 +1793,10 @@ public class FESettingsDialog extends PamDialog {
 										validEntry = false;
 									} else if (nextLine.length >= 7) {
 										if ((inputIgnoreBlanksCheck.isSelected() && nextLine[6].length() == 0)
-												|| (inputIgnoreFalsePositivesCheck.isSelected() && nextLine[6].equals("False positive"))) {
+												|| (inputIgnore2SecondGlitchCheck.isSelected() && nextLine[6].equals("2-second glitch"))
+												|| (inputIgnoreFalsePositivesCheck.isSelected() && nextLine[6].equals("False positive"))
+												|| (inputIgnoreUnkCheck.isSelected() && 
+														(nextLine[6].equals("Unk") || nextLine[6].equals("Unknown")))) {
 											validEntry = false;
 										}
 									}
@@ -1622,10 +1813,10 @@ public class FESettingsDialog extends PamDialog {
 										}
 									}
 									if (validEntry) {
-										feControl.getParams().inputCSVEntries.add(nextLine);
+										newParams.inputCSVEntries.add(nextLine);
 									}
 								}
-								if (feControl.getParams().inputCSVEntries.size() == 0) {
+								if (newParams.inputCSVEntries.size() == 0) {
 									feControl.SimpleErrorDialog("Selected input .wmnt file did not contain any valid entries.");
 									return false;
 								}
@@ -1645,97 +1836,163 @@ public class FESettingsDialog extends PamDialog {
 					feControl.SimpleErrorDialog("Error occured when attempting to read selected input .wmnt file.");
 					return false;
 				}
-				feControl.getParams().inputCSVName = inputCSVField.getText();
+				newParams.inputCSVName = inputCSVField.getText();
 				// Kudos to Lukas Eder on https://stackoverflow.com/questions/4699807/sort-arraylist-of-array-in-java.
-				feControl.getParams().inputCSVEntries.sort(Comparator.comparing(a -> a[1]));
+				newParams.inputCSVEntries.sort(Comparator.comparing(a -> a[1]));
 				ArrayList<Integer> intList = new ArrayList<Integer>();
-				for (int i = 0; i < feControl.getParams().inputCSVEntries.size(); i++) {
+				for (int i = 0; i < newParams.inputCSVEntries.size(); i++) {
 					intList.add(i);
 				}
-				feControl.getParams().inputCSVIndexes = new ArrayList<Integer>(intList);
-				feControl.getParams().inputCSVExpectedFileSize = Integer.valueOf(inputCSVFileSizeField.getText());
-				feControl.getParams().inputIgnoreBlanks = inputIgnoreBlanksCheck.isSelected();
-				feControl.getParams().inputIgnoreFalsePositives = inputIgnoreFalsePositivesCheck.isSelected();
+				newParams.inputCSVIndexes = new ArrayList<Integer>(intList);
+				newParams.inputCSVExpectedFileSize = Integer.valueOf(inputCSVFileSizeField.getText());
+				newParams.inputIgnoreBlanks = inputIgnoreBlanksCheck.isSelected();
+				newParams.inputIgnore2SecondGlitch = inputIgnore2SecondGlitchCheck.isSelected();
+				newParams.inputIgnoreFalsePositives = inputIgnoreFalsePositivesCheck.isSelected();
+				newParams.inputIgnoreUnk = inputIgnoreUnkCheck.isSelected();
 				feControl.getSidePanel().getFEPanel().getReloadCSVButton().setEnabled(true);
 			} else {
-				feControl.getParams().inputCSVName = "";
+				newParams.inputCSVName = "";
 				feControl.getSidePanel().getFEPanel().getReloadCSVButton().setEnabled(false);
 			}
 		}
-		feControl.getParams().outputCSVChecked = outputCSVCheck.isSelected();
+		newParams.outputCSVChecked = outputCSVCheck.isSelected();
 		if (outputCSVCheck.isSelected()) {
 			if (outputCSVField.getText() != "No file selected.") {
-				feControl.getParams().outputCSVName = outputCSVField.getText();
+				newParams.outputCSVName = outputCSVField.getText();
 			} else {
-				feControl.getParams().outputCSVName = "";
+				newParams.outputCSVName = "";
 			}
 		}
-		feControl.getParams().audioSourceProcessName = audioSourcePanel.getSourceName();
-		feControl.getParams().audioAutoClipLength = dynamicRB.isSelected();
+		newParams.audioSourceProcessName = audioSourcePanel.getSourceName();
+		PamDataBlock dbForSR = feControl.getPamController().getDataBlockByLongName(audioSourcePanel.getSourceName());
+		if (dbForSR != null) newParams.sr = (int) dbForSR.getSampleRate();
+		newParams.audioAutoClipLength = dynamicRB.isSelected();
 		if (!dynamicRB.isSelected()) {
-			feControl.getParams().audioClipLength = Integer.valueOf(audioLengthField.getText());
+			newParams.audioClipLength = Integer.valueOf(audioLengthField.getText());
 		}
-		feControl.getParams().audioSTFTLength = Integer.valueOf((String) audioSTFTBox.getSelectedItem());
-		feControl.getParams().audioHopSize = Integer.valueOf(audioHopField.getText());
-		feControl.getParams().audioWindowFunction = (String) audioWindowBox.getSelectedItem();
-		feControl.getParams().audioNormalizeChecked = audioNormalizeCheck.isSelected();
-		feControl.getParams().audioHPFChecked = audioHPFCheck.isSelected();
+		newParams.audioSTFTLength = Integer.valueOf((String) audioSTFTBox.getSelectedItem());
+		newParams.audioHopSize = Integer.valueOf(audioHopField.getText());
+		newParams.audioWindowFunction = (String) audioWindowBox.getSelectedItem();
+		newParams.audioNormalizeChecked = audioNormalizeCheck.isSelected();
+		newParams.audioHPFChecked = audioHPFCheck.isSelected();
 		if (audioHPFCheck.isSelected()) {
-			feControl.getParams().audioHPFThreshold = Integer.valueOf(audioHPFThresholdField.getText());
-			feControl.getParams().audioHPFMagnitude = Integer.valueOf(audioHPFMagnitudeField.getText());
+			newParams.audioHPFThreshold = Integer.valueOf(audioHPFThresholdField.getText());
+			newParams.audioHPFMagnitude = Integer.valueOf(audioHPFMagnitudeField.getText());
 		}
-		feControl.getParams().audioLPFChecked = audioLPFCheck.isSelected();
+		newParams.audioLPFChecked = audioLPFCheck.isSelected();
 		if (audioLPFCheck.isSelected()) {
-			feControl.getParams().audioLPFThreshold = Integer.valueOf(audioLPFThresholdField.getText());
-			feControl.getParams().audioLPFMagnitude = Integer.valueOf(audioLPFMagnitudeField.getText());
+			newParams.audioLPFThreshold = Integer.valueOf(audioLPFThresholdField.getText());
+			newParams.audioLPFMagnitude = Integer.valueOf(audioLPFMagnitudeField.getText());
 		}
-		feControl.getParams().audioNRChecked = audioNRCheck.isSelected();
+		newParams.audioNRChecked = audioNRCheck.isSelected();
 		if (audioNRCheck.isSelected()) {
-			feControl.getParams().audioNRStart = Integer.valueOf(audioNRStartField.getText());
-			feControl.getParams().audioNRLength = Integer.valueOf(audioNRLengthField.getText());
-			feControl.getParams().audioNRScalar = Double.valueOf(audioNRScalarField.getText());
+			newParams.audioNRStart = Integer.valueOf(audioNRStartField.getText());
+			newParams.audioNRLength = Integer.valueOf(audioNRLengthField.getText());
+			newParams.audioNRScalar = Double.valueOf(audioNRScalarField.getText());
 		}
 		String[][] tableOutp = new String[featureTable.getModel().getRowCount()][2];
 		for (int i = 0; i < featureTable.getModel().getRowCount(); i++) {
 			tableOutp[i][0] = (String) featureTable.getValueAt(i, 0);
 			tableOutp[i][1] = (String) featureTable.getValueAt(i, 1);
 		}
-		feControl.getParams().featureList = tableOutp;
-		feControl.getParams().miscClusterChecked = miscClusterCheck.isSelected();
+		newParams.featureList = tableOutp;
+		newParams.miscClusterChecked = miscClusterCheck.isSelected();
 		if (miscClusterCheck.isSelected()) {
-			feControl.getParams().miscJoinDistance = Integer.valueOf(miscJoinField.getText());
+			newParams.miscJoinDistance = Integer.valueOf(miscJoinField.getText());
 		}
-		feControl.getParams().miscIgnoreFileStartChecked = miscFileStartCheck.isSelected();
+		newParams.miscIgnoreFileStartChecked = miscFileStartCheck.isSelected();
 		if (miscFileStartCheck.isSelected()) {
-			feControl.getParams().miscIgnoreFileStartLength = Integer.valueOf(miscFileStartField.getText());
+			newParams.miscIgnoreFileStartLength = Integer.valueOf(miscFileStartField.getText());
 		}
-		feControl.getParams().miscIgnoreLowFreqChecked = miscBelowFreqCheck.isSelected();
+		newParams.miscIgnoreLowFreqChecked = miscBelowFreqCheck.isSelected();
 		if (miscBelowFreqCheck.isSelected()) {
-			feControl.getParams().miscIgnoreLowFreq = Integer.valueOf(miscBelowFreqField.getText());
+			newParams.miscIgnoreLowFreq = Integer.valueOf(miscBelowFreqField.getText());
 		}
-		feControl.getParams().miscIgnoreHighFreqChecked = miscAboveFreqCheck.isSelected();
+		newParams.miscIgnoreHighFreqChecked = miscAboveFreqCheck.isSelected();
 		if (miscAboveFreqCheck.isSelected()) {
-			feControl.getParams().miscIgnoreHighFreq = Integer.valueOf(miscAboveFreqField.getText());
+			newParams.miscIgnoreHighFreq = Integer.valueOf(miscAboveFreqField.getText());
 		}
-		feControl.getParams().miscIgnoreShortDurChecked = miscBelowDurCheck.isSelected();
+		newParams.miscIgnoreShortDurChecked = miscBelowDurCheck.isSelected();
 		if (miscBelowDurCheck.isSelected()) {
-			feControl.getParams().miscIgnoreShortDur = Integer.valueOf(miscBelowDurField.getText());
+			newParams.miscIgnoreShortDur = Integer.valueOf(miscBelowDurField.getText());
 		}
-		feControl.getParams().miscIgnoreLongDurChecked = miscAboveDurCheck.isSelected();
+		newParams.miscIgnoreLongDurChecked = miscAboveDurCheck.isSelected();
 		if (miscAboveDurCheck.isSelected()) {
-			feControl.getParams().miscIgnoreLongDur = Integer.valueOf(miscAboveDurField.getText());
+			newParams.miscIgnoreLongDur = Integer.valueOf(miscAboveDurField.getText());
 		}
-		feControl.getParams().miscIgnoreQuietAmpChecked = miscBelowAmpCheck.isSelected();
+		newParams.miscIgnoreQuietAmpChecked = miscBelowAmpCheck.isSelected();
 		if (miscBelowAmpCheck.isSelected()) {
-			feControl.getParams().miscIgnoreQuietAmp = Integer.valueOf(miscBelowAmpField.getText());
+			newParams.miscIgnoreQuietAmp = Integer.valueOf(miscBelowAmpField.getText());
 		}
-		feControl.getParams().miscIgnoreLoudAmpChecked = miscAboveAmpCheck.isSelected();
+		newParams.miscIgnoreLoudAmpChecked = miscAboveAmpCheck.isSelected();
 		if (miscAboveAmpCheck.isSelected()) {
-			feControl.getParams().miscIgnoreLoudAmp = Integer.valueOf(miscAboveAmpField.getText());
+			newParams.miscIgnoreLoudAmp = Integer.valueOf(miscAboveAmpField.getText());
 		}
+		
+		if (outputCSVCheck.isSelected()) {
+			ArrayList<String> unmatchedSettings = checkForUnmatchedOutputCSVSettings(newParams);
+			if (unmatchedSettings.size() > 0) {
+				if (unmatchedSettings.get(0).equals("Error 1") || unmatchedSettings.get(0).equals("Error 2")) {
+					if (!clearFileAndAddSettingsInfo(newParams)) return false;
+				} else if (unmatchedSettings.get(0).equals("Error 8")) {
+					feControl.SimpleErrorDialog("Error occured while attempting to parse output file.", 250);
+					return false;
+				} else {
+					String message = "";
+					if (unmatchedSettings.get(0).equals("Error 6")) {
+						message = "The selected file does not contain the same features.\n";
+					} else if (unmatchedSettings.get(0).startsWith("Error")) {
+						System.out.println(unmatchedSettings.get(0));
+						message = "The selected file is not formatted correctly.\n";
+					} else {
+						message = "Selected file contained settings that don't match:\n\n";
+						for (int i = 0; i < unmatchedSettings.size(); i++)
+							message += unmatchedSettings.get(i) + "\n";
+					}
+					message += "\nThe selected file needs to be cleared in order to proceed.\n\nContinue?";
+					int res = JOptionPane.showConfirmDialog(this,
+							feControl.makeHTML(message, 300),
+							feControl.getUnitName(),
+							JOptionPane.OK_CANCEL_OPTION,
+							JOptionPane.WARNING_MESSAGE);
+					if (res != JOptionPane.OK_OPTION) return false;
+					res = JOptionPane.showConfirmDialog(this,
+							feControl.makeHTML("Are you sure? This will delete everything in the file.", 300),
+							feControl.getUnitName(),
+							JOptionPane.OK_CANCEL_OPTION,
+							JOptionPane.WARNING_MESSAGE);
+					if (res != JOptionPane.OK_OPTION) return false;
+					if (!clearFileAndAddSettingsInfo(newParams)) return false;
+				}
+			} else {
+				int res = JOptionPane.showOptionDialog(this,
+						feControl.makeHTML("The selected file already contains data using the same features and settings "
+								+ "as those selected. Would you like to clear the file or keep its contents?", 300),
+						feControl.getUnitName(),
+						JOptionPane.YES_NO_CANCEL_OPTION,
+						JOptionPane.WARNING_MESSAGE,
+						null, 
+						new Object[] {"Keep contents", "Clear file", "Cancel"},
+						"Cancel");
+				// (YES_OPTION does nothing and accepts it as is.)
+				if (res == JOptionPane.NO_OPTION) {
+					res = JOptionPane.showConfirmDialog(this,
+							feControl.makeHTML("Are you sure? This will delete everything in the file.", 300),
+							feControl.getUnitName(),
+							JOptionPane.OK_CANCEL_OPTION,
+							JOptionPane.WARNING_MESSAGE);
+					if (res != JOptionPane.OK_OPTION) return false;
+					if (!clearFileAndAddSettingsInfo(newParams)) return false;
+				} else if (res == JOptionPane.CANCEL_OPTION) return false;
+			}
+		}
+		
+		feControl.setParams(newParams);
+		
 		if (feControl.getThreadManager().isActive()) {
 			feControl.getThreadManager().resetTxtParams();
 		}
+		
 		return true;
 	}
 	
