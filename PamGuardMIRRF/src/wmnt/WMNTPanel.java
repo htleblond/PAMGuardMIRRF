@@ -13,6 +13,8 @@ import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
 import javax.swing.text.PlainDocument;
 
+import PamController.PamControlledUnit;
+
 import javax.swing.filechooser.*;
 import java.util.*; //
 import java.text.*; //
@@ -27,11 +29,14 @@ import PamView.dialog.PamButton; //
 import PamView.dialog.PamTextField; //
 
 import binaryFileStorage.*;
+import fftManager.FFTDataBlock;
 import PamguardMVC.DataUnitBaseData;
+import PamguardMVC.PamDataBlock;
 import pamScrollSystem.*;
+import whistlesAndMoans.ConnectedRegionDataBlock;
+import whistlesAndMoans.ConnectedRegionDataUnit;
+import whistlesAndMoans.WhistleToneConnectProcess;
 import PamUtils.PamFileChooser;
-
-import java.util.TimeZone;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -79,6 +84,8 @@ public class WMNTPanel {
 	public Object[][] originalTable;
 	public boolean[] tableChangeLog;
 	
+	protected HashMap<String, ConnectedRegionDataUnit> crduMap;
+	
 	private WMNTSearchDialog searchDialog;
 	
 	private int currformat;
@@ -105,6 +112,7 @@ public class WMNTPanel {
 		this.wmntControl = wmntControl;
 		currformat = 6;
 		//startInterval = 2000;
+		this.crduMap = new HashMap<String, ConnectedRegionDataUnit>();
 		testLogger = null;
 		backupIndexes = null;
 		backupValues = null;
@@ -315,54 +323,17 @@ public class WMNTPanel {
 		mainPanel.add(memPanel);
 		
 		this.marker = new WMNTMarkControl("WMNT Contour Selector", this);
-		
-	/*	String html = "<html><body style='width: %1spx'>%1s";
-		int htmllen = 400;
-		String message = String.format(html, htmllen, 
-				"If this is your first time using this plug-in, it is strongly recommended that you read the manual first. "
-				+ "It should be noted that this program is inconveniently still named 'Whistle and Moan Detector' in some parts of PAMGuard, "
-				+ "as changing this would result in the plug-in not reading the correct table in MySQL. "
-				+ "If you don't have a copy of the manual, or would like to report a bug, the developer can be contacted at "
-				+ "wtleblond@gmail.com.\n\n"
-				//+ "Version 1.03 updates (August, 2021):\n"
-				//+ "• Fixed bug where the search dialog would crash when attempting to read UID values larger than 2^31.\n"
-				//+ "• Table column widths changed slightly.\n"
-				//+ "• Added SRKW call types to default drop-down list.\n\n"
-				//+ "Version 1.04 updates (October, 2021):\n"
-				//+ "• Plugin renamed \"Whistle and Moan Navigation Tool\" (WMNT).\n"
-				//+ "• Added feature for exporting the table to a .csv or .txt file.\n"
-				//+ "• Duration and amplitude, in milliseconds and sound pressure spectrum level, respectively, added as table columns.\n"
-				//+ "(NOTE that these are loaded in through MySQL, not the binary files, so a placeholder value of -1 fills these columns\n"
-				//+ "until the database has been connected to.)\n"
-				//+ "• A few new \"species\" added to defult drop-down list.\n\n"
-				+ "Version 1.05 updates (May, 2022):\n"
-				+ "• Table now displays date/time values in UTC as opposed to local time.\n"
-				+ "• Proper time zones have been implemented, replacing manual time offset; this should fix DST issues.\n"
-				+ "• SQL logger now prints results to console when committing entries to the database.\n"
-				+ "• Redundant WMD settings removed from settings dialog.\n\n"
-				+ "Version 1.06 updates (May, 2022):\n"
-				+ "• SQL logger will now only attempt to update entries that were actually modified, significantly reducing the amount of\n"
-				+ "time a commit takes (unless the entire table is modified in one go).\n\n"
-				+ "Version 1.07 updates (October, 2022):\n"
-				+ "• \"Import table\" button added.\n"
-				+ "• Dialog windows now set to correct parent frame.");
-		JOptionPane.showMessageDialog(wmntControl.getGuiFrame(),
-				message,
-				"Whistle and Moan Navigation Tool",
-				JOptionPane.INFORMATION_MESSAGE); */
 	}
 	
 	/**
 	 * Removes all elements from the JTable.
-	 * @author Holly LeBlond
 	 */
-	public void ClearTable() {
+	public void clearTable() {
 		dtmodel.setRowCount(0);
 	}
 	
 	/**
 	 * The listener for the 'Select all' button.
-	 * @author Holly LeBlond
 	 */
 	class SelectAllListener implements ActionListener{
 		public void actionPerformed(ActionEvent e) {
@@ -372,7 +343,6 @@ public class WMNTPanel {
 	
 	/**
 	 * The listener for the 'Clear all' button.
-	 * @author Holly LeBlond
 	 */
 	class ClearSelectionListener implements ActionListener{
 		public void actionPerformed(ActionEvent e) {
@@ -382,7 +352,6 @@ public class WMNTPanel {
 	
 	/**
 	 * The listener for the 'Select within start interval' button.
-	 * @author Holly LeBlond
 	 */
 	class SelectStartListener implements ActionListener{
 		public void actionPerformed(ActionEvent e) {
@@ -407,7 +376,6 @@ public class WMNTPanel {
 	
 	/**
 	 * The listener for the 'Select by search' button.
-	 * @author Holly LeBlond
 	 */
 	class SearchListener implements ActionListener{
 		public void actionPerformed(ActionEvent e) {
@@ -425,7 +393,6 @@ public class WMNTPanel {
 	
 	/**
 	 * The listener for the 'Species' button.
-	 * @author Holly LeBlond
 	 */
 	class SpeciesListener implements ActionListener{
 		public void actionPerformed(ActionEvent e) {
@@ -445,7 +412,6 @@ public class WMNTPanel {
 	
 	/**
 	 * The listener for the 'Call type' button.
-	 * @author Holly LeBlond
 	 */
 	class CalltypeListener implements ActionListener{
 		public void actionPerformed(ActionEvent e) {
@@ -465,7 +431,6 @@ public class WMNTPanel {
 	
 	/**
 	 * The listener for the 'Comment' button and text field.
-	 * @author Holly LeBlond
 	 */
 	class CommentListener implements ActionListener{
 		public void actionPerformed(ActionEvent e) {
@@ -485,7 +450,6 @@ public class WMNTPanel {
 	
 	/**
 	 * The listener for the 'Enter all' button.
-	 * @author Holly LeBlond
 	 */
 	class AllListener implements ActionListener{
 		public void actionPerformed(ActionEvent e) {
@@ -509,7 +473,6 @@ public class WMNTPanel {
 	
 	/**
 	 * The listener for the 'Connect to database' button.
-	 * @author Holly LeBlond
 	 */
 	class ConnectListener implements ActionListener{
 		public void actionPerformed(ActionEvent e) {
@@ -550,7 +513,6 @@ public class WMNTPanel {
 	
 	/**
 	 * The listener for the 'Load data' button.
-	 * @author Holly LeBlond
 	 */
 	class OpenListener implements ActionListener{
 		public void actionPerformed(ActionEvent e) {
@@ -561,7 +523,6 @@ public class WMNTPanel {
 	
 	/**
 	 * Thread used for running the loading bar window.
-	 * @author Holly LeBlond
 	 */
 	protected class LoadingBarThread extends Thread {
 		protected LoadingBarThread() {}
@@ -574,7 +535,6 @@ public class WMNTPanel {
 	/**
 	 * Thread used for loading binary file data into the table, 
 	 * and to allow the loading bar window to function properly.
-	 * @author Holly LeBlond
 	 */
 	protected class OpenerThread extends Thread {
 		protected OpenerThread() {}
@@ -603,6 +563,18 @@ public class WMNTPanel {
 			wmntControl.setTimezone(tz); */
 			
 			try {
+				WhistleToneConnectProcess wmDetector = null;
+				if (wmntControl.getParams().inputProcessName.length() != 0) {
+					PamDataBlock db = wmntControl.getPamController().getDetectorDataBlock(wmntControl.getParams().inputProcessName);
+					if (db != null) wmDetector = (WhistleToneConnectProcess) db.getParentProcess();
+				}
+				if (wmDetector == null) {
+					wmntControl.SimpleErrorDialog("No actual Whistle and Moan Detector module appears to be in this configuration. "
+							+ "You should add one and ensure the sampling rate, FFT length and FFT hop match those that the contours "
+							+ "in the binary files were processed with.");
+					return;
+				}
+				
 				backupIndexes = null;
 				backupValues = null;
 				undoButton.setEnabled(false);
@@ -617,16 +589,17 @@ public class WMNTPanel {
 				};
 				files = defFolder.listFiles(pgdfFilter);
 				
-				ClearTable();
+				clearTable();
 				
 				loadingBarWindow = new WMNTBinaryLoadingBarWindow(wmntControl.getGuiFrame(), files.length);
 				loadingBarThread = new LoadingBarThread();
 				loadingBarThread.start();
 				
 				dataDates = new List();
+				
 				for (int i = 0; i < files.length; i++) {
 					try {
-						PopulateTable(files[i]);
+						PopulateTable(files[i], wmDetector);
 					} catch (Exception e2) {
 						System.out.println("Error while parsing "+files[i].getName()+".");
 						e2.printStackTrace();
@@ -638,7 +611,7 @@ public class WMNTPanel {
 				
 			} catch (Exception e2) {
 				fileField.setText("Load error - see console.");
-				System.out.println(e2);
+				e2.printStackTrace();
 				System.out.println("Error - tried to open at: " + defaultloc);
 			}
 			//updateFromFullTable(); // Seems to make updating not work at all for some reason.
@@ -669,11 +642,10 @@ public class WMNTPanel {
 	/**
 	 * Reads from a .pgdf file that contains Whistle and Moan Detector contours and loads them into the JTable.
 	 * @param inpfile - The File being read from.
-	 * @author Holly LeBlond
 	 */
-	protected void PopulateTable(File inpfile) {
+	protected void PopulateTable(File inpfile, WhistleToneConnectProcess wmDetector) {
 		try {
-			reader = new WMNTBinaryReader(defaultloc + inpfile.getName());
+			reader = new WMNTBinaryReader(wmntControl, defaultloc + inpfile.getName(), wmDetector);
 		} catch (Exception e2){
 			fileField.setText("Load error - see console.");
 			System.out.println("Could not find file: " + inpfile.getName());
@@ -731,6 +703,8 @@ public class WMNTPanel {
 							dtmodel.addRow(new Object[]{-1, detectionDateString,
 									-1, -1, -1, -1, "", "", ""});
 						}
+						crduMap.put(String.valueOf(dubd.getUID())+", "+detectionDateString,
+								reader.getDataAsDataUnit(curr, reader.bh, reader.bh.getHeaderFormat()));
 					}
 				} else {
 					break;
@@ -775,7 +749,6 @@ public class WMNTPanel {
 	
 	/**
 	 * The listener for the 'Import table' button.
-	 * @author Holly LeBlond
 	 */
 	class ImportListener implements ActionListener{
 		public void actionPerformed(ActionEvent e) {
@@ -877,109 +850,128 @@ public class WMNTPanel {
 	
 	/**
 	 * The listener for the 'Export table' button.
-	 * @author Holly LeBlond
 	 */
 	class ExportListener implements ActionListener{
 		public void actionPerformed(ActionEvent e) {
-			if (ttable.getRowCount() > 0) {
-				fc = new PamFileChooser();
-				fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
-				fc.setMultiSelectionEnabled(false);
-				fc.addChoosableFileFilter(new FileNameExtensionFilter("WMNT table export file (*.wmnt)","wmnt"));
-				fc.addChoosableFileFilter(new FileNameExtensionFilter("Comma-separated values file (*.csv)","csv"));
-				fc.addChoosableFileFilter(new FileNameExtensionFilter("Text file (*.txt)","txt"));
-				int returnVal = fc.showSaveDialog(wmntControl.getGuiFrame());
-				if (returnVal == JFileChooser.APPROVE_OPTION) {
-					File f = getSelectedFileWithExtension(fc);
-					f.setWritable(true, false);
-					if (f.exists() == true) {
-						int res = JOptionPane.showConfirmDialog(wmntControl.getGuiFrame(),
-								"Overwrite selected file?",
-								"Whistle and Moan Navigation Tool",
-								JOptionPane.YES_NO_OPTION);
-						if (res == JOptionPane.YES_OPTION) {
-							f.setExecutable(true);
-						} else {
-							return;
-						}
-					} else {
-						try {
-							f.createNewFile();
-						} catch (Exception e2) {
-							System.out.println(e2);
-							SimpleErrorDialog("Could not create new file.\nSee console for details.");
-							return;
-						}
-					}
-					String fn = f.getName();
-					System.out.println(fn);
-					if (fn.endsWith(".csv") || fn.endsWith(".wmnt")) {
-						try {
-							PrintWriter pw = new PrintWriter(f);
-							StringBuilder sb = new StringBuilder();
-							sb.append("uid,datetime,lf,hf,duration,amplitude,species,calltype,comment\n");
-							pw.write(sb.toString());
-							for (int i = 0; i < ttable.getRowCount(); i++) {
-								sb = new StringBuilder();
-								for (int j = 0; j < ttable.getColumnCount(); j++) {
-									sb.append(ttable.getValueAt(i, j).toString());
-									if (j < ttable.getColumnCount() - 1) {
-										sb.append(",");
-									} else if (i < ttable.getRowCount() - 1) {
-										sb.append("\n");
-									}
-								}
-								pw.write(sb.toString());
-								pw.flush();
-							}
-							pw.close();
-							JOptionPane.showMessageDialog(wmntControl.getGuiFrame(),
-									"Table successfully written to file.",
-									"Whistle and Moan Navigation Tool",
-									JOptionPane.INFORMATION_MESSAGE);
-						} catch (Exception e2) {
-							System.out.println(e2);
-							SimpleErrorDialog();
-						}
-					} else if (fn.endsWith(".txt")) {
-						try {
-							PrintWriter pw = new PrintWriter(f);
-							StringBuilder sb = new StringBuilder();
-							for (int i = 0; i < ttable.getRowCount(); i++) {
-								sb = new StringBuilder();
-								for (int j = 0; j < ttable.getColumnCount(); j++) {
-									sb.append(ttable.getValueAt(i, j).toString());
-									if (j < ttable.getColumnCount() - 1) {
-										sb.append("\t");
-									} else if (i < ttable.getRowCount() - 1) {
-										sb.append("\n");
-									}
-								}
-								pw.write(sb.toString());
-								pw.flush();
-							}
-							pw.close();
-							JOptionPane.showMessageDialog(wmntControl.getGuiFrame(),
-									"Table successfully written to file.",
-									"Whistle and Moan Navigation Tool",
-									JOptionPane.INFORMATION_MESSAGE);
-						} catch (Exception e2) {
-							System.out.println(e2);
-							SimpleErrorDialog();
-						}
-					} else {
-						SimpleErrorDialog("Invalid file name or extension.");
-					}
+			if (ttable.getRowCount() == 0) {
+				SimpleErrorDialog("Table is currently empty.");
+			}	
+			fc = new PamFileChooser();
+			fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
+			fc.setMultiSelectionEnabled(false);
+			//fc.addChoosableFileFilter(new FileNameExtensionFilter("Experimental WMNT table export file (*.wmnte)","wmnte"));
+			fc.addChoosableFileFilter(new FileNameExtensionFilter("WMNT table export file (*.wmnt)","wmnt"));
+			fc.addChoosableFileFilter(new FileNameExtensionFilter("Comma-separated values file (*.csv)","csv"));
+			fc.addChoosableFileFilter(new FileNameExtensionFilter("Text file (*.txt)","txt"));
+			int returnVal = fc.showSaveDialog(wmntControl.getGuiFrame());
+			if (returnVal != JFileChooser.APPROVE_OPTION) return;
+			File f = getSelectedFileWithExtension(fc);
+			f.setWritable(true, false);
+			if (f.exists()) {
+				int res = JOptionPane.showConfirmDialog(wmntControl.getGuiFrame(),
+						"Overwrite selected file?",
+						"Whistle and Moan Navigation Tool",
+						JOptionPane.YES_NO_OPTION);
+				if (res == JOptionPane.YES_OPTION) {
+					f.setExecutable(true);
+				} else {
+					return;
 				}
 			} else {
-				SimpleErrorDialog("Table is currently empty.");
+				try {
+					f.createNewFile();
+				} catch (Exception e2) {
+					e2.printStackTrace();
+					SimpleErrorDialog("Could not create new file.\nSee console for details.");
+					return;
+				}
+			}
+			String fn = f.getName();
+			if (fn.endsWith(".csv") || fn.endsWith(".wmnt")) {
+				try {
+					PrintWriter pw = new PrintWriter(f);
+					StringBuilder sb = new StringBuilder();
+					sb.append("uid,datetime,lf,hf,duration,amplitude,species,calltype,comment,slicedata\n");
+					pw.write(sb.toString());
+					for (int i = 0; i < ttable.getRowCount(); i++) {
+						sb = new StringBuilder();
+						for (int j = 0; j < ttable.getColumnCount(); j++) {
+							sb.append(ttable.getValueAt(i, j).toString());
+							if (j < ttable.getColumnCount() - 1) {
+								sb.append(",");
+								continue;
+							}
+							if (fn.endsWith(".wmnt")) {
+								ConnectedRegionDataUnit crdu = 
+										crduMap.get(ttable.getValueAt(i, 0).toString()+", "
+												+ttable.getValueAt(i, 1).toString());
+								WhistleToneConnectProcess wmDetector = null;
+								if (wmntControl.getParams().inputProcessName.length() != 0) {
+									PamDataBlock db = 
+											wmntControl.getPamController().getDetectorDataBlock(
+													wmntControl.getParams().inputProcessName);
+									if (db != null) {
+										wmDetector = (WhistleToneConnectProcess) db.getParentProcess();
+										FFTDataBlock fftDB = (FFTDataBlock) wmDetector.getParentDataBlock();
+										WMNTSliceDataCalculator calc =
+												new WMNTSliceDataCalculator(crdu.getConnectedRegion().getSliceData(),
+												(int) wmDetector.getSampleRate(), fftDB.getFftLength());
+										double[] freqs = calc.getFreqs();
+										for (int k = 0; k < freqs.length; k++)
+											sb.append(","+String.valueOf(calc.sliceDataArr[k].getStartSample())+
+													">"+String.valueOf(freqs[k]));
+										//System.out.println(ttable.getValueAt(i, 0).toString()+": "+
+										//		String.valueOf(calc.calculateFreqElbowAngle()));
+									}
+								}
+							}
+							sb.append("\n");
+						}
+						pw.write(sb.toString());
+						pw.flush();
+					}
+					pw.close();
+					JOptionPane.showMessageDialog(wmntControl.getGuiFrame(),
+							"Table successfully written to file.",
+							"Whistle and Moan Navigation Tool",
+							JOptionPane.INFORMATION_MESSAGE);
+				} catch (Exception e2) {
+					e2.printStackTrace();
+					SimpleErrorDialog();
+					return;
+				}
+			} else if (fn.endsWith(".txt")) {
+				try {
+					PrintWriter pw = new PrintWriter(f);
+					StringBuilder sb = new StringBuilder();
+					for (int i = 0; i < ttable.getRowCount(); i++) {
+						sb = new StringBuilder();
+						for (int j = 0; j < ttable.getColumnCount(); j++) {
+							sb.append(ttable.getValueAt(i, j).toString());
+							if (j < ttable.getColumnCount() - 1) {
+								sb.append("\t");
+							} else if (i < ttable.getRowCount() - 1) {
+								sb.append("\n");
+							}
+						}
+						pw.write(sb.toString());
+						pw.flush();
+					}
+					pw.close();
+					JOptionPane.showMessageDialog(wmntControl.getGuiFrame(),
+							"Table successfully written to file.",
+							"Whistle and Moan Navigation Tool",
+							JOptionPane.INFORMATION_MESSAGE);
+				} catch (Exception e2) {
+					System.out.println(e2);
+					SimpleErrorDialog();
+				}
 			}
 		}
 	}
 	
 	/**
 	 * The listener for the 'Check database for alignment' button.
-	 * @author Holly LeBlond
 	 */
 	class CheckListener implements ActionListener {
 		public void actionPerformed(ActionEvent e) {
@@ -1014,7 +1006,6 @@ public class WMNTPanel {
 	
 	/**
 	 * The listener for the 'Commit to database' button.
-	 * @author Holly LeBlond
 	 */
 	class CommitListener implements ActionListener {
 		public void actionPerformed(ActionEvent e) {
@@ -1025,7 +1016,6 @@ public class WMNTPanel {
 	
 	/**
 	 * The listener for the 'Scroll to selection on spectrogram' button.
-	 * @author Holly LeBlond
 	 */
 	class ScrollListener implements ActionListener {
 		public void actionPerformed(ActionEvent e) {
@@ -1061,7 +1051,6 @@ public class WMNTPanel {
 	
 	/**
 	 * The listener for the 'Undo' button.
-	 * @author Holly LeBlond
 	 */
 	class UndoListener implements ActionListener {
 		public void actionPerformed(ActionEvent e) {
@@ -1071,7 +1060,6 @@ public class WMNTPanel {
 	
 	/**
 	 * Saves the selected values in 'backupIndexes' and their index numbers in 'backupValues'. 
-	 * @author Holly LeBlond
 	 */
 	private void createBackup() {
 		if (ttable.getRowCount() > 0) {
@@ -1090,7 +1078,6 @@ public class WMNTPanel {
 	
 	/**
 	 * Undoes the last change to the table. Currently only goes back once.
-	 * @author Holly LeBlond
 	 */
 	private void undo() {
 		if (backupIndexes != null && backupValues != null) {
@@ -1123,7 +1110,6 @@ public class WMNTPanel {
 	
 	/**
 	 * Streamlined error dialog.
-	 * @author Holly LeBlond
 	 */
 	public void SimpleErrorDialog() {
 		JOptionPane.showMessageDialog(wmntControl.getGuiFrame(),
@@ -1134,7 +1120,6 @@ public class WMNTPanel {
 	
 	/**
 	 * Streamlined error dialog with an editable message.
-	 * @author Holly LeBlond
 	 */
 	public void SimpleErrorDialog(String inptext) {
 		JOptionPane.showMessageDialog(wmntControl.getGuiFrame(),
@@ -1197,7 +1182,7 @@ public class WMNTPanel {
 	 * Finds the path to the binary store.
 	 * Copied from PamController as it's private in the library for some reason.
 	 * @return The path to the binary store (String).
-	 * @author Doug Gillespie
+	 * @author Doug Gillespie (in PamController)
 	 */
 	public String findBinaryStorePath() {
 		BinaryStore binaryControl = BinaryStore.findBinaryStoreControl();
@@ -1217,7 +1202,6 @@ public class WMNTPanel {
 	/**
 	 * Returns all rows in the table as a 2D Object array.
 	 * @return The table as a 2D Object array (Object[][]).
-	 * @author Holly LeBlond
 	 */
 	public Object[][] getTableRowsAsArray(){
 		Object[][] outp = new Object[ttable.getModel().getRowCount()][ttable.getModel().getColumnCount()];
@@ -1233,7 +1217,6 @@ public class WMNTPanel {
 	 * Returns original index of row in table.
 	 * @param rowIndex - The current index of the row in the table.
 	 * @return The original index of the row in the initial table before any sorting (Integer).
-	 * @author Holly LeBlond
 	 */
 	public int getOriginalIndex(int rowIndex) {
 		Object[] row = new Object[2];
@@ -1251,7 +1234,6 @@ public class WMNTPanel {
 	 * Returns an array of false booleans.
 	 * @param len - Desired length of array.
 	 * @return An array of false booleans (boolean[]).
-	 * @author Holly LeBlond
 	 */
 	public boolean[] resetChangeLog(int len) {
 		boolean[] outp = new boolean[len];
@@ -1262,11 +1244,19 @@ public class WMNTPanel {
 	}
 	
 	/**
+	 * Map of ConnectedRegionDataUnits that match table entries via
+	 * "[uid], [timestamp]" as the key. Mainly meant for dealing with
+	 * slice data.
+	 */
+	public HashMap<String, ConnectedRegionDataUnit> getCRDUMap(){
+		return crduMap;
+	}
+	
+	/**
 	 * Compares the current values of a row in the table against the values of the same row in the database.
 	 * If all values are identical, its respective boolean in tableChangeLog is set to false; otherwise it is set to true.
 	 * @param currIndex - Index of row in current table (in case of sorting).
 	 * @param origIndex - Index of row in initial table.
-	 * @author Holly LeBlond
 	 */
 	public void fixChangeLog(int currIndex, int origIndex) {
 		if (currIndex > -1 && origIndex > -1) {
@@ -1285,7 +1275,6 @@ public class WMNTPanel {
 	/**
 	 * Returns the current format of the last loaded binary file. Default is 6.
 	 * @return int - The current format of the loaded binary files.
-	 * @author Holly LeBlond
 	 */
 	public int getCurrFormat() {
 		return currformat;

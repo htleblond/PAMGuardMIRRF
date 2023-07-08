@@ -58,50 +58,39 @@ class FEThread():
         #print("About to start thread.")
         #thread = threading.Thread(target=self.threadFunc(), args=(1,))
         #thread.start()
-        
+    
     # Loads a clip for processing.
-    def addClip(self, fn:str, uid, datelong, amplitude, duration, freqhd_min, freqhd_max, frange, fslopehd):
+    def addClip(self, fn:str, uid, datelong, amplitude, duration, freqhd_min, freqhd_max, slice_data):
         #print("Reached addClip().")
         self.clipList.append(fn)
-        extras = [uid, datelong, amplitude, duration, freqhd_min, freqhd_max, frange, fslopehd]
+        headerData = HeaderData(uid, datelong, amplitude, duration, freqhd_min, freqhd_max, slice_data)
         #thread = threading.Thread(target=self.threadFunc(fn, extras), args=(1,))
-        thread = threading.Thread(target=self.threadFunc, args=(fn,extras,))
+        thread = threading.Thread(target=self.threadFunc, args=(fn,headerData,))
         thread.start()
         print("Thread "+str(uid)+" has finished.", flush=True)
     
     # The processing thread's function.
-    def threadFunc(self, fn: str, extras):
+    def threadFunc(self, fn: str, headerData):
         #print("Reached threadFunc().")
         if self.audioNRChecked and len(self.y_nr) == 0:
-            print("Error: Could not process "+str(extras[0]), flush=True)
+            print("Error: Could not process "+str(headerData.uid), flush=True)
             if os.path.exists(fn):
                 os.remove(fn)
             return
         try:
-            outp = self.extractFeatures(fn, extras)
+            outp = self.extractFeatures(fn, headerData)
             print("outp: "+str(outp), flush=True)
             self.clipList.pop(0);
         except Exception:
             #print("Error: Could not process "+str(extras[0]), file=sys.stderr)
-            print("Error: Could not process "+str(extras[0]), flush=True)
+            print("Error: Could not process "+str(headerData.uid), flush=True)
             print(traceback.format_exc(), flush=True, file=sys.stderr)
         if os.path.exists(fn):
             os.remove(fn)
     
-    #deprecated
-    def killAfterCompletion(self):
-        self.active = False
-    
-    #deprecated
-    def checkIfFreeable(self):
-        if not self.active and len(self.clipList) == 0:
-            return True
-        else:
-            return False
-    
     # Loads and manipulates the audio before sending it to the functions
     # that perform the feature extraction.
-    def extractFeatures(self, fn: str, extras):
+    def extractFeatures(self, fn: str, headerData):
         self.sr = librosa.core.get_samplerate(fn)
         y, sr = librosa.load(fn, sr=self.sr)
         y_stft = librosa.stft(y, n_fft=self.audioSTFTLength, hop_length=self.audioHopSize, win_length=self.audioSTFTLength, \
@@ -136,9 +125,12 @@ class FEThread():
             preCalcFeatures.append(self.preCalculateFeature(feature, y, y_stft))
         #idTokens = self.y_nr_name.split("_")
         idTokens = self.clipList[0].split("_")
-        outp = [idTokens[1]+"-"+idTokens[2], extras[0], extras[1], extras[3], extras[4], extras[5]]
+        outp = [idTokens[1]+"-"+idTokens[2], headerData.uid, headerData.datelong, headerData.duration, headerData.freqhd_min, headerData.freqhd_max]
         for i in np.arange(len(self.features)):
-            outp.append(self.extractIndividualFeature(self.features[i], preCalcFeatures[self.featureProcessIndexes[i]], extras))
+            if self.featureProcessIndexes[i] == -1:
+                outp.append(self.extractIndividualFeature(self.features[i], [], headerData))
+            else:
+                outp.append(self.extractIndividualFeature(self.features[i], preCalcFeatures[self.featureProcessIndexes[i]], headerData))
         return outp
     
     # Performs the actual feature extraction. Designed such that instances where
@@ -233,11 +225,40 @@ class FEThread():
         return []
             
     # Goes through the array of pre-calculated data and runs calculateData on it.
-    def extractIndividualFeature(self, feature: str, featureArray, extras):
+    def extractIndividualFeature(self, feature: str, featureArray, headerData):
         tokens = feature.split("_")
-        header_features = ["amplitude","duration","freqhd_min","freqhd_max","frange","fslopehd"]
-        if feature in header_features:
-            return extras[header_features.index(feature)+2]
+        header_features = ["amplitude","duration","freqhd_min","freqhd_max"]
+        if feature == "amplitude":
+            return headerData.amplitude
+        elif feature == "duration":
+            return headerData.duration
+        elif feature == "freqhd_min":
+            return headerData.freqhd_min
+        elif feature == "freqhd_max":
+            return headerData.freqhd_max
+        elif feature == "frange":
+            return headerData.freqhd_max - headerData.freqhd_min
+        elif feature == "fslopehd":
+            return (headerData.freqhd_max - headerData.freqhd_min) / (headerData.duration / 1000)
+        elif feature == "freqsdelbow":
+            deriv2abs = np.abs(self.calculateFreqSD2ndDerivative(headerData.slice_data))
+            elbow = headerData.slice_data[np.argmax(deriv2abs)+1]
+            start = (1000 * (headerData.slice_data[0][0] - elbow[0]) / self.sr, headerData.slice_data[0][1] - elbow[1])
+            end = (1000 * (headerData.slice_data[len(headerData.slice_data)-1][0] - elbow[0]) / self.sr, \
+                   headerData.slice_data[len(headerData.slice_data)-1][1] - elbow[1])
+            dot = np.dot(start, end)
+            mag = np.sqrt(np.power(start[0],2)+np.power(start[1],2)) * np.sqrt(np.power(end[0],2)+np.power(end[1],2))
+            if mag == 0.0:
+                return 180.0
+            return 180.0 * np.arccos(dot/mag) / np.pi
+        elif feature == "freqsdslope":
+            return (headerData.slice_data[len(headerData.slice_data)-1][1] - headerData.slice_data[0][1]) / (headerData.duration / 1000)
+        elif tokens[0] == "freqsd":
+            return self.calculateUnit([x[1] for x in headerData.slice_data], tokens[len(tokens)-1])
+        elif tokens[0] == "freqsdd1":
+            return self.calculateUnit(self.calculateFreqSD1stDerivative(headerData.slice_data), tokens[len(tokens)-1])
+        elif tokens[0] == "freqsdd2":
+            return self.calculateUnit(self.calculateFreqSD2ndDerivative(headerData.slice_data), tokens[len(tokens)-1])
         elif tokens[0] in ["rms","bandwidth","centroid","contrast","flatness","flux","specmag","rolloff","yin","zcr"]:
             return self.calculateUnit(featureArray, tokens[len(tokens)-1])
         elif tokens[0] in ["mfcc","poly"]:
@@ -304,6 +325,8 @@ class FEThread():
             return np.max(featureArray)
         elif function == "min":
             return np.min(featureArray)
+        elif function == "rng":
+            return np.max(featureArray) - np.min(featureArray)
         return 0;
     
     # Parses through input settings and creates a list of what to process
@@ -313,8 +336,9 @@ class FEThread():
         for i in np.arange(len(features)):
             curr = ""
             tokens = features[i].split("_")
-            if tokens[0] in ["amplitude","duration","freqhd","freqsd","frange","fslopehd","fslopesd"]:
-                # These involve contour header or slice data, so they will be dealt with in Java.
+            if tokens[0] in ["amplitude","duration","freqhd","frange","fslopehd", \
+                             "freqsd","freqsdd1","freqsdd2","freqsdelbow","freqsdslope"]:
+                # These are just calculated from input header data.
                 pass
             elif tokens[0] in ["rms","centroid","flux","zcr"]:
                 curr = tokens[0]
@@ -349,30 +373,27 @@ class FEThread():
             return "triang"
         return winname.lower()
     
-    def runLast(self):
-        print("RUNLAST")
+    def calculateFreqSD1stDerivative(self, slice_data: list):
+        freqs = [x[1] for x in slice_data]
+        if len(freqs) <= 1:
+            return [0.0]
+        return [freqs[i+1] - freqs[i] for i in np.arange(len(freqs)-1)]
+    
+    def calculateFreqSD2ndDerivative(self, slice_data: list):
+        deriv = self.calculateFreqSD1stDerivative(slice_data)
+        if len(deriv) <= 1:
+            return [0.0]
+        return [deriv[i+1] - deriv[i] for i in np.arange(len(deriv)-1)]
 
-#deprecated
-def freeThroughList(threadList: list, wavNrList: list):
-    #print("listlens: "+str(len(threadList))+", "+str(len(wavNrList)))
-    if len(threadList) == len(wavNrList):
-        i = 0
-        while i < len(threadList):
-            if freeIfComplete(threadList[i], wavNrList[i]):
-                threadList.pop(i)
-                wavNrList.pop(i)
-            else:
-                i += 1
-    return threadList, wavNrList
-
-#deprecated
-def freeIfComplete(inpThread: FEThread, inpWav):
-    if inpThread.checkIfFreeable():
-        print("freed: "+inpThread.y_nr_name[:len(inpThread.y_nr_name)-4])
-        #inpThread = None
-        #inpWav = None
-        return True
-    return False
+class HeaderData:
+        def __init__(self, uid, datelong, amplitude, duration, freqhd_min, freqhd_max, slice_data):
+            self.uid = uid
+            self.datelong = datelong
+            self.amplitude = amplitude
+            self.duration = duration
+            self.freqhd_min = freqhd_min
+            self.freqhd_max = freqhd_max
+            self.slice_data = slice_data
 
 def loadAudio(fn: str, sr: int):
     warnings.simplefilter(action='ignore', category=FutureWarning)

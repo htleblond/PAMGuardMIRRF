@@ -1,0 +1,7 @@
+mirrf_0.03 CHANGELOG
+July 7th, 2023
+Holly LeBlond
+
+- Slice data is now retrievable from binary files in WMNT.
+- .wmnt files now store start samples and frequencies for every slice in a contour.
+- Slice-data-related features added to Feature Extractor and its Python code.

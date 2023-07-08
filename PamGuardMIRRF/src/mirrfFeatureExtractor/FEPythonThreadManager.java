@@ -196,14 +196,14 @@ public class FEPythonThreadManager {
 		public String uid;
 		public String nrName;
 		public String clipName;
-		public String[] extras;
+		public String[] headerData;
 		
-		protected ContourClip(String clusterID, String uid, String nrName, String clipName, String[] extras) {
+		protected ContourClip(String clusterID, String uid, String nrName, String clipName, String[] headerData) {
 			this.clusterID = clusterID;
 			this.uid = uid;
 			this.nrName = nrName;
 			this.clipName = clipName;
-			this.extras = extras;
+			this.headerData = headerData;
 		}
 	}
 	
@@ -216,10 +216,10 @@ public class FEPythonThreadManager {
 	
 	/**
 	 * Adds a contour clip to the waitList.
-	 * "extras" should include contour header data (see use in FEProcess for details).
+	 * "headerData" should include contour header data (see use in FEProcess for details).
 	 */
-	public void sendContourClipToThread(String clusterID, String uid, String nrName, String clipName, String[] extras) {
-		waitList.add(new ContourClip(clusterID, uid, nrName, clipName, extras));
+	public void sendContourClipToThread(String clusterID, String uid, String nrName, String clipName, String[] headerData) {
+		waitList.add(new ContourClip(clusterID, uid, nrName, clipName, headerData));
 	}
 	
 	/**
@@ -324,8 +324,8 @@ public class FEPythonThreadManager {
 					} else if (idList.contains(cc.clusterID)) {
 						ccList.get(idList.indexOf(cc.clusterID)).add(cc);
 						String command = "thread"+String.format("%02d", idList.indexOf(cc.clusterID))+".addClip(r\""+cc.clipName+"\"";
-						for (int i = 0; i < cc.extras.length; i++) {
-							command += ","+cc.extras[i];
+						for (int i = 0; i < cc.headerData.length; i++) {
+							command += ","+cc.headerData[i];
 						}
 						command += ")";
 						commandList.add(command);

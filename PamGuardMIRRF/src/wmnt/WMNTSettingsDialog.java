@@ -24,6 +24,8 @@ import javax.swing.text.PlainDocument;
 import PamView.dialog.PamButton;
 import PamView.dialog.PamDialog;
 import PamView.dialog.PamGridBagContraints;
+import PamView.dialog.SourcePanel;
+import whistlesAndMoans.ConnectedRegionDataUnit;
 import wmnt.WMNTPanel.SpeciesListener;
 
 /**
@@ -32,6 +34,7 @@ import wmnt.WMNTPanel.SpeciesListener;
  */
 public class WMNTSettingsDialog extends PamDialog {
 	
+	protected SourcePanel inputSourcePanel;
 	protected JTextField speciesField;
 	protected DefaultComboBoxModel<String> speciesModel;
 	protected JComboBox<String> speciesBox;
@@ -66,11 +69,14 @@ public class WMNTSettingsDialog extends PamDialog {
 		b.fill = GridBagConstraints.HORIZONTAL;
 		b.anchor = GridBagConstraints.WEST;
 		
+		inputSourcePanel = new SourcePanel(this, "Contour data source (for slice data)", ConnectedRegionDataUnit.class, false, true);
+		mainPanel.add(inputSourcePanel.getPanel(), b);
+		b.gridy++;
+		
 		JPanel speciesPanel = new JPanel(new GridBagLayout());
 		speciesPanel.setBorder(new TitledBorder("'Species' list"));
 		speciesPanel.setAlignmentX(LEFT_ALIGNMENT);
 		GridBagConstraints c = new PamGridBagContraints();
-		c.gridy = 0;
 		c.gridx = 0;
 		c.fill = GridBagConstraints.HORIZONTAL;
 		speciesField = new JTextField();
@@ -328,6 +334,7 @@ public class WMNTSettingsDialog extends PamDialog {
 			wmntControl.getParams().databaseTZ = tzPanel.getDatabaseTimeZone();
 		}
 		
+		wmntControl.getParams().inputProcessName = inputSourcePanel.getSourceName();
 		wmntControl.getParams().speciesList = new ArrayList<String>();
 		wmntControl.getParams().speciesList.add("");
 		wmntControl.getSidePanel().getWMNTPanel().speciesModel = new DefaultComboBoxModel<String>();

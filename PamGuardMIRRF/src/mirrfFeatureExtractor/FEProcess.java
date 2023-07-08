@@ -19,8 +19,12 @@ import org.docx4j.org.apache.poi.poifs.storage.RawDataBlock;
 import Acquisition.AcquisitionControl;
 import warnings.PamWarning;
 import clipgenerator.localisation.ClipDelays;
+import fftManager.FFTDataBlock;
 import wavFiles.Wav16AudioFormat;
 import wavFiles.WavFileWriter;
+import whistlesAndMoans.ConnectedRegionDataBlock;
+import whistlesAndMoans.ConnectedRegionDataUnit;
+import whistlesAndMoans.SliceData;
 import PamController.PamController;
 import PamguardMVC.PamDataBlock;
 import PamguardMVC.PamDataUnit;
@@ -238,7 +242,7 @@ public class FEProcess extends PamProcess {
 			}
 			if (!(start <= currTime && currTime < end)) continue;
 			try {
-				FEDummyDataUnit newDU = new FEDummyDataUnit();
+				FESliceDataUnit newDU = new FESliceDataUnit();
 				newDU.setUID(Long.valueOf(curr[0]));
 				newDU.setTimeMilliseconds(currTime);
 				newDU.setFrequency(new double[] {Double.valueOf(curr[2]), Double.valueOf(curr[3])});
@@ -246,6 +250,7 @@ public class FEProcess extends PamProcess {
 				newDU.setMeasuredAmplitude(Double.valueOf(curr[5]));
 				newDU.setStartSample((long) (feControl.getParams().sr*(currTime - start))/1000);
 				newDU.setSampleDuration((long) (feControl.getParams().sr*(newDU.getDurationInMilliseconds()))/1000);
+				newDU.setSliceData(curr);
 				csvClipList.add(new ClipRequest(clipBlockProcesses[0], newDU));
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -267,7 +272,7 @@ public class FEProcess extends PamProcess {
 		clipBlockProcesses = new ClipBlockProcess[nBlocks];
 		PamDataBlock aDataBlock;
 		if (feControl.getParams().inputFromCSV) {
-			aDataBlock = new PamDataBlock<FEDummyDataUnit>(FEDummyDataUnit.class, processName, this, 0);
+			aDataBlock = new PamDataBlock<FESliceDataUnit>(FESliceDataUnit.class, processName, this, 0);
 			aDataBlock.setSampleRate(feControl.getParams().sr, false);
 		} else {
 			aDataBlock = PamController.getInstance().getDetectorDataBlock(feControl.getParams().inputProcessName);
@@ -309,6 +314,10 @@ public class FEProcess extends PamProcess {
 			this.clipProcess = clipProcess;
 			this.dataBlock = dataBlock;
 			dataBlock.addObserver(this, true);
+			
+			ConnectedRegionDataBlock crdb = (ConnectedRegionDataBlock) dataBlock;
+			ConnectedRegionDataUnit crdu = (ConnectedRegionDataUnit) crdb.getLastUnit();
+			// TODO SLICE DATA !!!!!!!!!!!!!!!!
 		}
 		
 		/**
@@ -409,17 +418,44 @@ public class FEProcess extends PamProcess {
 			prevDU = dataUnit;
 			if (countUp) clusterCountID++;
 			
+			long[] sliceStartSamples;
+			double[] sliceFreqs;
+			if (params.inputFromCSV) {
+				FESliceDataUnit sdu = (FESliceDataUnit) dataUnit;
+				sliceStartSamples = sdu.sliceStartSamples;
+				sliceFreqs = sdu.sliceFreqs;
+			} else {
+				ConnectedRegionDataUnit crdu = (ConnectedRegionDataUnit) dataUnit;
+				long contourStartSample = crdu.getStartSample();
+				List<SliceData> sdList = crdu.getConnectedRegion().getSliceData();
+				Collections.sort(sdList, Comparator.comparingLong(SliceData::getStartSample));
+				sliceStartSamples = new long[sdList.size()];
+				sliceFreqs = new double[sdList.size()];
+				for (int i = 0; i < sdList.size(); i++) {
+					FFTDataBlock fftDB = (FFTDataBlock) crdu.getFFTDataUnits(0).get(0).getParentDataBlock();
+					sliceStartSamples[i] = sdList.get(i).getStartSample();
+					// For unknown reasons, the slice's start sample isn't always set.
+					if (sliceStartSamples[i] == 0) sliceStartSamples[i] = i * fftDB.getFftHop() + contourStartSample;
+					sliceFreqs[i] = fftDB.getSampleRate() * sdList.get(i).getPeakInfo()[0][2] / fftDB.getFftLength();
+				}
+			}
+			
 			String clusterID = createClusterID(dataUnit.getUID(), clusterCountID, false);
-			String[] extras = new String[8];
+			//String[] extras = new String[8];
+			String[] extras = new String[7];
 			extras[0] = "uid="+String.valueOf(dataUnit.getUID());
 			extras[1] = "datelong="+String.valueOf(dataUnit.getTimeMilliseconds());
 			extras[2] = "amplitude="+String.valueOf(dataUnit.getAmplitudeDB());
 			extras[3] = "duration="+String.valueOf(dataUnit.getDurationInMilliseconds());
 			extras[4] = "freqhd_min="+String.valueOf(dataUnit.getFrequency()[0]);
 			extras[5] = "freqhd_max="+String.valueOf(dataUnit.getFrequency()[1]);
-			extras[6] = "frange="+String.valueOf(dataUnit.getFrequency()[1]-dataUnit.getFrequency()[0]);
-			extras[7] = "fslopehd="+String.valueOf((dataUnit.getFrequency()[1]-dataUnit.getFrequency()[0])
-					/ (dataUnit.getDurationInMilliseconds()/1000));
+			//extras[6] = "frange="+String.valueOf(dataUnit.getFrequency()[1]-dataUnit.getFrequency()[0]);
+			//extras[7] = "fslopehd="+String.valueOf((dataUnit.getFrequency()[1]-dataUnit.getFrequency()[0])
+			//		/ (dataUnit.getDurationInMilliseconds()/1000));
+			extras[6] = "slice_data=[("+String.valueOf(sliceStartSamples[0])+","+String.valueOf(sliceFreqs[0]);
+			for (int i = 1; i < sliceFreqs.length; i++)
+				extras[6] += "),("+String.valueOf(sliceStartSamples[i])+","+String.valueOf(sliceFreqs[i]);
+			extras[6] += ")]";
 			feControl.getThreadManager().sendContourClipToThread(clusterID, String.valueOf(dataUnit.getUID()), nrPath, clipPath, extras);
 			
 			return 0; // no error. 

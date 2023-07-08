@@ -8,6 +8,8 @@ import PamModel.parametermanager.PamParameterSet;
 
 public class WMNTParameters implements Serializable, Cloneable, ManagedParameters {
 	
+	public String inputProcessName;
+	
 	public ArrayList<String> speciesList;
 	public ArrayList<String> callTypeList;
 	
@@ -20,6 +22,8 @@ public class WMNTParameters implements Serializable, Cloneable, ManagedParameter
 	public String sqlTableName;
 	
 	public WMNTParameters() {
+		inputProcessName = "";
+		
 		String[] speciesNames = new String[] {"", "2-second glitch", "False positive", "KW", "HW", "CSL", "PWSD", "KW/HW?", "KW/PWSD?", "Fish",
 				"Vessel", "Mooring", "Unk", "Unk-Anthro", "Unk-Odontocete", "Unk-Mysticete", "Unk-Cetacean", "Deployment", "Aliens"};
 		speciesList = new ArrayList<String>();

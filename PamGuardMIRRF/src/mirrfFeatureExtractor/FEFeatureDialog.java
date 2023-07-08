@@ -55,14 +55,11 @@ public class FEFeatureDialog extends PamDialog {
 	protected JPanel p_cards;
 	protected JPanel p_blank;
 	protected JPanel p_amp;
-	//protected JPanel p_amp_sd; // Not actually possible to retrieve
-	//protected JPanel p_ampslope; // Not actually possible to retrieve
 	protected JPanel p_duration;
 	protected JPanel p_freq_hd;
-	//protected JPanel p_freq_sd; // Apparently not possible to retrieve
+	protected JPanel p_freq_sd;
 	protected JPanel p_frange;
 	protected JPanel p_fslope_hd;
-	//protected JPanel p_fslope_sd; // Apparently not possible to retrieve
 	protected JPanel p_mfcc;
 	protected JPanel p_poly;
 	protected JPanel p_rms;
@@ -85,7 +82,9 @@ public class FEFeatureDialog extends PamDialog {
 	
 	protected JComboBox<String> freq_hd_box;
 	
-	//protected JComboBox freq_sd_box;
+	protected JComboBox<String> freq_sd_options_box;
+	protected JLabel freq_sd_text;
+	protected JComboBox<String> freq_sd_box;
 	
 	//protected JComboBox fslope_sd_box;
 	
@@ -166,8 +165,8 @@ public class FEFeatureDialog extends PamDialog {
 		c.anchor = GridBagConstraints.WEST;
 		//p_left.add(new JLabel("Select a feature to add to vector:"), c);
 		//c.gridy++;
-		String[] featureNames = new String[] {"Amplitude","Duration","Frequency","Frequency range","Frequency slope",
-				"Mel-frequency cepstral coefficients","Polynomial features","Root mean square",
+		String[] featureNames = new String[] {"Amplitude","Duration","Frequency (header data)","Frequency range (header data)",
+				"Frequency slope (header data)","Frequency (slice data)","Mel-frequency cepstral coefficients","Polynomial features","Root mean square",
 				"Spectral bandwidth","Spectral centroid","Spectral contrast","Spectral flatness","Spectral flux (onset strength)",
 				"Spectral magnitude","Spectral rolloff","YIN fundamental frequency","YIN harmonics","Zero-crossing rate"};
 		dlmodel = new DefaultListModel<String>();
@@ -197,58 +196,43 @@ public class FEFeatureDialog extends PamDialog {
 		p_cards.add(p_blank,"");
 		cl.show(p_cards,"");
 		
+		int nameIndex = 0;
+		
 		p_amp = constructFeaturePanel(makeHTML("Amplitude value (in dB re SPSL) taken directly from contour header data."),
 				new Object[0][0],
 				false);
-		p_cards.add(p_amp,featureNames[0]);
-		
-	/*	amp_sd_box = makeOutputBox();
-		p_amp_sd = constructFeaturePanel(makeHTML("Parses through amplitude values (in dB re SPSL) from contour slice data."),
-				new Object[][] {{"Output:", amp_sd_box}},
-				false);
-		p_cards.add(p_amp_sd,featureNames[1]); */
-		
-	/*	ampslope_box = makeOutputBox();
-		p_ampslope = constructFeaturePanel(makeHTML("Parses through amplitude values (in dB re SPSL) from contour slice data and calculates "
-				+ "slope values for each frame."),
-				new Object[][] {{"Output:", ampslope_box}},
-				false);
-		p_cards.add(p_ampslope,featureNames[2]); */
+		p_cards.add(p_amp,featureNames[nameIndex++]);
 		
 		p_duration = constructFeaturePanel(makeHTML("Duration value (in milliseconds) taken directly from contour header data."),
 				new Object[0][0],
 				false);
-		p_cards.add(p_duration,featureNames[1]);
+		p_cards.add(p_duration,featureNames[nameIndex++]);
 		
-		freq_hd_box = makeOutputBox(new String[]{"Minimum","Maximum"});
+		freq_hd_box = makeOutputBox(new String[] {"Minimum","Maximum"});
 		p_freq_hd = constructFeaturePanel(makeHTML("Minimum or maximum frequency value (in Hz) taken directly from contour header data."),
 				new Object[][] {{"Output:", freq_hd_box}},
 				false);
-		p_cards.add(p_freq_hd,featureNames[2]);
-		
-	/*	freq_sd_box = makeOutputBox();
-		p_freq_sd = constructFeaturePanel(makeHTML("Parses through frequency values (in Hz) from contour slice data."),
-				new Object[][] {{"Output:", freq_sd_box}},
-				false);
-		p_cards.add(p_freq_sd,featureNames[3]); */
+		p_cards.add(p_freq_hd,featureNames[nameIndex++]);
 		
 		p_frange = constructFeaturePanel(makeHTML("Difference between maximum and minimum frequency values (in Hz) from contour header data."),
 				new Object[0][0],
 				false);
-		p_cards.add(p_frange,featureNames[3]);
+		p_cards.add(p_frange,featureNames[nameIndex++]);
 		
 		p_fslope_hd = constructFeaturePanel(makeHTML("Maximum frequency value minus minimum frequency value, divided by duration value, "
 				+ "all from contour header data (in Hz per second)."),
 				new Object[0][0],
 				false);
-		p_cards.add(p_fslope_hd,featureNames[4]);
+		p_cards.add(p_fslope_hd,featureNames[nameIndex++]);
 		
-	/*	fslope_sd_box = makeOutputBox();
-		p_fslope_sd = constructFeaturePanel(makeHTML("Parses through frequency values (in Hz) from contour slice data and calculates slope values "
-				+ "for each frame."),
-				new Object[][] {{"Output:", fslope_sd_box}},
+		freq_sd_options_box = makeOutputBox(new String[] {"Frequencies","1st derivative","2nd derivative","Elbow angle","Start-to-end slope"});
+		freq_sd_options_box.addActionListener(new FreqSDOptionsBoxListener());
+		freq_sd_text = new JLabel(getFreqSDText());
+		freq_sd_box = makeOutputBox();
+		p_freq_sd = constructFeaturePanel(makeHTML("Calculations performed on contour slice data frequencies."),
+				new Object[][] {{freq_sd_options_box},{freq_sd_text},{"Output:", freq_sd_box}},
 				false);
-		p_cards.add(p_fslope_sd,featureNames[6]); */
+		p_cards.add(p_freq_sd,featureNames[nameIndex++]);
 		
 		mfcc_box = makeOutputBox();
 		mfcc_n_field = new JTextField(5);
@@ -271,7 +255,7 @@ public class FEFeatureDialog extends PamDialog {
 				+ "for all coefficients or one specific coefficient."),
 				new Object[][] {{"Output:", mfcc_box},{"Number of MFCCs:",mfcc_n_field},{"Selected coefficient:",mfcc_selector_box}},
 				true);
-		p_cards.add(p_mfcc,featureNames[5]);
+		p_cards.add(p_mfcc,featureNames[nameIndex++]);
 		
 		poly_box = makeOutputBox();
 		poly_order_field = new JTextField(5);
@@ -293,13 +277,13 @@ public class FEFeatureDialog extends PamDialog {
 				+ "(From Librosa documentation: https://librosa.org/doc/main/generated/librosa.feature.poly_features.html)"),
 				new Object[][] {{"Output:",poly_box},{"Order:",poly_order_field},{"Selected coefficient:",poly_selector_box}},
 				true);
-		p_cards.add(p_poly,featureNames[6]);
+		p_cards.add(p_poly,featureNames[nameIndex++]);
 		
 		rms_box = makeOutputBox();
 		p_rms = constructFeaturePanel(makeHTML("Calculates root mean square (RMS) values directly from the audio of the clip."),
 				new Object[][] {{"Output:", rms_box}},
 				false);
-		p_cards.add(p_rms,featureNames[7]);
+		p_cards.add(p_rms,featureNames[nameIndex++]);
 		
 		bandwidth_box = makeOutputBox();
 		bandwidth_power_field = new JTextField(5);
@@ -321,13 +305,13 @@ public class FEFeatureDialog extends PamDialog {
 				+ "(From Librosa documentation: https://librosa.org/doc/main/generated/librosa.feature.spectral_bandwidth.html)"),
 				new Object[][] {{"Output:", bandwidth_box},{"Power:",bandwidth_power_field},{bandwidth_normalize_check}},
 				false);
-		p_cards.add(p_bandwidth,featureNames[8]);
+		p_cards.add(p_bandwidth,featureNames[nameIndex++]);
 		
 		centroid_box = makeOutputBox();
 		p_centroid = constructFeaturePanel(makeHTML("Calculates the \"centre of mass\" of the spectrum of an audio clip."),
 				new Object[][] {{"Output:", centroid_box}},
 				false);
-		p_cards.add(p_centroid,featureNames[9]);
+		p_cards.add(p_centroid,featureNames[nameIndex++]);
 		
 		contrast_box = makeOutputBox();
 		contrast_freq_field = new JTextField(5);
@@ -368,7 +352,7 @@ public class FEFeatureDialog extends PamDialog {
 				new Object[][] {{"Output:", contrast_box},{makeHTML("Frequency cutoff for first bin:")},{"",contrast_freq_field},
 				{makeHTML("Number of frequency bands:")},{"",contrast_bands_field},{contrast_linear_rb},{contrast_log_rb}},
 				false);
-		p_cards.add(p_contrast,featureNames[10]);
+		p_cards.add(p_contrast,featureNames[nameIndex++]);
 		
 		flatness_box = makeOutputBox();
 		flatness_power_field = new JTextField(5);
@@ -387,14 +371,14 @@ public class FEFeatureDialog extends PamDialog {
 		p_flatness = constructFeaturePanel(makeHTML("Quantifies how \"noise-like\" or \"tone-like\" frames of an audio clip are."),
 				new Object[][] {{"Output:", flatness_box},{"Power:", flatness_power_field}},
 				false);
-		p_cards.add(p_flatness,featureNames[11]);
+		p_cards.add(p_flatness,featureNames[nameIndex++]);
 		
 		flux_box = makeOutputBox();
 		p_flux = constructFeaturePanel(makeHTML("Compute a spectral flux onset strength envelope.\n\n"
 				+ "(From Librosa documentation: https://librosa.org/doc/main/generated/librosa.onset.onset_strength.html)"),
 				new Object[][] {{"Output:", flux_box}},
 				false);
-		p_cards.add(p_flux,featureNames[12]);
+		p_cards.add(p_flux,featureNames[nameIndex++]);
 		
 		specmag_box = makeOutputBox();
 		specmag_min_field = new JTextField(5);
@@ -441,7 +425,7 @@ public class FEFeatureDialog extends PamDialog {
 				new Object[][] {{"Output:", specmag_box},{"Minimum frequency (Hz):"},{"", specmag_min_field},
 				{"Maximum frequency (Hz):"},{"", specmag_max_field}},
 				false);
-		p_cards.add(p_specmag,featureNames[13]);
+		p_cards.add(p_specmag,featureNames[nameIndex++]);
 		
 		rolloff_box = makeOutputBox();
 		rolloff_threshold_field = new JTextField(5);
@@ -472,7 +456,7 @@ public class FEFeatureDialog extends PamDialog {
 		p_rolloff = constructFeaturePanel(makeHTML("Calculates frequency (in Hz) in each frame where [threshold]% of the spectral energy lies below."),
 				new Object[][] {{"Output:", rolloff_box},{"Threshold (%):", rolloff_threshold_field}},
 				false);
-		p_cards.add(p_rolloff,featureNames[14]);
+		p_cards.add(p_rolloff,featureNames[nameIndex++]);
 		
 		yin_box = makeOutputBox();
 		yin_box.setSelectedIndex(1);
@@ -519,7 +503,7 @@ public class FEFeatureDialog extends PamDialog {
 				new Object[][] {{"Output:", yin_box},{"Minimum frequency (Hz):"},{"", yin_min_field},{"Maximum frequency (Hz)"},
 				{"", yin_max_field}},
 				false);
-		p_cards.add(p_yin,featureNames[15]);
+		p_cards.add(p_yin,featureNames[nameIndex++]);
 		
 		harmonics_box = makeOutputBox(new String[] {"Sum of harmonic magnitudes","Harmonics-to-background ratio","Harmonic centroid mean",
 				"Harmonic centroid standard deviation"});
@@ -580,13 +564,13 @@ public class FEFeatureDialog extends PamDialog {
 				new Object[][] {{"Output:"},{"", harmonics_box},{"Number of harmonics:"},{"",harmonics_n_field},{"Minimum frequency (Hz):"},
 				{"",harmonics_min_field},{"Maximum frequency (Hz):"},{"",harmonics_max_field},{harmonics_normalize_check}},
 				false);
-		p_cards.add(p_harmonics,featureNames[16]);
+		p_cards.add(p_harmonics,featureNames[nameIndex++]);
 		
 		zcr_box = makeOutputBox();
 		p_zcr = constructFeaturePanel(makeHTML("Calculates how often the x-axis is crossed in an audio time series."),
 				new Object[][] {{"Output:", zcr_box}},
 				false);
-		p_cards.add(p_zcr,featureNames[17]);
+		p_cards.add(p_zcr,featureNames[nameIndex++]);
 		
 		
 		// Kudos to this: https://stackoverflow.com/questions/13800775/find-selected-item-of-a-jlist-and-display-it-in-real-time
@@ -616,48 +600,66 @@ public class FEFeatureDialog extends PamDialog {
 		setDialogComponent(mainPanel);
 	}
 	
-	protected class AddButtonListener implements ActionListener{
+	public String getFreqSDText() {
+		switch (freq_sd_options_box.getSelectedIndex()) {
+		case 1:
+			return makeHTML("The \"rate of change\" between the peak frequencies of each slice.");
+		case 2:
+			return makeHTML("The \"rate of change of the rate of change\" between the peak frequencies of each slice.");
+		case 3:
+			return makeHTML("A measurement of the contour's \"curvature\", in degrees.");
+		case 4:
+			return makeHTML("\"As-the-crow-flies\" slope in terms of time and frequency between the first and last slices in the contour.");
+		}
+		return makeHTML("The peak frequencies of each slice.");
+	}
+	
+	protected class FreqSDOptionsBoxListener implements ActionListener {
+		@Override
+		public void actionPerformed(ActionEvent e) {
+			freq_sd_text.setText(getFreqSDText());
+			freq_sd_box.setEnabled(freq_sd_options_box.getSelectedIndex() < 3);
+		}
+	}
+	
+	protected class AddButtonListener implements ActionListener {
 		public void actionPerformed(ActionEvent e) {
 			String outp = "";
 			if (flist.getSelectedIndex() > -1) {
 				String selection = flist.getSelectedValue();
-				if (selection == "Amplitude") {
+				if (selection.equals("Amplitude")) {
 					outp = "amplitude";
-			/*	} else if (selection == "Amplitude (slice data)") {
-					outp = "ampsd_";
-					outp += outpAbbr((String) amp_sd_box.getSelectedItem());
-				} else if (selection == "Amplitude slope (slice data)") {
-					outp = "ampslope_";
-					outp += outpAbbr((String) ampslope_box.getSelectedItem()); */
-				} else if (selection == "Duration") {
+				} else if (selection.equals("Duration")) {
 					outp = "duration";
-				} else if (selection == "Frequency") {
+				} else if (selection.equals("Frequency (header data)")) {
 					outp = "freqhd_";
 					outp += outpAbbr((String) freq_hd_box.getSelectedItem());
-			/*	} else if (selection == "Frequency (slice data)") {
-					outp = "freqsd_";
-					outp += outpAbbr((String) freq_sd_box.getSelectedItem()); */
-				} else if (selection == "Frequency range") {
+				} else if (selection.equals("Frequency range (header data)")) {
 					outp = "frange";
-				} else if (selection == "Frequency slope") {
+				} else if (selection.equals("Frequency slope (header data)")) {
 					outp = "fslopehd";
-			/*	} else if (selection == "Frequency slope (slice data)") {
-					outp = "fslopesd_";
-					outp += outpAbbr((String) fslope_sd_box.getSelectedItem()); */
-				} else if (selection == "Mel-frequency cepstral coefficients") {
+				} else if (selection.equals("Frequency (slice data)")) {
+					outp = "freqsd";
+					int num = freq_sd_options_box.getSelectedIndex();
+					if (num == 1) outp += "d1";
+					else if (num == 2) outp += "d2";
+					else if (num == 3) outp += "elbow";
+					else if (num == 4) outp += "slope";
+					if (num < 3) outp += "_"+outpAbbr((String) freq_sd_box.getSelectedItem());
+				} else if (selection.equals("Mel-frequency cepstral coefficients")) {
 					outp = "mfcc_";
 					outp += mfcc_n_field.getText() + "_";
 					outp += (String) mfcc_selector_box.getSelectedItem() + "_";
 					outp += outpAbbr((String) mfcc_box.getSelectedItem());
-				} else if (selection == "Polynomial features") {
+				} else if (selection.equals("Polynomial features")) {
 					outp = "poly_";
 					outp += poly_order_field.getText() + "_";
 					outp += (String) poly_selector_box.getSelectedItem() + "_";
 					outp += outpAbbr((String) poly_box.getSelectedItem());
-				} else if (selection == "Root mean square") {
+				} else if (selection.equals("Root mean square")) {
 					outp = "rms_";
 					outp += outpAbbr((String) rms_box.getSelectedItem());
-				} else if (selection == "Spectral bandwidth") {
+				} else if (selection.equals("Spectral bandwidth")) {
 					outp = "bandwidth_";
 					outp += bandwidth_power_field.getText() + "_";
 					if (bandwidth_normalize_check.isSelected()) {
@@ -666,10 +668,10 @@ public class FEFeatureDialog extends PamDialog {
 						outp += "nn_";
 					}
 					outp += outpAbbr((String) bandwidth_box.getSelectedItem());
-				} else if (selection == "Spectral centroid") {
+				} else if (selection.equals("Spectral centroid")) {
 					outp = "centroid_";
 					outp += outpAbbr((String) centroid_box.getSelectedItem());
-				} else if (selection == "Spectral contrast") {
+				} else if (selection.equals("Spectral contrast")) {
 					outp = "contrast_";
 					outp += contrast_freq_field.getText() + "_";
 					outp += contrast_bands_field.getText() + "_";
@@ -679,28 +681,28 @@ public class FEFeatureDialog extends PamDialog {
 						outp += "log_";
 					}
 					outp += outpAbbr((String) contrast_box.getSelectedItem());
-				} else if (selection == "Spectral flatness") {
+				} else if (selection.equals("Spectral flatness")) {
 					outp = "flatness_";
 					outp += flatness_power_field.getText() + "_";
 					outp += outpAbbr((String) flatness_box.getSelectedItem());
-				} else if (selection == "Spectral flux (onset strength)") {
+				} else if (selection.equals("Spectral flux (onset strength)")) {
 					outp = "flux_";
 					outp += outpAbbr((String) flux_box.getSelectedItem());
-				} else if (selection == "Spectral magnitude") {
+				} else if (selection.equals("Spectral magnitude")) {
 					outp = "specmag_";
 					outp += specmag_min_field.getText() + "_";
 					outp += specmag_max_field.getText() + "_";
 					outp += outpAbbr((String) specmag_box.getSelectedItem());
-				} else if (selection == "Spectral rolloff") {
+				} else if (selection.equals("Spectral rolloff")) {
 					outp = "rolloff_";
 					outp += rolloff_threshold_field.getText() + "_";
 					outp += outpAbbr((String) rolloff_box.getSelectedItem());
-				} else if (selection == "YIN fundamental frequency") {
+				} else if (selection.equals("YIN fundamental frequency")) {
 					outp = "yin_";
 					outp += yin_min_field.getText() + "_";
 					outp += yin_max_field.getText() + "_";
 					outp += outpAbbr((String) yin_box.getSelectedItem());
-				} else if (selection == "YIN harmonics") {
+				} else if (selection.equals("YIN harmonics")) {
 					if (harmonics_box.getSelectedIndex() == 0) {
 						outp = "harmmags_";
 					} else if (harmonics_box.getSelectedIndex() == 1) {
@@ -719,7 +721,7 @@ public class FEFeatureDialog extends PamDialog {
 					} else {
 						outp += "nn";
 					}
-				} else if (selection == "Zero-crossing rate") {
+				} else if (selection.equals("Zero-crossing rate")) {
 					outp = "zcr_";
 					outp += outpAbbr((String) zcr_box.getSelectedItem());
 				}
@@ -744,6 +746,8 @@ public class FEFeatureDialog extends PamDialog {
 			return "min";
 		} else if (inp == "Maximum") {
 			return "max";
+		} else if (inp == "Range") {
+			return "rng";
 		}
 		return "";
 	}
@@ -765,7 +769,7 @@ public class FEFeatureDialog extends PamDialog {
 	 * "Standard deviation", "Minimum" and "Maximum".
 	 */
 	public JComboBox<String> makeOutputBox() {
-		String[] choices = {"Mean","Median","Standard deviation","Minimum","Maximum"};
+		String[] choices = {"Mean","Median","Standard deviation","Minimum","Maximum","Range"};
 		JComboBox<String> outp = new JComboBox<String>(choices);
 		return outp;
 	}
