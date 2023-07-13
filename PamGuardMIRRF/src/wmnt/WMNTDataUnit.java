@@ -24,7 +24,6 @@ public class WMNTDataUnit extends PamDataUnit {
 	 * @param clearAllFirst - The results table and matrices in the MIRRF Classifier will be reset.
 	 * @param startLoadingBar - Opens the MIRRF Classifier's loading window.
 	 * @param totalRowsToUpdate - Total number of rows being updated (including ones not added to this unit).
-	 * @author Holly LeBlond
 	 */
 	public WMNTDataUnit(boolean clearAllFirst, boolean startLoadingBar, int totalRowsToUpdate) {
 		super(0);
@@ -37,7 +36,6 @@ public class WMNTDataUnit extends PamDataUnit {
 	
 	/**
 	 * The MIRRF Classifier's loading window will close after the unit is processed.
-	 * @author Holly LeBlond
 	 */
 	public void setEndLoadingBar(boolean boo) {
 		endLoadingBar = boo;

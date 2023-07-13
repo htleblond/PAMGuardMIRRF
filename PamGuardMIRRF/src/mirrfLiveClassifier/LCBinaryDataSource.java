@@ -7,24 +7,18 @@ import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
 
-import javax.swing.JOptionPane;
-
-import PamController.PamControlledUnit;
-import PamguardMVC.PamDataBlock;
 import PamguardMVC.PamDataUnit;
 import binaryFileStorage.BinaryDataSource;
 import binaryFileStorage.BinaryHeader;
-import binaryFileStorage.BinaryInputStream;
 import binaryFileStorage.BinaryObjectData;
-import binaryFileStorage.BinaryOfflineDataMap;
-import binaryFileStorage.BinaryOfflineDataMapPoint;
-import binaryFileStorage.BinaryStore;
 import binaryFileStorage.ModuleFooter;
 import binaryFileStorage.ModuleHeader;
 import mirrfFeatureExtractor.FEDataBlock;
-import whistlesAndMoans.SliceData;
-import whistlesAndMoans.WhistleBinaryModuleHeader;
 
+/**
+ * The Live Classifier's BinaryDataSource.
+ * @author Holly LeBlond
+ */
 public class LCBinaryDataSource extends BinaryDataSource {
 	
 	private LCControl lcControl;
@@ -46,11 +40,11 @@ public class LCBinaryDataSource extends BinaryDataSource {
 	private DataOutputStream headerOutputStream;
 	private ByteArrayOutputStream headerBytes;
 	
-	private String currentBinaryDataFolder = "";
 	
 	@Override
 	public BinaryObjectData getPackedData(PamDataUnit pamDataUnit) {
-		//System.out.println("REACHED getPackedData");
+		if (lcControl.getParams().printJava)
+			System.out.println("REACHED getPackedData");
 		LCDataUnit du = (LCDataUnit) pamDataUnit;
 		if (dos == null || bos == null) {
 			dos = new DataOutputStream(bos = new ByteArrayOutputStream());
@@ -85,19 +79,6 @@ public class LCBinaryDataSource extends BinaryDataSource {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-	/*	System.out.println("Original: "+String.valueOf(pbo.getDataUnitBaseData().getTimeMilliseconds()));
-		System.out.println("Changed:  "+String.valueOf(cc.getStartAndEnd()[0]));
-		pbo.getDataUnitBaseData().setTimeMilliseconds(cc.getStartAndEnd()[0]);
-		pbo.getDataUnitBaseData().setTimeNanoseconds(null);
-		//pbo.getDataUnitBaseData().getChannelBitmap(null); // not actually optional
-		//pbo.getDataUnitBaseData().setUID(null); // not actually optional
-		pbo.getDataUnitBaseData().setStartSample(null);
-		pbo.getDataUnitBaseData().setSampleDuration(null);
-		pbo.getDataUnitBaseData().setFrequency(new double[] {cc.getFreqLimits()[0], cc.getFreqLimits()[1]});
-		pbo.getDataUnitBaseData().setMillisecondDuration((double) (cc.getStartAndEnd()[1]-cc.getStartAndEnd()[0]));
-		pbo.getDataUnitBaseData().setTimeDelaysSeconds(null); */
-		
-		//this.getBinaryStorageStream().storeData(moduleID, pbo.getDataUnitBaseData(), pbo);
 		
 		return pbo;
 	}
@@ -119,7 +100,8 @@ public class LCBinaryDataSource extends BinaryDataSource {
 
 	@Override
 	public byte[] getModuleHeaderData() {
-		//System.out.println("REACHED getModuleHeaderData");
+		if (lcControl.getParams().printJava)
+			System.out.println("REACHED getModuleHeaderData");
 		if (headerOutputStream == null) {
 			headerOutputStream = new DataOutputStream(headerBytes = new ByteArrayOutputStream());
 		}
@@ -149,7 +131,8 @@ public class LCBinaryDataSource extends BinaryDataSource {
 
 	@Override
 	public ModuleHeader sinkModuleHeader(BinaryObjectData binaryObjectData, BinaryHeader bh) {
-		//System.out.println("REACHED sinkModuleHeader");
+		if (lcControl.getParams().printJava)
+			System.out.println("REACHED sinkModuleHeader");
 		ByteArrayInputStream bis = new ByteArrayInputStream(binaryObjectData.getData());
 		DataInputStream dis = new DataInputStream(bis);
 		LCBinaryModuleHeader mh = new LCBinaryModuleHeader(binaryObjectData.getVersionNumber());
@@ -171,7 +154,8 @@ public class LCBinaryDataSource extends BinaryDataSource {
 
 	@Override
 	public PamDataUnit sinkData(BinaryObjectData binaryObjectData, BinaryHeader bh, int moduleVersion) {
-		//System.out.println("REACHED sinkData");
+		if (lcControl.getParams().printJava)
+			System.out.println("REACHED sinkData");
 		
 		// This doesn't seem to do anything.
 	/*	BinaryStore bs = BinaryStore.findBinaryStoreControl();
@@ -223,7 +207,6 @@ public class LCBinaryDataSource extends BinaryDataSource {
 				}
 			}
 			du = new LCDataUnit(lcControl, cc);
-			//System.out.println("checkMemory: "+String.valueOf(checkMemory(this.getSisterDataBlock(), 10000000L)));
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -233,46 +216,11 @@ public class LCBinaryDataSource extends BinaryDataSource {
 	@Override
 	public ModuleFooter sinkModuleFooter(BinaryObjectData binaryObjectData, BinaryHeader bh,
 			ModuleHeader moduleHeader) {
-		//System.out.println("REACHED sinkModuleFooter");
-		//System.out.println("checkMemory: "+String.valueOf(checkMemory(this.getSisterDataBlock(), 10000000L)));
+		if (lcControl.getParams().printJava)
+			System.out.println("REACHED sinkModuleFooter");
 		return null;
 	}
 
 	@Override
-	public void newFileOpened(File outputFile) {
-		
-	}
-	
-	// stolen from BinaryStore for testing
-/*	private boolean checkMemory(PamDataBlock dataBlock, long minAmount) {
-		Runtime r = Runtime.getRuntime();
-		long totalMemory = r.totalMemory();
-		long maxMemory = r.maxMemory();
-		long freeMemory = r.freeMemory();
-		if (freeMemory > minAmount) {
-			return true;
-		}
-		else if (freeMemory + totalMemory < maxMemory - minAmount) {
-			return true;
-		}
-		// run the garbage collector and try again ...
-		r.gc();
-		
-		totalMemory = r.totalMemory();
-		maxMemory = r.maxMemory();
-		freeMemory = r.freeMemory();
-		if (freeMemory > minAmount) {
-			return true;
-		}
-		else if (freeMemory + totalMemory < maxMemory - minAmount) {
-			return true;
-		}
-		
-		// not enoughmemory, so throw a warning. 
-		JOptionPane.showMessageDialog(null, "System memory is getting low and no more " +
-				"\ndata can be loaded. Select a shorter load time for offline data", 
-				dataBlock.getDataName(), JOptionPane.ERROR_MESSAGE);
-
-		return false;
-	} */
+	public void newFileOpened(File outputFile) {}
 }

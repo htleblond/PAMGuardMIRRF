@@ -65,6 +65,10 @@ public class FEParameters extends MIRRFParameters {
 	public boolean miscIgnoreLoudAmpChecked;
 	public int miscIgnoreLoudAmp;
 	
+	public boolean miscPrintJavaChecked;
+	public boolean miscPrintInputChecked;
+	public boolean miscPrintOutputChecked;
+	
 	public FEParameters() {
 		
 		this.sr = 0;
@@ -119,6 +123,10 @@ public class FEParameters extends MIRRFParameters {
 		this.miscIgnoreQuietAmp = 0;
 		this.miscIgnoreLoudAmpChecked = false;
 		this.miscIgnoreLoudAmp = 0;
+		
+		this.miscPrintJavaChecked = false;
+		this.miscPrintInputChecked = false;
+		this.miscPrintOutputChecked = false;
 	}
 	
 	public String getFeatureAbbrsAsString() {

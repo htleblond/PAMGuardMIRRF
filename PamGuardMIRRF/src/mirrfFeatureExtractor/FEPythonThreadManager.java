@@ -35,7 +35,6 @@ public class FEPythonThreadManager {
 	private BufferedReader ebr = null;
 	private InputPrintThread ipt = null;
 	private ErrorPrintThread ept = null;
-	//private KillerThread kt = null;
 	private RunnerThread rt = null;
 	private ArrayList<String> activePythonThreads;
 	private Process pr;
@@ -154,12 +153,14 @@ public class FEPythonThreadManager {
 					String outpstr = null;
 					if (br.ready()) {
 						while ((outpstr = br.readLine()) != null) {
-							System.out.println(outpstr);
+							if (feControl.getParams().miscPrintJavaChecked)
+								System.out.println(outpstr);
 						}
 					}
 					if (ebr.ready()) {
 						while ((outpstr = ebr.readLine()) != null) {
-							System.out.println(outpstr);
+							if (feControl.getParams().miscPrintJavaChecked)
+								System.out.println(outpstr);
 						}
 					}
 					
@@ -282,7 +283,8 @@ public class FEPythonThreadManager {
 	private void pythonCommand(String command) {
 		if (bw != null) {
 			try {
-				System.out.println("FE COMMAND: "+command);
+				if (feControl.getParams().miscPrintInputChecked)
+					System.out.println("FE COMMAND: "+command);
 				if (command != null) {
 					bw.write(command);
 					bw.newLine();
@@ -440,72 +442,7 @@ public class FEPythonThreadManager {
 			if (params.outputCSVChecked) {
 				File f = new File(params.outputCSVName);
 				f.setWritable(true, false);
-			/*	boolean matchesFeatures = false;
-				boolean blankFile = true;
-				if (f.exists()) {
-					Scanner sc;
-					try {
-						sc = new Scanner(f);
-						if (sc.hasNextLine()) {
-							matchesFeatures = true;
-							blankFile = false;
-							String[] firstLine = sc.nextLine().split(",");
-							if (firstLine.length == 6 + params.featureList.length) {
-								for (int i = 0; i < params.featureList.length; i++) {
-									if (!firstLine[i+6].equals(params.featureList[i][1])) {
-										matchesFeatures = false;
-									}
-								}
-							} else {
-								matchesFeatures = false;
-							}
-						}
-						sc.close();
-					} catch (FileNotFoundException e1) {
-						e1.printStackTrace();
-						return false;
-					}
-					if (!blankFile && !matchesFeatures) {
-						try {
-							f.delete();
-							f.createNewFile();
-							blankFile = true;
-						} catch (IOException e2) {
-							System.out.println("ERROR: Could not delete pre-existing output .csv file.");
-							return false;
-						}
-					}
-				} else {
-					try {
-						f.createNewFile();
-					} catch (IOException e2) {
-						System.out.println("ERROR: Could not create output .csv file.");
-						return false;
-					}
-				}
-				System.out.println("Blankfile: "+String.valueOf(blankFile));
-				if (blankFile) { */
-				/*	try {
-						String firstLine = "cluster,uid,date,duration,lf,hf";
-						for (int i = 0; i < params.featureList.length; i++) {
-							firstLine += ","+params.featureList[i][1];
-						}
-						firstLine += "\n";
-						PrintWriter pw = new PrintWriter(f);
-						StringBuilder sb = new StringBuilder();
-						sb.append(firstLine);
-						pw.write(sb.toString());
-						pw.flush();
-						pw.close();
-					} catch (Exception e2) {
-						System.out.println("ERROR: Could not write to selected .csv file.");
-						return false;
-					} */
-					
-					// TODO MAKE SURE THIS DOESN'T CAUSE ANY PROBLEMS !!!!!
-			/*		FESettingsDialog dialogInstance = new FESettingsDialog(feControl.getGuiFrame(), feControl);
-					dialogInstance.clearFileAndAddSettingsInfo(params);
-				} */
+				
 				String outp = "";
 				outp += tokens[0].substring(1, tokens[0].length()-1);
 				outp += ","+tokens[1];
@@ -647,7 +584,8 @@ public class FEPythonThreadManager {
 					String outpstr = "";
 					if (br.ready()) {
 						while ((outpstr = br.readLine()) != null) {
-							System.out.println("FE IBR: "+outpstr);
+							if (feControl.getParams().miscPrintOutputChecked)
+								System.out.println("FE IBR: "+outpstr);
 							boolean boo = processPythonOutput(outpstr);
 							if (outpstr.contains("Error: Could not process ")) {
 								//pythonResultsWaitQueue--;
@@ -722,23 +660,6 @@ public class FEPythonThreadManager {
 		}
 	}
 	
-	@Deprecated
-	protected class KillerThread extends Thread {
-		protected KillerThread() {}
-		@Override
-		public void run() {
-			while(printThreadsActive) {
-				pythonCommand("threadList, wavNrList = FEPythonThread.freeThroughList(threadList, wavNrList)");
-				try {
-					TimeUnit.MILLISECONDS.sleep(1000);
-				} catch (Exception e) {
-					System.out.println("Sleep exception.");
-					e.printStackTrace();
-				}
-			}
-		}
-	}
-	
 	public FEControl getControl() {
 		return feControl;
 	}
@@ -757,7 +678,8 @@ public class FEPythonThreadManager {
 	public boolean setActive() {
 		active = new MIRRFJarExtractor().extract("src/mirrfFeatureExtractor/FEPythonThread.py",
 				feControl.getParams().tempFolder, "FEPythonThread.py", true);
-		System.out.println("JarExtractor completed.");
+		if (feControl.getParams().miscPrintJavaChecked)
+			System.out.println("JarExtractor completed.");
 		return active;
 	}
 	

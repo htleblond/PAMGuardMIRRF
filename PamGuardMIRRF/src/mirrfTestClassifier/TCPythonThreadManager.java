@@ -1,7 +1,6 @@
 package mirrfTestClassifier;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -16,6 +15,13 @@ import mirrfLiveClassifier.LCBestFeaturesDialog;
 import mirrfLiveClassifier.LCPythonThreadManager;
 import mirrfLiveClassifier.LCTrainingSetInfo;
 
+/**
+ * Creates an instance of a Python interpreter, sends clips to the
+ * Python script for processing, and manages communication between
+ * Java and Python.
+ * Subclass of the Live Classifier's thread manager.
+ * @author Holly LeBlond
+ */
 public class TCPythonThreadManager extends LCPythonThreadManager {
 	
 	protected volatile boolean running;
@@ -27,7 +33,6 @@ public class TCPythonThreadManager extends LCPythonThreadManager {
 	
 	public TCPythonThreadManager(TCControl tcControl) {
 		super(tcControl);
-		//this.scriptClassName = "TCPythonScript"; // Likely not even necessary.
 		this.running = false;
 		this.waitingOnModel = false;
 		this.lastInitFailed = false;
@@ -35,6 +40,10 @@ public class TCPythonThreadManager extends LCPythonThreadManager {
 		this.totalProcessed = -1;
 	}
 	
+	/**
+	 * Attempts to fit the training sets in Python.
+	 * @return False if an error occurred. Otherwise, true.
+	 */
 	public boolean initializeTrainingSets() {
 		if (running) {
 			getControl().SimpleErrorDialog("This action cannot be performed while another process is active.", 250);
@@ -131,6 +140,10 @@ public class TCPythonThreadManager extends LCPythonThreadManager {
 		return true;
 	}
 	
+	/**
+	 * Sends the command for fitting a training model to the Python script and waits for a response.
+	 * @param initCommand - The initialization command.
+	 */
 	protected void initializeModel(String initCommand) {
 		waitingOnModel = true;
 		addCommand(initCommand);
@@ -143,6 +156,10 @@ public class TCPythonThreadManager extends LCPythonThreadManager {
 		}
 	}
 	
+	/**
+	 * Attempts the "printBestFeatureOrder" command in the Python script and waits for a response.
+	 * @return False if an error occurred. Otherwise, true.
+	 */
 	public boolean initializeBestFeaturesSet() {
 		if (running) {
 			getControl().SimpleErrorDialog("This action cannot be performed while another process is active.", 250);
@@ -172,6 +189,10 @@ public class TCPythonThreadManager extends LCPythonThreadManager {
 		return true;
 	}
 	
+	/**
+	 * Starts sending testing data to the training models after they've been initialized.
+	 * @param maxMapSize
+	 */
 	public void startPredictions(int maxMapSize) {
 		TCParameters params = getControl().getParams();
 		LCTrainingSetInfo setInfo = params.getTrainingSetInfo();
@@ -329,6 +350,9 @@ public class TCPythonThreadManager extends LCPythonThreadManager {
 		}
 	}
 	
+	/**
+	 * Adds 1 to the loading bar in TCSidePanelPanel.
+	 */
 	protected void addOneToLoadingBar() {
 		totalProcessed++;
 		if (totalClusters <= 0) return;
@@ -339,6 +363,10 @@ public class TCPythonThreadManager extends LCPythonThreadManager {
 		if (totalProcessed == totalClusters) endProcess("Done!"); // TODO FIND A BETTER WAY TO DO THIS !!!
 	}
 	
+	/**
+	 * Stops the process.
+	 * @param loadingBarMessage - The resulting message in the loading bar.
+	 */
 	protected void endProcess(String loadingBarMessage) {
 		running = false;
 		waitingOnModel = false;
@@ -349,14 +377,23 @@ public class TCPythonThreadManager extends LCPythonThreadManager {
 		getStartButton().setEnabled(true);
 	}
 	
+	/**
+	 * @return The actual GUI side panel.
+	 */
 	protected TCSidePanelPanel getSidePanelPanel() {
 		return getControl().getSidePanel().getTCSidePanelPanel();
 	}
 	
+	/**
+	 * @return The start button in TCSidePanelPanel.
+	 */
 	protected JButton getStartButton() {
 		return getSidePanelPanel().startButton;
 	}
 	
+	/**
+	 * @return The loading bar in TCSidePanelPanel.
+	 */
 	protected JProgressBar getLoadingBar() {
 		return getSidePanelPanel().loadingBar;
 	}
@@ -366,6 +403,9 @@ public class TCPythonThreadManager extends LCPythonThreadManager {
 		return (TCControl) lcControl;
 	}
 	
+	/**
+	 * Attempts to stop the thread manager's current actions.
+	 */
 	public void stop() {
 		running = false;
 		commandList.clear();
@@ -377,6 +417,9 @@ public class TCPythonThreadManager extends LCPythonThreadManager {
 		}
 	}
 	
+	/**
+	 * @return Whether or not the process is currently running.
+	 */
 	public boolean isRunning() {
 		return running;
 	}

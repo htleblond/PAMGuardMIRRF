@@ -5,6 +5,10 @@ import java.io.Serializable;
 import PamModel.parametermanager.ManagedParameters;
 import PamModel.parametermanager.PamParameterSet;
 
+/**
+ * Parameters template for MIRRF modules that use Python scripts.
+ * @author Holly LeBlond
+ */
 //@SuppressWarnings("serial")
 public abstract class MIRRFParameters implements Serializable, Cloneable, ManagedParameters {
 	

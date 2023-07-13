@@ -26,13 +26,15 @@ import PamController.PamSettingManager;
 import PamController.PamSettings;
 
 /**
- * The controller class for the MIRRF Training Set Builder.
- * Is a subclass of PamControlledUnit.
+ * Haven't released this one yet.
+ * This module should eventually allow you to create scatter plots for comparing features
+ * extracted by the Feature Extractor, but it doesn't work super great yet.
+ * I'll get back to this one eventually.
  * @author Holly LeBlond
  */
 public class FPControl extends PamControlledUnit implements PamSettings {
 	
-	public static final String UNITTYPE = "MIRRFTC";
+	public static final String UNITTYPE = "MIRRFFP";
 	
 	protected FPTabPanel fpTabPanel;
 

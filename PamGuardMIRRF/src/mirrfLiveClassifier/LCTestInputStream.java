@@ -13,6 +13,11 @@ import binaryFileStorage.BinaryInputStream;
 import binaryFileStorage.BinaryStore;
 import binaryFileStorage.CountingInputStream;
 
+@Deprecated
+/**
+ * Only meant for testing purposes.
+ * @author Holly LeBlond
+ */
 public class LCTestInputStream extends BinaryInputStream {
 	
 	public File curr;

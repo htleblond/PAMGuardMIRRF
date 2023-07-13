@@ -43,9 +43,6 @@ public class WMNTSettingsDialog extends PamDialog {
 	protected JComboBox<String> callTypeBox;
 	protected JTextField intervalField;
 	protected WMNTTimeZonePanel tzPanel;
-/*	protected String originalAudioTZ;
-	protected String originalBinaryTZ;
-	protected String originalDatabaseTZ; */
 	protected JTextField sqlTableField;
 	
 	protected WMNTControl wmntControl;
@@ -55,8 +52,6 @@ public class WMNTSettingsDialog extends PamDialog {
 		super(parentFrame, wmntControl.getUnitName(), true);
 		this.wmntControl = wmntControl;
 		this.parentFrame = parentFrame;
-		
-		//this.getDefaultButton().setVisible(false);
 		
 		JTabbedPane tabbedPane = new JTabbedPane();
 		
@@ -165,9 +160,6 @@ public class WMNTSettingsDialog extends PamDialog {
 		tzPanel.setAudioTimeZone(wmntControl.getParams().audioTZ);
 		tzPanel.setBinaryTimeZone(wmntControl.getParams().binaryTZ);
 		tzPanel.setDatabaseTimeZone(wmntControl.getParams().databaseTZ);
-	/*	originalAudioTZ = wmntControl.getParams().audioTZ;
-		originalBinaryTZ = wmntControl.getParams().binaryTZ;
-		originalDatabaseTZ = wmntControl.getParams().databaseTZ; */
 		mainPanel.add(tzPanel, b);
 		
 		b.gridy++;
@@ -234,6 +226,7 @@ public class WMNTSettingsDialog extends PamDialog {
 	 * Used with JTextField.setDocument(new JTextFieldLimit(int limit).getDocument());
 	 * Copied from https://stackoverflow.com/questions/3519151/how-to-limit-the-number-of-characters-in-jtextfield
 	 * Author page: https://stackoverflow.com/users/1866109/francisco-j-g%c3%bcemes-sevilla
+	 * (Also modified to filter out commas.)
 	 */
 	public class JTextFieldLimit extends JTextField {
 	    private int limit;
@@ -251,10 +244,8 @@ public class WMNTSettingsDialog extends PamDialog {
 	        @Override
 	        public void insertString( int offset, String  str, AttributeSet attr ) throws BadLocationException {
 	            if (str == null) return;
-
-	            if ((getLength() + str.length()) <= limit) {
-	                super.insertString(offset, str, attr);
-	            }
+	            if (str.length() == 1 && str.charAt(0) == ',') return;
+	            if ((getLength() + str.length()) <= limit) super.insertString(offset, str, attr);
 	        }       
 	    }
 	}

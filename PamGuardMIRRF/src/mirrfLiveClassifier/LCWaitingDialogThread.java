@@ -1,11 +1,12 @@
 package mirrfLiveClassifier;
 
-import java.awt.Frame;
 import java.awt.Window;
 import java.util.concurrent.TimeUnit;
 
-import javax.swing.JOptionPane;
-
+/**
+ * The thread for LCWaitingDialog.
+ * @author Holly LeBlond
+ */
 public class LCWaitingDialogThread extends Thread {
 	protected LCControl lcControl;
 	//protected volatile boolean running;

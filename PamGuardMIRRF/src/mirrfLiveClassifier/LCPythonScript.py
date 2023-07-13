@@ -1,3 +1,6 @@
+# LCPythonScript.py (for MIRRF Classifier plugin for PAMGuard)
+# By Holly LeBlond
+
 import numpy as np
 import os
 import sys

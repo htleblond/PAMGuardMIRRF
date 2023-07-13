@@ -1,20 +1,11 @@
-/*
- * Whistle and Moan Navigation Tool
- * Version 1.05 
- * By Holly LeBlond
- * Fisheries and Oceans Canada
- * May 2022
- */
-
 package wmnt;
 
 import PamModel.PamDependency;
 import PamModel.PamPluginInterface;
-//import mirrfFeatureExtractor.FEPlugin;
-//import mirrf.MIRRFPlugin;
+import mirrf.MIRRFInfo;
 
 /**
- * "Whistles and Moans Navigation Tool" (WMNT)
+ * Whistle and Moan Navigation Tool (WMNT) - now bundled into mirrf.jar
  * (Formerly named "Whistle and Moan Detector Plus" (WMDP))
  * The intention of this was to add a side panel for streamlined manual data entry into MySQL for the
  * pre-existing Whistle and Moan Detector in PamGuard. However, it is also very useful for simply
@@ -43,27 +34,27 @@ public class WMNTPlugin implements PamPluginInterface {
 
 	@Override
 	public String getDeveloperName() {
-		return "Holly LeBlond";
+		return MIRRFInfo.getDeveloperName();
 	}
 
 	@Override
 	public String getContactEmail() {
-		return "wtleblond@gmail.com";
+		return MIRRFInfo.getContactEmail();
 	}
 
 	@Override
 	public String getVersion() {
-		return "0.02b";
+		return MIRRFInfo.getVersion();
 	}
 
 	@Override
 	public String getPamVerDevelopedOn() {
-		return "2.02.09";
+		return MIRRFInfo.getPamVerDevelopedOn();
 	}
 
 	@Override
 	public String getPamVerTestedOn() {
-		return "2.02.09";
+		return MIRRFInfo.getPamVerTestedOn();
 	}
 
 	@Override

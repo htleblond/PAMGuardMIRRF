@@ -217,7 +217,6 @@ public class WMNTSQLLogging {
 	/**
 	 * Finds the index of the row in the table with matching UID and date values.
 	 * Returns -1 if such row is not present.
-	 * @author Holly LeBlond
 	 */
 	protected int findRow(String uid, String date) {
 		for (int i = 0; i < ttable.getRowCount(); i++) {
@@ -237,7 +236,6 @@ public class WMNTSQLLogging {
 	 * @param mill - The milliseconds attached to the date (Short).
 	 * @param writing - False removes a second and converts to UTC. True adds a second and converts from UTC.
 	 * @return The converted date (String).
-	 * @author Holly LeBlond
 	 */
 	protected String convertDate(String inpdate, short mill, boolean writing) {
 		String conv;
@@ -268,7 +266,6 @@ public class WMNTSQLLogging {
 	/**
 	 * For when the 'Check database for alignment' button is pressed.
 	 * @param outpTable
-	 * @author Holly LeBlond
 	 */
 	public void checkAlignment(PamTable outpTable) {
 		DefaultListModel<String> tableModel = new DefaultListModel<>();
@@ -320,7 +317,6 @@ public class WMNTSQLLogging {
 	
 	/**
 	 * Thread used for running the loading bar window.
-	 * @author Holly LeBlond
 	 */
 	protected class LoadingBarThread extends Thread {
 		protected LoadingBarThread() {}
@@ -333,7 +329,6 @@ public class WMNTSQLLogging {
 	/**
 	 * Commits to the database.
 	 * @param outpTable
-	 * @author Holly LeBlond
 	 */
 	public void commit(PamTable outpTable, Object[][] origTable, boolean[] changeLog) {
 		int totalChanges = 0;
@@ -402,7 +397,6 @@ public class WMNTSQLLogging {
 	 * Executes the SQL for commit().
 	 * @param sqlEntry - The SQL update statement. (String)
 	 * @return boolean - Whether or not the SQL succeeded or not.
-	 * @author Holly LeBlond
 	 */
 	protected boolean commitEntry(String sqlEntry) {
 		try {

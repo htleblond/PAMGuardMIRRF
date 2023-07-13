@@ -11,13 +11,15 @@ import javax.swing.table.DefaultTableModel;
 
 import PamView.PamTable;
 import PamView.dialog.PamDialog;
-import PamView.panel.PamBorderPanel;
 import PamView.panel.PamPanel;
-import mirrfLiveClassifier.LCPanel.CustomTableRenderer;
 
+/**
+ * Dialog for displaying Python output after the "List features by usefulness" button is pressed.
+ * @author Holly LeBlond
+ */
 public class LCBestFeaturesDialog extends PamDialog {
 	
-	private LCControl lcControl;
+	protected LCControl lcControl;
 	
 	protected DefaultTableModel dtm;
 	protected PamTable featureTable;

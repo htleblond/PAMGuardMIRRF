@@ -1,21 +1,22 @@
 package mirrfLiveClassifier;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.ListIterator;
 
 import PamController.PamControlledUnit;
 import PamguardMVC.PamDataBlock;
-import PamguardMVC.PamDataUnit;
 import PamguardMVC.dataOffline.OfflineDataLoadInfo;
 import binaryFileStorage.BinaryOfflineDataMap;
 import binaryFileStorage.BinaryOfflineDataMapPoint;
 import binaryFileStorage.BinaryStore;
 import pamScrollSystem.ViewLoadObserver;
 
+/**
+ * The Live Classifier's output data block.
+ * @author Holly LeBlond
+ */
 public class LCDataBlock extends PamDataBlock<LCDataUnit> {
 
 	protected LCControl lcControl;
@@ -49,7 +50,8 @@ public class LCDataBlock extends PamDataBlock<LCDataUnit> {
 	
 	@Override
 	synchronized public boolean loadViewerData(OfflineDataLoadInfo offlineDataLoadInfo, ViewLoadObserver loadObserver) {
-		System.out.println("REACHED loadViewerData");
+		if (lcControl.getParams().printJava)
+			System.out.println("REACHED loadViewerData");
 		for (int i = 0; i < lcControl.getPamController().getNumControlledUnits(); i++) {
 			PamControlledUnit pcu = lcControl.getPamController().getControlledUnit(i);
 			//System.out.println(pcu.getUnitName()+" : "+pcu.getUnitType());
@@ -69,7 +71,8 @@ public class LCDataBlock extends PamDataBlock<LCDataUnit> {
 				}
 			}
 		}
-		System.out.println(String.valueOf(offlineDataLoadInfo.getStartMillis())+" -> "+String.valueOf(offlineDataLoadInfo.getEndMillis()));
+		if (lcControl.getParams().printJava)
+			System.out.println(String.valueOf(offlineDataLoadInfo.getStartMillis())+" -> "+String.valueOf(offlineDataLoadInfo.getEndMillis()));
 		boolean loadOk = super.loadViewerData(offlineDataLoadInfo, loadObserver);
 		return loadOk;
 	}
@@ -82,7 +85,6 @@ public class LCDataBlock extends PamDataBlock<LCDataUnit> {
 	 * @param clusterID
 	 * @param datetime - Start date and time of cluster in UTC as string formatted as "yyyy-MM-dd HH:mm:ss+SSS".
 	 * @return LCDataUnit
-	 * @author Holly LeBlond
 	 */
 	public LCDataUnit retrieveDataUnit(String clusterID, String datetime) {
 		for (int i = 0; i < this.getUnitsCount(); i++) {
@@ -103,20 +105,18 @@ public class LCDataBlock extends PamDataBlock<LCDataUnit> {
 	 * @param clusterID
 	 * @param datetime - Start date and time of cluster in UTC as a long.
 	 * @return LCDataUnit
-	 * @author Holly LeBlond
 	 */
 	public LCDataUnit retrieveDataUnit(String clusterID, Long datetime) {
 		return retrieveDataUnit(clusterID, lcControl.convertLocalLongToUTC(datetime));
 	}
 	
 	/**
-	 * Returns a HashMap containing each LCDataUnit that match a clusterID and date/time
+	 * Returns a HashMap containing each LCDataUnit that matches a clusterID and date/time
 	 * in the input list. Each list entry should be clusterID+", "+date/time. The output
 	 * key will also follow this format.
 	 * The date/time string should be formatted as "yyyy-MM-dd HH:mm:ss+SSS".
 	 * @param idsAndDates
 	 * @return HashMap<String, LCDataUnit>
-	 * @author Holly LeBlond
 	 */
 	public HashMap<String, LCDataUnit> retrieveDataUnitsByIDandDate(ArrayList<String> idsAndDates) {
 		HashMap<String, LCDataUnit> outp = new HashMap<String, LCDataUnit>();
@@ -133,6 +133,14 @@ public class LCDataBlock extends PamDataBlock<LCDataUnit> {
 		return outp;
 	}
 	
+	/**
+	 * Returns a HashMap containing each UID that matches a clusterID and date/time
+	 * in the input list. Each list entry should be clusterID+", "+date/time. The output
+	 * key will also follow this format.
+	 * The date/time string should be formatted as "yyyy-MM-dd HH:mm:ss+SSS".
+	 * @param idsAndDates
+	 * @return HashMap<String, ArrayList<Long>>
+	 */
 	public HashMap<String, ArrayList<Long>> retrieveAllUIDsByIDandDate() {
 		HashMap<String, ArrayList<Long>> outp = new HashMap<String, ArrayList<Long>>();
 		for (int i = 0; i < this.getUnitsCount(); i++) {

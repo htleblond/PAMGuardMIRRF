@@ -12,6 +12,10 @@ import PamController.PamSettingManager;
 import mirrfLiveClassifier.LCControl;
 import mirrfLiveClassifier.LCMarkControl;
 
+/**
+ * The Test Classifier's PamControlledUnit, which is an extension of the Live Classifier's control unit.
+ * @author Holly LeBlond
+ */
 public class TCControl extends LCControl {
 	
 	//protected TCParameters parameters = new TCParameters();
@@ -26,7 +30,6 @@ public class TCControl extends LCControl {
 	
 	@Override
 	protected void init() {
-		System.out.println("TC: Init happened");
 		if (parameters == null || !(parameters instanceof TCParameters)) parameters = new TCParameters();
 		PamSettingManager.getInstance().registerSettings(this);
 		
@@ -80,20 +83,7 @@ public class TCControl extends LCControl {
 		return (TCProcess) process;
 	}
 	
-	// The following are now in TCParameters.
-/*	public LCTrainingSetInfo getTestingSetInfo() {
-		return loadedTestingSetInfo;
-	}
-	
-	public void setTestingSetInfo(LCTrainingSetInfo inp) {
-		loadedTestingSetInfo = inp;
-	}
-	
-	public String getTestPath() {
-		return loadedTestingSetInfo.pathName;
-	} */
-	
-	public boolean isTrainingSetLoaded() {
+/*	public boolean isTrainingSetLoaded() {
 		return trainingSetLoaded;
 	}
 	
@@ -107,7 +97,7 @@ public class TCControl extends LCControl {
 	
 	public void setModelFittingStatus(boolean inp) {
 		modelFittingFinished = inp;
-	}
+	} */
 	
 	@Override
 	public TCParameters getParams() {

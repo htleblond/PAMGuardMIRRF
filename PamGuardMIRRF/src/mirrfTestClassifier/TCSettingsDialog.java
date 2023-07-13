@@ -26,15 +26,15 @@ import javax.swing.border.TitledBorder;
 
 import PamView.dialog.PamGridBagContraints;
 import PamView.dialog.SourcePanel;
-import mirrfFeatureExtractor.FEDataBlock;
 import mirrfFeatureExtractor.FEDataUnit;
-import mirrfFeatureExtractor.FEParameters;
-import mirrfLiveClassifier.LCControl;
-import mirrfLiveClassifier.LCParameters;
 import mirrfLiveClassifier.LCSettingsDialog;
 import mirrfLiveClassifier.LCTrainingSetInfo;
-import mirrfLiveClassifier.LCSettingsDialog.TrainSetListener;
 
+/**
+ * The settings dialog for the Test Classifier.
+ * Subclass of the Live Classifier's settings dialog.
+ * @author Holly LeBlond
+ */
 public class TCSettingsDialog extends LCSettingsDialog {
 	
 	protected JTextField testSetField;
@@ -63,7 +63,6 @@ public class TCSettingsDialog extends LCSettingsDialog {
 	protected void init() {
 		super.init();
 		loadedTestingSet = getControl().getParams().getTestingSetInfo();
-		System.out.println("TCSettingsDialog: Init happened");
 	}
 	
 	@Override
@@ -216,6 +215,9 @@ public class TCSettingsDialog extends LCSettingsDialog {
 		return true;
 	}
 	
+	/**
+	 * Fills testSubsetBox with options.
+	 */
 	protected void fillTestSubsetBox() {
 		testSubsetBox.removeAllItems();
 		if (loadedTrainingSet == null) return;
@@ -234,6 +236,9 @@ public class TCSettingsDialog extends LCSettingsDialog {
 		else if  (currID.length() == 2) testSubsetBox.setSelectedItem(currID);
 	}
 	
+	/**
+	 * The listener for the validation radio buttons.
+	 */
 	protected class ValidationRBListener implements ActionListener {
 		public static final int LEAVEONEOUT = 0;
 		public static final int KFOLD = 1;
@@ -255,7 +260,15 @@ public class TCSettingsDialog extends LCSettingsDialog {
 	
 	protected class LabelNotFoundException extends Exception {}
 	
-	// TODO Consider doing this check in TCProcess.
+	/**
+	 * When using either leave-one-out or k-fold cross-validation, checks if all instances of a class are contained in a single subset.
+	 * When testing a single subset, checks if all instances of a class are contained in the selected subset.
+	 * If either of these are the case, classification cannot proceed, as all training set instances must contains all classes.
+	 * @param curr - The currently loaded training set.
+	 * @param kFold - If true, assume k-fold cross-validation. Otherwise, assume leave-one-out.
+	 * @param testSubset - Whether or not a single subset is being tested as opposed to the whole set.
+	 * @return False if there's an instance of a training set missing a class, or if another error occurs. Otherwise, true.
+	 */
 	public boolean checkClassSpread(LCTrainingSetInfo curr, boolean kFold, boolean testSubset) {
 		if (kFold) testSubset = false; // kFold overrides testSubset.
 		if (testSubset && testSubsetBox.getItemCount() == 0) {
@@ -363,10 +376,17 @@ public class TCSettingsDialog extends LCSettingsDialog {
 		return true;
 	}
 	
-	public boolean checkIfTrainingSetIsValid(LCTrainingSetInfo inp, boolean readThroughCSV, boolean showLoadingDialogs) {
+	/**
+	 * Checks if the training set is actually usable with the selected settings.
+	 * @param inp - The loaded training set.
+	 * @param readThroughFile - Whether or not the .mirrfts file the training set came from should be read through again for changes.
+	 * @param showLoadingDialogs - Whether or not loading dialogs should appear.
+	 * @return True if the training set is valid. Otherwise, false.
+	 */
+	public boolean checkIfTrainingSetIsValid(LCTrainingSetInfo inp, boolean readThroughFile, boolean showLoadingDialogs) {
 		TCParameters params = generateParameters();
 		LCTrainingSetInfo curr = inp;
-		if (readThroughCSV) {
+		if (readThroughFile) {
 			curr = readTrainingSet(false, showLoadingDialogs, new File(loadedTrainingSet.pathName));
 			if (curr == null) return false;
 			if (!loadedTrainingSet.compare(curr)) {
@@ -396,7 +416,14 @@ public class TCSettingsDialog extends LCSettingsDialog {
 		return true;
 	}
 	
-	public boolean checkIfTestingSetIsValid(LCTrainingSetInfo inp, boolean readThroughCSV, boolean showLoadingDialogs) {
+	/**
+	 * Checks if the testing set is actually usable with the selected settings and training set.
+	 * @param inp - The loaded testing set.
+	 * @param readThroughFile - Whether or not the .mirrfts file the testing set came from should be read through again for changes.
+	 * @param showLoadingDialogs - Whether or not loading dialogs should appear.
+	 * @return True if the testing set is valid. Otherwise, false.
+	 */
+	public boolean checkIfTestingSetIsValid(LCTrainingSetInfo inp, boolean readThroughFile, boolean showLoadingDialogs) {
 		TCParameters params = generateParameters();
 		if (inp == null || inp.pathName.length() == 0) {
 			getControl().SimpleErrorDialog("No testing set has been selected.", 250);
@@ -407,7 +434,7 @@ public class TCSettingsDialog extends LCSettingsDialog {
 			return false;
 		}
 		LCTrainingSetInfo curr = inp;
-		if (readThroughCSV) curr = readTrainingSet(true, showLoadingDialogs, new File(loadedTestingSet.pathName));
+		if (readThroughFile) curr = readTrainingSet(true, showLoadingDialogs, new File(loadedTestingSet.pathName));
 		if (curr.pathName.equals(loadedTrainingSet.pathName)) {
 			getControl().SimpleErrorDialog("Training and testing sets cannot be the same file.", 250);
 			return false;

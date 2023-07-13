@@ -10,6 +10,12 @@ import java.util.concurrent.TimeUnit;
 
 import mirrf.MIRRFJarExtractor;
 
+/**
+ * Creates an instance of a Python interpreter, sends clips to the
+ * Python script for processing, and manages communication between
+ * Java and Python.
+ * @author Holly LeBlond
+ */
 public class LCPythonThreadManager{
 	protected LCControl lcControl;
 	protected String scriptClassName = "LCPythonScript";
@@ -49,6 +55,9 @@ public class LCPythonThreadManager{
 		this.pit.start();
 	}
 	
+	/**
+	 * Creates the Python interpreter and immediately begins importing libraries.
+	 */
 	protected void initializePython() throws Exception {
 		try {
 			commandList = new ArrayList<String>();
@@ -61,10 +70,10 @@ public class LCPythonThreadManager{
 	        
 	        startPrintThreads();
 	        
-	        pythonCommand("import os", false);
-	        pythonCommand("os.chdir(r\""+pathname+"\")", false);
-	        pythonCommand("os.getcwd()", false);
-	        pythonCommand("import numpy as np", false);
+	        pythonCommand("import os", getControl().getParams().printInput);
+	        pythonCommand("os.chdir(r\""+pathname+"\")", getControl().getParams().printInput);
+	        pythonCommand("os.getcwd()", getControl().getParams().printInput);
+	        pythonCommand("import numpy as np", getControl().getParams().printInput);
 	        String pyParams = lcControl.getParams().outputPythonParamsToText();
 	        if (lcParams.getFeatureList().size() > 0) {
 	        	pyParams += "\""+lcParams.getFeatureList().get(0)+"\"";
@@ -75,17 +84,20 @@ public class LCPythonThreadManager{
 	        pyParams += "]";
 	        pyParams += "]";
 	        if (pyParams.length() > 0) {
-	            pythonCommand("txtParams = "+pyParams, false);
+	            pythonCommand("txtParams = "+pyParams, getControl().getParams().printInput);
 	        } else {
-	            pythonCommand("txtParams = []", false);
+	            pythonCommand("txtParams = []", getControl().getParams().printInput);
 	        }
-	        pythonCommand("import sys", false);
-	        pythonCommand("import gc", false);
+	        pythonCommand("import sys", getControl().getParams().printInput);
+	        pythonCommand("import gc", getControl().getParams().printInput);
 		} catch (Exception e) {
 			throw e;
 		}
 	}
 	
+	/**
+	 * Iterates through and empties the command queue and sends commands to the Python interpreter.
+	 */
 	protected class PythonInterpreterThread extends Thread {
 		public PythonInterpreterThread() {}
 		@Override
@@ -94,11 +106,11 @@ public class LCPythonThreadManager{
 				// Kudos to this: https://stackoverflow.com/questions/25041529/how-to-run-the-python-interpreter-and-get-its-output-using-java
 				if (setActive()) {
 					initializePython();
-			        pythonCommand("import "+scriptClassName, false);
+			        pythonCommand("import "+scriptClassName, getControl().getParams().printInput);
 			        
 			        while (active || commandList.size() > 0) {
 			        	if (commandList.size() > 0) {
-			        		pythonCommand(commandList.get(0), true);
+			        		pythonCommand(commandList.get(0), getControl().getParams().printInput);
 				            commandList.remove(0);
 			        	}
 			        	try {
@@ -110,16 +122,23 @@ public class LCPythonThreadManager{
 			        }
 				}
 			} catch (Exception e) {
-				System.out.println("nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn");
 				e.printStackTrace(System.out);
 			}
 		}
 	}
 	
+	/**
+	 * Adds a command to the queue.
+	 */
 	public void addCommand(String inp) {
 		commandList.add(inp);
 	}
 	
+	/**
+	 * Actually sends the command to the interpreter.
+	 * @param command
+	 * @param toPrint - If true, prints the command to the console
+	 */
 	public void pythonCommand(String command, boolean toPrint) {
 		if (bw != null) {
 			try {
@@ -137,6 +156,9 @@ public class LCPythonThreadManager{
 		}
 	}
 	
+	/**
+	 * Starts the print threads.
+	 */
 	public void startPrintThreads() {
 		printThreadsActive = true;
 		ipt = new InputPrintThread();
@@ -145,6 +167,11 @@ public class LCPythonThreadManager{
 		ept.start();
 	}
 	
+	/**
+	 * Parses output from the InputPrintThread (which should be non-error output from the Python interpreter).
+	 * @param outpstr - The output string
+	 * @param print - If true, prints the output string to the console
+	 */
 	protected void parseIPTOutput(String outpstr, boolean print) {
 		if (print) System.out.println("LC IBR: "+outpstr);
 		if (outpstr.equals("Initialization succeeded")) {
@@ -168,6 +195,9 @@ public class LCPythonThreadManager{
 		}
 	}
 	
+	/**
+	 * Passes along non-error output from the Python interpreter.
+	 */
 	protected class InputPrintThread extends Thread {
 		protected InputPrintThread() {}
 		@Override
@@ -178,7 +208,7 @@ public class LCPythonThreadManager{
 					if (br.ready()) {
 						while (br.ready() && printThreadsActive && (outpstr = br.readLine()) != null) {
 							if (outpstr != null) {
-								parseIPTOutput(outpstr, true); // TODO Set to false after testing.
+								parseIPTOutput(outpstr, getControl().getParams().printOutput);
 								try {
 									TimeUnit.MILLISECONDS.sleep(50);
 								} catch (Exception e) {
@@ -202,11 +232,17 @@ public class LCPythonThreadManager{
 		}
 	}
 	
+	/**
+	 * Parses output from the ErrorPrintThread. Always prints it to the console.
+	 * @param outpstr - The output string
+	 */
 	protected void parseEPTOutput(String outpstr) {
 		System.out.println("LC EBR: "+outpstr);
-		// TODO
 	}
 	
+	/**
+	 * Passes along error output from the Python interpreter.
+	 */
 	protected class ErrorPrintThread extends Thread {
 		protected ErrorPrintThread() {}
 		@Override
@@ -241,10 +277,18 @@ public class LCPythonThreadManager{
 		}
 	}
 	
+	/**
+	 * @return Whether or not all commands have finished processing in the Python interpreter.
+	 * (Assuming the "finished" boolean has been correctly set.)
+	 */
 	public boolean getFinished() {
 		return finished;
 	}
 	
+	/**
+	 * Sets the "finished" boolean.
+	 * If true, other classes will assume that the interpreter has finished processing everything.
+	 */
 	public void setFinished(boolean inp) {
 		finished = inp;
 	}
@@ -253,10 +297,15 @@ public class LCPythonThreadManager{
 		return lcControl;
 	}
 	
+	/**
+	 * Extracts the Python script from the plugin's .jar file and turns the thread manager "on".
+	 * @return True if the script was successfully extracted. Otherwise, false.
+	 */
 	public boolean setActive() {
 		active = new MIRRFJarExtractor().extract("src/mirrfLiveClassifier/LCPythonScript.py",
 				lcControl.getParams().tempFolder, "LCPythonScript.py", true);
-		System.out.println("JarExtractor completed.");
+		if(getControl().getParams().printJava)
+			System.out.println("JarExtractor completed.");
 		return active;
 	}
 	

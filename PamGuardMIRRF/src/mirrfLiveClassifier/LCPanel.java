@@ -11,10 +11,6 @@ import javax.swing.table.*;
 import javax.swing.filechooser.*;
 import java.util.*;
 import java.text.*;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
 
 import javax.swing.border.TitledBorder;
 import javax.swing.event.ListSelectionEvent;
@@ -22,11 +18,9 @@ import javax.swing.event.ListSelectionListener;
 
 import PamView.dialog.PamGridBagContraints;
 import PamView.panel.PamBorderPanel;
-import mirrfFeatureExtractor.FEFeatureDialog;
 import pamScrollSystem.AbstractPamScroller;
 import pamScrollSystem.AbstractScrollManager;
 import pamScrollSystem.ViewerScrollerManager;
-import weka.classifiers.evaluation.ConfusionMatrix;
 import wmnt.WMNTAnnotationInfo;
 import wmnt.WMNTDataUnit;
 import PamView.PamColors;
@@ -41,7 +35,6 @@ public class LCPanel extends PamBorderPanel {
 	protected LCControl control;
 	protected PamBorderPanel mainPanel;
 	protected PamBorderPanel memPanel;
-	//protected PamBorderPanel topLeftPanel; // deal with this stuff in settings instead
 	protected volatile PamBorderPanel topLeftPanel;
 	protected PamBorderPanel topRightPanel;
 	protected CardLayout cl;
@@ -49,12 +42,6 @@ public class LCPanel extends PamBorderPanel {
 	protected PamBorderPanel bottomLeftPanel;
 	protected PamBorderPanel bottomRightPanel;
 	
-	//protected JTextField trainSetField;
-	//protected JButton trainSetButton;
-	//protected JTextField testSetField;
-	//protected JButton testSetButton;
-	//protected JProgressBar loadingBar;
-	//protected JButton runButton;
 	protected DefaultTableModel dtm;
 	protected PamTable resultsTable;
 	protected JTextArea resultsTA;
@@ -99,7 +86,6 @@ public class LCPanel extends PamBorderPanel {
 		
 		mainPanel = new PamBorderPanel();
 		mainPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
-		//mainPanel.setLayout(new BorderLayout());
 		
 		memPanel = new PamBorderPanel(new GridBagLayout());
 		GridBagConstraints b = new PamGridBagContraints();
@@ -251,6 +237,10 @@ public class LCPanel extends PamBorderPanel {
 		}
 	}
 	
+	/**
+	 * Sends a command to the Python interpreter, which returns a sorted list of scores that attempt
+	 * to quantify how "useful" each feature is, which are then shown in a dialog.
+	 */
 	protected void bestFeaturesButtonAction() {
 		if (control.isViewer()) {
 			control.SimpleErrorDialog("This function is only available in regular processing mode.", 250);
@@ -262,7 +252,7 @@ public class LCPanel extends PamBorderPanel {
 		}
 		wdThread = new LCWaitingDialogThread(control.getGuiFrame(), control, "Waiting for response from Python script...");
 		wdThread.start();
-		control.getThreadManager().pythonCommand("tcm.printBestFeatureOrder()", false);
+		control.getThreadManager().pythonCommand("tcm.printBestFeatureOrder()", control.getParams().printInput);
 	}
 	
 	/**
@@ -315,6 +305,9 @@ public class LCPanel extends PamBorderPanel {
 		exportDialog.setVisible(true);
 	}
 	
+	/**
+	 * Displays individual contour results in the space below the table when table rows are selected.
+	 */
 	protected class ResultsSelectionListener implements ListSelectionListener {
 		public void valueChanged(ListSelectionEvent e) {
 			resultsTA.setText("");
@@ -373,18 +366,9 @@ public class LCPanel extends PamBorderPanel {
 	    }
 	}
 	
-	public void setToRunning(boolean boo) {
-		running = boo;
-	}
-	
-	public void setToWaiting(boolean boo) {
-		waiting = boo;
-	}
-	
-	public void setInitWorked(boolean boo) {
-		initWorked = boo;
-	}
-	
+	/**
+	 * Creates the accuracy matrix and, in Viewer mode, the confusion matrix.
+	 */
 	public void createMatrices(String[] labelOrder) {
 		accuracyMatrix = new int[labelOrder.length][5];
 		jLabelAccuracyMatrix = new JLabel[labelOrder.length+2][7];
@@ -474,6 +458,9 @@ public class LCPanel extends PamBorderPanel {
 		showMatrices();
 	}
 	
+	/**
+	 * Displays the matrices in the upper right panel.
+	 */
 	protected void showMatrices() {
 		JPanel matricesPanel = new JPanel(new GridLayout(2, 1, 10, 50));
 		JPanel amGridPanel = new JPanel(new GridLayout(jLabelAccuracyMatrix.length, jLabelAccuracyMatrix[0].length, 10, 10));
@@ -496,6 +483,9 @@ public class LCPanel extends PamBorderPanel {
 		cl.show(cmCardsPanel, "matricesPanel");
 	}
 	
+	/**
+	 * Adds a row to the table displaying results found in the input data unit.
+	 */
 	public void addResultToTable(LCDataUnit du) {
 		LCCallCluster cc = du.getCluster();
 		
@@ -641,6 +631,9 @@ public class LCPanel extends PamBorderPanel {
 		}
 	}
 	
+	/**
+	 * Updates the confusion matrix in the upper right panel for when results are added to the table.
+	 */
 	public void updateConfMatrixLabels() {
 		// fills in digits and updates row percentages
 		for (int i = 0; i < confMatrix.length; i++) {
@@ -694,6 +687,9 @@ public class LCPanel extends PamBorderPanel {
 		}
 	}
 	
+	/**
+	 * Re-loads all data unit info into the table.
+	 */
 	private void fullTableUpdate() {
 		LCDataBlock db = (LCDataBlock) control.getProcess().getOutputDataBlock(0);
 		for (int i = 0; i < confMatrix.length; i++) {
@@ -729,6 +725,9 @@ public class LCPanel extends PamBorderPanel {
 		}
 	}
 	
+	/**
+	 * Updates the "actual species" column when the species column in the WMNT is modified.
+	 */
 	public void wmntUpdate(WMNTDataUnit wmntdu) {
 		if (wmntdu.startLoadingBar) {
 			loadingBarWindow = new LCLoadingBarWindow(control.getGuiFrame(), wmntdu.totalRowsToUpdate);

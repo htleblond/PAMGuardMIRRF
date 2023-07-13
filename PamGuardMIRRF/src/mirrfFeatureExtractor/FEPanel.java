@@ -5,16 +5,12 @@ import java.awt.event.*;
 
 import javax.swing.*;
 
-import PamDetection.RawDataUnit;
-
 import java.util.*;
 
 import javax.swing.border.TitledBorder;
 
-import whistlesAndMoans.AbstractWhistleDataUnit;
 import PamView.dialog.PamGridBagContraints;
 import PamView.panel.PamPanel;
-import PamView.dialog.SourcePanel;
 
 /**
  * The actual side panel.
@@ -32,9 +28,6 @@ public class FEPanel {
 	
 	protected PamPanel mainPanel;
 	
-	//protected JTextField fileField;
-	//protected JButton settingsButton;
-	//protected JProgressBar loadingBar;
 	protected JTextField successField;
 	protected JTextField failureField;
 	protected JTextField ignoreField;
@@ -166,10 +159,6 @@ public class FEPanel {
 		}
 		return outp;
 	}
-	
-/*	public JTextField getFileField() {
-		return fileField;
-	} */
 	
 	protected class ReloadCSVListener implements ActionListener{
 		public void actionPerformed(ActionEvent e) {

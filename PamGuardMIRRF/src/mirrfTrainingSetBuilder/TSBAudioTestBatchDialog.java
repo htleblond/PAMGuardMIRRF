@@ -1,6 +1,5 @@
 package mirrfTrainingSetBuilder;
 
-import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Window;
@@ -11,10 +10,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.TimeZone;
 
-import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.UnsupportedAudioFileException;
@@ -27,7 +24,6 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.border.TitledBorder;
-import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.PlainDocument;
@@ -39,10 +35,11 @@ import Acquisition.filedate.StandardFileDateSettings;
 import PamUtils.PamFileChooser;
 import PamView.dialog.PamDialog;
 import PamView.dialog.PamGridBagContraints;
-import PamguardMVC.RawDataUnavailableException;
-import wavFiles.Wav16AudioFormat;
-import wavFiles.WavFileWriter;
 
+/**
+ * Dialog for generating smaller sets of audio (where detections occur) for faster testing.
+ * @author Holly LeBlond
+ */
 public class TSBAudioTestBatchDialog extends PamDialog {
 	
 	protected TSBControl tsbControl;
@@ -178,19 +175,6 @@ public class TSBAudioTestBatchDialog extends PamDialog {
 		c.gridy++;
 		c.gridx = 0;
 		c.gridwidth = 1;
-	/*	p2.add(new JLabel("Minimum:"), c);
-		c.gridx += c.gridwidth;
-		minimumClassCheck = new JCheckBox();
-		minimumClassCheck.addActionListener(new CheckListener());
-		p2.add(minimumClassCheck, c);
-		c.gridx += c.gridwidth;
-		minimumClassField = new JTextField(6);
-		minimumClassField.setEnabled(false);
-		minimumClassField.setText("1000");
-		minimumClassField.setDocument(JIntFilter());
-		p2.add(minimumClassField, c);
-		c.gridy++;
-		c.gridx = 0; */
 		p2.add(new JLabel("Maximum:"), c);
 		c.gridx += c.gridwidth;
 		maximumClassCheck = new JCheckBox();
@@ -207,6 +191,9 @@ public class TSBAudioTestBatchDialog extends PamDialog {
 		this.setDialogComponent(mainPanel);
 	}
 	
+	/**
+	 * Fills subsetBox with options.
+	 */
 	protected void fillSubsetBox() {
 		subsetBox.removeAllItems();
 		subsetBox.addItem("All");
@@ -227,6 +214,9 @@ public class TSBAudioTestBatchDialog extends PamDialog {
 		subsetBox.setSelectedIndex(0);
 	}
 	
+	/**
+	 * Opens a file chooser when audioFolderButton is pressed.
+	 */
 	protected class AudioFolderListener implements ActionListener{
 		public void actionPerformed(ActionEvent e) {
 			PamFileChooser fc = new PamFileChooser();
@@ -243,6 +233,9 @@ public class TSBAudioTestBatchDialog extends PamDialog {
 		}
 	}
 	
+	/**
+	 * Opens a file chooser when outputFolderButton is pressed.
+	 */
 	protected class OutputFolderListener implements ActionListener{
 		public void actionPerformed(ActionEvent e) {
 			PamFileChooser fc = new PamFileChooser();
@@ -255,6 +248,9 @@ public class TSBAudioTestBatchDialog extends PamDialog {
 		}
 	}
 	
+	/**
+	 * Simple object for keeping track of .wav files and when they start and end.
+	 */
 	public class WavObject {
 		public File file;
 		public long start;
@@ -270,11 +266,17 @@ public class TSBAudioTestBatchDialog extends PamDialog {
 			return start;
 		}
 		
+		/**
+		 * Cuts the start time to the end of the previous WavObject (if the latter occurs after the former).
+		 */
 		public void cutStartTimeToEndOfPrev(WavObject prev) {
 			if (start < prev.end) start = prev.end;
 		}
 	}
 	
+	/**
+	 * Object containing a WavObject and a list of TSBDetections associated with it.
+	 */
 	public class DetectionSetObject {
 		private WavObject wavObject;
 		private ArrayList<TSBDetection> detectionList;
@@ -317,6 +319,9 @@ public class TSBAudioTestBatchDialog extends PamDialog {
 		}
 	}
 	
+	/**
+	 * Replaces the original listener for the "OK" button.
+	 */
 	protected class GenerateButtonListener implements ActionListener {
 		public void actionPerformed(ActionEvent e) {
 			GenerateButtonThread gbThread = new GenerateButtonThread();
@@ -324,6 +329,10 @@ public class TSBAudioTestBatchDialog extends PamDialog {
 		}
 	}
 	
+	/**
+	 * Thread activated by GenerateButtonListener.
+	 * Performs generateBatch(), and if it returns true, effectively "presses OK" and closes the dialog.
+	 */
 	protected class GenerateButtonThread extends Thread {
 		
 		protected GenerateButtonThread() {}
@@ -336,6 +345,9 @@ public class TSBAudioTestBatchDialog extends PamDialog {
 		}
 	}
 	
+	/**
+	 * The thread for the loading bar window.
+	 */
 	protected class LoadingBarWindowThread extends Thread {
 		protected TSBAudioTestBatchLoadingBarWindow loadingBarWindow;
 		
@@ -349,10 +361,16 @@ public class TSBAudioTestBatchDialog extends PamDialog {
 		}
 	}
 	
+	/**
+	 * Sets the "interrupted" boolean to true, signaling the audio creation process to stop.
+	 */
 	public void interrupt() {
 		interrupted = true;
 	}
 	
+	/**
+	 * Attempts to generate a new batch of audio based off of input settings.
+	 */
 	protected boolean generateBatch() {
 		try {
 			int minNum = Integer.valueOf(minimumField.getText());
@@ -602,6 +620,9 @@ public class TSBAudioTestBatchDialog extends PamDialog {
 		return true;
 	}
 	
+	/**
+	 * Enables/disables certain text fields if certain boxes are checked.
+	 */
 	protected class CheckListener implements ActionListener{
 		public void actionPerformed(ActionEvent e) {
 			maximumField.setEnabled(maximumCheck.isSelected());

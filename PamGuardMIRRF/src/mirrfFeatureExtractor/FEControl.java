@@ -3,13 +3,10 @@ package mirrfFeatureExtractor;
 import java.awt.Frame;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.File;
 import java.io.Serializable;
 
 import javax.swing.JMenuItem;
-import javax.swing.JOptionPane;
 
-import PamController.PamControlledUnit;
 import PamController.PamControlledUnitSettings;
 import PamController.PamSettingManager;
 import PamController.PamSettings;
@@ -50,40 +47,6 @@ public class FEControl extends MIRRFControlledUnit implements PamSettings {
 		
 	}
 	
-/*	protected void runTempFolderDialogLoop(String unitName, String subfolderName, MIRRFParameters params) {
-		boolean preExistingFile = false;
-		if (feParameters.tempKey > -1) {
-			int result = JOptionPane.showConfirmDialog(this.getGuiFrame(),
-					makeHTML("In this configuration, the following temporary folder path was found:"
-							+ "\n\n"+feParameters.tempFolder+"\n\n"
-							+ "Would you like to change the folder?\n"
-							+ "(WARNING: If another instance of PAMGuard is running the "+subfolderName+" with\n"
-							+ "this folder, SELECT YES, otherwise that instance will most likely crash.)", 300),
-					unitName,
-					JOptionPane.YES_NO_OPTION);
-			if (result == JOptionPane.YES_OPTION) {
-				if (feParameters.tempFolder.length() > 9)
-					feParameters.tempFolder = feParameters.tempFolder.substring(0, feParameters.tempFolder.length()-10);
-				feParameters.tempKey = -1;
-				preExistingFile = true;
-			}
-		}
-		
-		if (feParameters.tempFolder.length() == 0 || feParameters.tempKey < 0) {
-			do {
-				//FETempFolderDialog tfDialog = new FETempFolderDialog(this.getGuiFrame(), this);
-				MIRRFTempFolderDialog tfDialog = new MIRRFTempFolderDialog(this.getGuiFrame(), this,
-						"MIRRF Feature Extractor", "Feature Extractor", feParameters, preExistingFile);
-				tfDialog.setVisible(true);
-				File testFile = new File(feParameters.tempFolder);
-				if (!testFile.exists()) {
-					feParameters.tempFolder = "";
-				}
-			} while (feParameters.tempFolder.length() == 0 || feParameters.tempKey < 0);
-		}
-		System.out.println("tempFolder: "+feParameters.tempFolder);
-	} */
-	
 	/**
 	 * Calls the function in FEPanel that adds 1 to the respective counter.
 	 * @param i - Number determining the chosen counter:
@@ -104,30 +67,6 @@ public class FEControl extends MIRRFControlledUnit implements PamSettings {
 	public boolean subtractOneFromPendingCounter() {
 		return this.getSidePanel().getFEPanel().subtractOneFromPendingCounter();
 	}
-	
-	/**
-	 * Streamlined error dialog.
-	 */
-/*	public void SimpleErrorDialog() {
-		JOptionPane.showMessageDialog(this.getGuiFrame(),
-			"An error has occured.\nSee console for details.",
-			"MIRRF Feature Extractor",
-			JOptionPane.ERROR_MESSAGE);
-	} */
-	
-	/**
-	 * Streamlined error dialog with an editable message.
-	 */
-/*	public void SimpleErrorDialog(String inptext) {
-		JOptionPane.showMessageDialog(this.getGuiFrame(),
-			inptext,
-			"MIRRF Feature Extractor",
-			JOptionPane.ERROR_MESSAGE);
-	} */
-	
-/*	public String makeHTML(String inp, int width) {
-		return String.format("<html><body style='width: %1spx'>%1s", width, inp);
-	} */
 	
 	@Override
 	public FESidePanel getSidePanel() {
@@ -197,11 +136,6 @@ public class FEControl extends MIRRFControlledUnit implements PamSettings {
 		}
 	}
 
-	
-	/**
-	 * Opens the settings dialog.
-	 * @param parentFrame
-	 */
 	/**
 	 * Opens the settings dialog.
 	 * @param parentFrame

@@ -3,7 +3,6 @@ package mirrfLiveClassifier;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
-import PamController.PamController;
 import PamguardMVC.PamDataUnit;
 import PamguardMVC.PamObservable;
 import PamguardMVC.PamProcess;
@@ -11,10 +10,13 @@ import mirrfFeatureExtractor.FECallCluster;
 import mirrfFeatureExtractor.FEDataBlock;
 import mirrfFeatureExtractor.FEDataUnit;
 
+/**
+ * The Live Classifier's PamProcess.
+ * @author Holly LeBlond
+ */
 public class LCProcess extends PamProcess {
 	
 	protected LCControl lcControl;
-	//protected FEDataBlock vectorDataBlock;
 	protected LCDataBlock resultsDataBlock;
 	
 	public static final String streamName = "Call Clusters";
@@ -27,7 +29,8 @@ public class LCProcess extends PamProcess {
 	
 	protected void init() {
 		for (int i = 0; i < lcControl.getPamController().getDataBlocks().size(); i++) {
-			System.out.println(lcControl.getPamController().getDataBlocks().get(i).getDataName()+" : "+lcControl.getParams().inputProcessName);
+			if (lcControl.getParams().printJava)
+				System.out.println(lcControl.getPamController().getDataBlocks().get(i).getDataName()+" : "+lcControl.getParams().inputProcessName);
 			if (lcControl.getPamController().getDataBlocks().get(i).getDataName().equals(lcControl.getParams().inputProcessName)) {
 				this.setParentDataBlock(lcControl.getPamController().getDataBlocks().get(i));
 			}
@@ -46,7 +49,8 @@ public class LCProcess extends PamProcess {
 			return;
 		}
 		super.newData(o, arg);
-		//System.out.println("REACHED lcProcess.newData");
+		if (lcControl.getParams().printJava)
+			System.out.println("REACHED lcProcess.newData");
 		FEDataUnit vectorDataUnit = (FEDataUnit) arg;
 		FECallCluster cc = vectorDataUnit.getCluster();
 		String outp = "tcm.predictCluster([";
@@ -74,6 +78,11 @@ public class LCProcess extends PamProcess {
 		lcControl.getThreadManager().addCommand(outp);
 	}
 	
+	/**
+	 * Converts prediction data made by the Python script into a data unit and adds it to the block.
+	 * @return False if the input string isn't formatted correctly and is thus not added to the block.
+	 * Otherwise, returns true.
+	 */
 	public boolean addResultsData(String inp) {
 		try {
 			String[] tokens = inp.split(Pattern.quote("]|["));
@@ -148,7 +157,7 @@ public class LCProcess extends PamProcess {
 
 	@Override
 	public void pamStop() {
-		if (lcControl.isTrainingSetLoaded()) {
+		if (!lcControl.isTrainingSetLoaded()) {
 			return;
 		}
 		while (true) {
@@ -157,7 +166,6 @@ public class LCProcess extends PamProcess {
 				break;
 			} else {
 				try {
-					//System.out.println("Sleeping: "+String.valueOf(parent.getUnitsCount()));
 					TimeUnit.MILLISECONDS.sleep(200);
 				} catch (Exception e) {
 					System.out.println("Sleep exception.");
@@ -166,22 +174,25 @@ public class LCProcess extends PamProcess {
 			}
 		}
 		try {
+			// TODO THIS NEEDS TO BE REPLACED AT SOME POINT
 			TimeUnit.MILLISECONDS.sleep(1000);
 		} catch (Exception e) {
 			System.out.println("Sleep exception.");
 			e.printStackTrace();
 		}
-		lcControl.getThreadManager().pythonCommand("tcm.runLast()", false);
+		lcControl.getThreadManager().pythonCommand("tcm.runLast()", lcControl.getParams().printInput);
 		while (!lcControl.getThreadManager().getFinished()) {
 			try {
-				System.out.println("Waiting for RUNLAST");
-				TimeUnit.MILLISECONDS.sleep(200);
+				if (lcControl.getParams().printInput)
+					System.out.println("Waiting for RUNLAST");
+				TimeUnit.MILLISECONDS.sleep(100);
 			} catch (Exception e) {
 				System.out.println("Sleep exception.");
 				e.printStackTrace();
 			}
 		}
 		try {
+			// TODO THIS NEEDS TO BE REPLACED AT SOME POINT
 			TimeUnit.MILLISECONDS.sleep(1000);
 		} catch (Exception e) {
 			System.out.println("Sleep exception.");

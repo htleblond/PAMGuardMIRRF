@@ -1,9 +1,6 @@
 package mirrfLiveClassifier;
 
-import java.awt.BorderLayout;
-import java.awt.CardLayout;
 import java.awt.Color;
-import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -11,50 +8,27 @@ import java.awt.GridLayout;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.File;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Scanner;
 import java.util.TimeZone;
-import java.util.concurrent.TimeUnit;
 
 import javax.swing.BorderFactory;
-import javax.swing.BoxLayout;
-import javax.swing.ButtonGroup;
-import javax.swing.DefaultListModel;
 import javax.swing.JButton;
-import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
-import javax.swing.JFileChooser;
 import javax.swing.JLabel;
-import javax.swing.JList;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.JRadioButton;
-import javax.swing.JScrollPane;
-import javax.swing.JTabbedPane;
-import javax.swing.JTextField;
-import javax.swing.ListSelectionModel;
 import javax.swing.border.TitledBorder;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
-import javax.swing.filechooser.FileNameExtensionFilter;
-import javax.swing.text.AttributeSet;
-import javax.swing.text.BadLocationException;
-import javax.swing.text.PlainDocument;
 
-import PamController.PamController;
-import PamUtils.PamFileChooser;
-import mirrfFeatureExtractor.FEDataBlock;
-import mirrfFeatureExtractor.FEDataUnit;
 import wmnt.WMNTDataBlock;
 import wmnt.WMNTDataUnit;
-import PamView.dialog.GroupedSourcePanel;
 import PamView.dialog.PamDialog;
 import PamView.dialog.PamGridBagContraints;
 import PamView.dialog.SourcePanel;
-import PamguardMVC.PamDataBlock;
 
+/**
+ * The dialog for assigning colours to labels.
+ * Also replaces the settings dialog in Viewer Mode.
+ * @author Holly LeBlond
+ */
 public class LCColourDialog extends PamDialog {
 	
 	private static LCColourDialog singleInstance;
@@ -133,6 +107,9 @@ public class LCColourDialog extends PamDialog {
 		setDialogComponent(p0);
 	}
 	
+	/**
+	 * The ActionListener for each button in buttonColumn.
+	 */
 	class ColourPickerListener implements ActionListener {
 		private int index;
 		private LCColourDialog cDialog;
@@ -149,10 +126,17 @@ public class LCColourDialog extends PamDialog {
 		}
 	}
 	
+	/**
+	 * @return A hash map matching species to the current selection of colours.
+	 */
 	public HashMap<String, Color> getCurrentColours() {
 		return currentColours;
 	}
 	
+	/**
+	 * Sets the currentColours hash map.
+	 * Also automatically adjusts the text colour for each label to either white or black for visibility.
+	 */
 	public void setCurrentColours(HashMap<String, Color> inp) {
 		currentColours = inp;
 		for (int i = 0; i < labelColumn.length; i++) {

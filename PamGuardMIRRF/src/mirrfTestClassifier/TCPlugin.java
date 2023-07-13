@@ -1,22 +1,12 @@
-/* 
- * MIRRF Test Classifier
- * Version 1.01 
- * By Holly LeBlond
- * Fisheries and Oceans Canada
- * August 2022
- */
-
 package mirrfTestClassifier;
 
 import PamModel.PamDependency;
 import PamModel.PamPluginInterface;
-//import mirrf.MIRRFPlugin;
-//import mirrfFeatureExtractor.FEPlugin;
+import mirrf.MIRRFInfo;
 
 /**
- * Music Information Retrieval Random Forest (MIRRF) Classifier - Test Classifier
- * (Write description here.)
- * @author Holly LeBlond
+ * Music Information Retrieval Random Forest (MIRRF) Classifier for PamGuard - Test Classifier
+ * @author Holly LeBlond (Fisheries and Oceans Canada)
  */
 public class TCPlugin implements PamPluginInterface {
 	
@@ -39,27 +29,27 @@ public class TCPlugin implements PamPluginInterface {
 
 	@Override
 	public String getDeveloperName() {
-		return "Holly LeBlond";
+		return MIRRFInfo.getDeveloperName();
 	}
 
 	@Override
 	public String getContactEmail() {
-		return "wtleblond@gmail.com";
+		return MIRRFInfo.getContactEmail();
 	}
 
 	@Override
 	public String getVersion() {
-		return "0.02b";
+		return MIRRFInfo.getVersion();
 	}
 
 	@Override
 	public String getPamVerDevelopedOn() {
-		return "2.02.09";
+		return MIRRFInfo.getPamVerDevelopedOn();
 	}
 
 	@Override
 	public String getPamVerTestedOn() {
-		return "2.02.09";
+		return MIRRFInfo.getPamVerTestedOn();
 	}
 
 	@Override
@@ -79,7 +69,7 @@ public class TCPlugin implements PamPluginInterface {
 
 	@Override
 	public String getToolTip() {
-		return "TBA";
+		return "Classifies Whistle and Moan Detector data from pre-existing training sets.";
 	}
 
 	@Override
@@ -114,8 +104,8 @@ public class TCPlugin implements PamPluginInterface {
 
 	@Override
 	public String getAboutText() {
-		String desc = "TBA";
-		return desc;
+		return "A modified version of the MIRRF Live Classifier that runs tests on pre-exisiting "
+				+ "training sets through cross-validation as opposed to live data from the Feature Extractor.";
 	}
 
 	/* (non-Javadoc)

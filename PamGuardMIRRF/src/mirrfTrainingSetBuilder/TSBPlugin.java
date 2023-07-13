@@ -1,22 +1,12 @@
-/* 
- * MIRRF Training Set Builder
- * Version 1.01 
- * By Holly LeBlond
- * Fisheries and Oceans Canada
- * July 2022
- */
-
 package mirrfTrainingSetBuilder;
 
 import PamModel.PamDependency;
 import PamModel.PamPluginInterface;
-//import mirrfFeatureExtractor.FEPlugin;
-//import mirrf.MIRRFPlugin;
+import mirrf.MIRRFInfo;
 
 /**
- * Music Information Retrieval Random Forest (MIRRF) Classifier - Feature Extractor
- * (Write description here.)
- * @author Holly LeBlond
+ * Music Information Retrieval Random Forest (MIRRF) Classifier for PamGuard - Training Set Builder
+ * @author Holly LeBlond (Fisheries and Oceans Canada)
  */
 public class TSBPlugin implements PamPluginInterface {
 	
@@ -39,27 +29,27 @@ public class TSBPlugin implements PamPluginInterface {
 
 	@Override
 	public String getDeveloperName() {
-		return "Holly LeBlond";
+		return MIRRFInfo.getDeveloperName();
 	}
 
 	@Override
 	public String getContactEmail() {
-		return "wtleblond@gmail.com";
+		return MIRRFInfo.getContactEmail();
 	}
 
 	@Override
 	public String getVersion() {
-		return "0.02b";
+		return MIRRFInfo.getVersion();
 	}
 
 	@Override
 	public String getPamVerDevelopedOn() {
-		return "2.02.09";
+		return MIRRFInfo.getPamVerDevelopedOn();
 	}
 
 	@Override
 	public String getPamVerTestedOn() {
-		return "2.02.09";
+		return MIRRFInfo.getPamVerTestedOn();
 	}
 
 	@Override
@@ -79,7 +69,8 @@ public class TSBPlugin implements PamPluginInterface {
 
 	@Override
 	public String getToolTip() {
-		return "TBA";
+		return "Combines Feature Extractor data with Whistle and Moan Navigation Tool "
+				+ "annotations to create training sets for the Live and Test Classifiers.";
 	}
 
 	@Override
@@ -114,8 +105,10 @@ public class TSBPlugin implements PamPluginInterface {
 
 	@Override
 	public String getAboutText() {
-		String desc = "TBA";
-		return desc;
+		return "A tool for combining feature vectors output by the Feature Extractor with annotations "
+				+ "exported from the Whistle and Moan Navigation Tool to make training sets for the "
+				+ "Live and Test Classifiers. Also has a feature for making smaller batches of "
+				+ "detection-containing audio for faster test runs.";
 	}
 
 	/* (non-Javadoc)

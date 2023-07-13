@@ -6,8 +6,10 @@ import whistlesAndMoans.SliceData;
 
 /**
  * Performs various calculations on an input list of SliceData.
+ * Kinda pointless now as all these calculations are done in the Feature Extractor's Python script and not here.
  * @author Holly LeBlond
  */
+@Deprecated
 public class WMNTSliceDataCalculator {
 	
 	//public List<SliceData> sliceDataList;

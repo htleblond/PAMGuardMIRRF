@@ -3,10 +3,13 @@ package mirrfTestClassifier;
 import java.awt.Window;
 
 import mirrfFeatureExtractor.FEParameters;
-import mirrfLiveClassifier.LCControl;
 import mirrfLiveClassifier.LCExportDialog;
-import mirrfLiveClassifier.LCParameters;
 
+/**
+ * Dialog for exporting classification results.
+ * Subclass of the Live Classifier's export dialog.
+ * @author Holly LeBlond
+ */
 public class TCExportDialog extends LCExportDialog {
 
 	public TCExportDialog(TCControl tcControl, Window parentFrame) {
@@ -19,17 +22,6 @@ public class TCExportDialog extends LCExportDialog {
 	
 	@Override
 	protected StringBuilder produceFeatureExtractorInfo(StringBuilder sb) {
-	/*	sb = new StringBuilder();
-		sb.append("FEATURE INFO\n\n");
-		sb.append("Features (from training set): "+String.valueOf(getControl().getFeatureList().size()));
-		for (int i = 0; i < getControl().getFeatureList().size(); i++) {
-			sb.append("\t"+getControl().getFeatureList().get(i)+"\n");
-		}
-		sb.append("\n");
-		pw.write(sb.toString());
-		pw.flush();
-		return sb; */
-		
 		sb = new StringBuilder();
 		TCParameters params = getControl().getParams();
 		boolean printTestSetParamsToo = false;

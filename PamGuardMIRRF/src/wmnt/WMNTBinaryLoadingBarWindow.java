@@ -7,12 +7,15 @@ import java.awt.Window;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
-import javax.swing.JTextField;
 import javax.swing.WindowConstants;
 
 import PamView.dialog.PamDialog;
 import PamView.dialog.PamGridBagContraints;
 
+/**
+ * Loading dialog for loading in binary files.
+ * @author Holly LeBlond
+ */
 public class WMNTBinaryLoadingBarWindow extends PamDialog {
 	
 	private int totalToUpdate;

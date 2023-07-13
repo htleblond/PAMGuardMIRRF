@@ -3,33 +3,25 @@ package mirrfLiveClassifier;
 import java.awt.Frame;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.File;
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.TimeZone;
 
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 
-import PamController.PamControlledUnit;
 import PamController.PamControlledUnitSettings;
 import PamController.PamSettingManager;
 import PamController.PamSettings;
-import PamguardMVC.PamDataBlock;
 import mirrf.MIRRFControlledUnit;
-import mirrf.MIRRFParameters;
-import mirrf.MIRRFTempFolderDialog;
 
 /**
  * The controller class for the MIRRF Live Classifier.
- * Is a subclass of PamControlledUnit.
  * @author Holly LeBlond
  */
 public class LCControl extends MIRRFControlledUnit implements PamSettings {
@@ -43,9 +35,6 @@ public class LCControl extends MIRRFControlledUnit implements PamSettings {
 	protected LCUpdateProcess updateProcess;
 	protected LCMarkControl markControl;
 	
-	//protected String trainPath;
-	//protected String[] featureList;
-	//protected LCTrainingSetInfo loadedTrainingSetInfo;
 	protected volatile boolean trainingSetLoaded;
 	protected volatile boolean modelFittingFinished;
 	
@@ -55,33 +44,16 @@ public class LCControl extends MIRRFControlledUnit implements PamSettings {
 	}
 	
 	protected void init() {
-		//System.out.println("LC: Init happened");
 		PamSettingManager.getInstance().registerSettings(this);
 		
-		//trainPath = "";
-		//featureList = new String[0];
-		//loadedTrainingSetInfo = new LCTrainingSetInfo("");
 		trainingSetLoaded = false;
 		modelFittingFinished = true;
 		
 		tabPanel = new LCTabPanel(this);
 		
 		runTempFolderDialogLoop("MIRRF Live Classifier", "Live Classifier", parameters);
-	/*	if (parameters.tempFolder.length() == 0) {
-			LCTempFolderDialog tfDialog = new LCTempFolderDialog(this.getGuiFrame(), this, "MIRRF Live Classifier", "Live Classifier");
-			tfDialog.setVisible(true);
-		} else {
-			File testFile = new File(parameters.tempFolder);
-			if (!testFile.exists()) {
-				LCTempFolderDialog tfDialog = new LCTempFolderDialog(this.getGuiFrame(), this, "MIRRF Live Classifier", "Live Classifier");
-				tfDialog.setVisible(true);
-			}
-		} */
 		
-		//if (!this.isViewer()) {
-		if (true) {
-			threadManager = new LCPythonThreadManager(this);
-		}
+		threadManager = new LCPythonThreadManager(this);
 		process = new LCProcess(this);
 		addPamProcess(process);
 		
@@ -101,41 +73,9 @@ public class LCControl extends MIRRFControlledUnit implements PamSettings {
 		}
 	}
 	
-/*	protected void runTempFolderDialogLoop(String unitName, String subfolderName, MIRRFParameters params) {
-		boolean preExistingFile = false;
-		if (parameters.tempKey > -1) {
-			int result = JOptionPane.showConfirmDialog(this.getGuiFrame(),
-					makeHTML("In this configuration, the following temporary folder path was found:"
-							+ "\n\n"+parameters.tempFolder+"\n\n"
-							+ "Would you like to change the folder?\n\n"
-							+ "(WARNING: If another instance of PAMGuard is running the "+subfolderName+" with\n"
-							+ "this folder, SELECT YES, otherwise that instance will most likely crash.)", 300),
-					unitName,
-					JOptionPane.YES_NO_OPTION);
-			if (result == JOptionPane.YES_OPTION) {
-				String toRemove = subfolderName+"\\"+String.format("%09d", parameters.tempKey)+"\\";
-				if (parameters.tempFolder.endsWith(toRemove)) {
-					parameters.tempFolder = parameters.tempFolder.substring(0, parameters.tempFolder.length()-toRemove.length());
-					preExistingFile = true;
-				}
-				parameters.tempKey = -1;
-			}
-		}
-		
-		if (parameters.tempFolder.length() == 0 || parameters.tempKey < 0) {
-			do {
-				MIRRFTempFolderDialog tfDialog = new MIRRFTempFolderDialog(this.getGuiFrame(), this, unitName,
-						subfolderName, params, preExistingFile);
-				tfDialog.setVisible(true);
-				File testFile = new File(parameters.tempFolder);
-				if (!testFile.exists()) {
-					parameters.tempFolder = "";
-				}
-			} while (parameters.tempFolder.length() == 0 || parameters.tempKey < 0);
-		}
-		System.out.println("tempFolder: "+parameters.tempFolder);
-	} */
-	
+	/**
+	 * Brings up a dialog for selecting the time zone that matches the binary files (which should be local).
+	 */
 	public void showTimeZoneDialog() {
 		String[] tz_list = TimeZone.getAvailableIDs();
 		String tz = (String) JOptionPane.showInputDialog(this.getGuiFrame(),
@@ -151,6 +91,9 @@ public class LCControl extends MIRRFControlledUnit implements PamSettings {
 		getParams().timeZone = tz;
 	}
 	
+	/**
+	 * Converts a long to a string representing a date/time with the following format: yyyy-MM-dd HH:mm:ss+SSS
+	 */
 	public String convertLocalLongToUTC(long inp) {
 		Date date = new Date(inp);
 		String date_format = "yyyy-MM-dd HH:mm:ss+SSS";
@@ -165,6 +108,9 @@ public class LCControl extends MIRRFControlledUnit implements PamSettings {
 		return dtformat.format(utcDateTime);
 	}
 	
+	/**
+	 * Turns a date/time string formatted like yyyy-MM-dd HH:mm:ss+SSS back to a long.
+	 */
 	public long convertDateStringToLong(String inp) {
 		// Kudos: https://stackoverflow.com/questions/12473550/how-to-convert-a-string-date-to-long-millseconds
 		SimpleDateFormat f = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss+SSS");
@@ -176,105 +122,61 @@ public class LCControl extends MIRRFControlledUnit implements PamSettings {
 		}
 		return -1;
 	}
-	
-	/**
-	 * Streamlined error dialog with an editable message.
-	 */
-/*	public void SimpleErrorDialog(String inptext, int width) {
-		JOptionPane.showMessageDialog(this.getGuiFrame(),
-				makeHTML(inptext, width),
-			this.getUnitName(),
-			JOptionPane.ERROR_MESSAGE);
-	} */
-	
-/*	// Kudos to this: https://stackoverflow.com/questions/1842223/java-linebreaks-in-jlabels
-	public String makeHTML(String inp, int width) {
-		//int width = 150;
-		String outp = "<html><p style=\"width:"+Integer.toString(width)+"px\">"+inp+"</p></html>";
-		return outp;
-	} */
-	
-/*	public String makeHTML(String inp, int width) {
-		return String.format("<html><body style='width: %1spx'>%1s", width, inp);
-	} */
 		
 	@Override
 	public LCTabPanel getTabPanel() {
 		return tabPanel;
 	}
 	
+	/**
+	 * @return The Live Classifier's Python thread manager.
+	 */
 	public LCPythonThreadManager getThreadManager() {
 		return threadManager;
 	}
 	
+	/**
+	 * @return The Live Classifier's process.
+	 */
 	public LCProcess getProcess() {
 		return process;
 	}
 	
+	/**
+	 * @return The Live Classifier's process for updating table values in conjunction with
+	 * an instance of the Whistle and Moan Navigation Tool (WMNT).
+	 */
 	public LCUpdateProcess getUpdateProcess() {
 		return updateProcess;
 	}
 	
-/*	public String getTrainPath() {
-		return trainPath;
-	}
-	
-	public void setTrainPath(String inp) {
-		trainPath = inp;
-	}
-	
-	public String[] getFeatureList() {
-		return featureList;
-	}
-	
-	public void setFeatureList(String[] inp) {
-		featureList = inp;
-	} */
-	
-	// The following six functions have been moved to LCParameters:
-/*	public LCTrainingSetInfo getTrainingSetInfo() {
-		return getParams().loadedTrainingSetInfo;
-	}
-	
-	public void setTrainingSetInfo(LCTrainingSetInfo inp) {
-		getParams().loadedTrainingSetInfo = inp;
-	}
-	
-	public String getTrainPath() {
-		return getParams().loadedTrainingSetInfo.pathName;
-	}
-	
-	public ArrayList<String> getFeatureList() {
-		return getParams().loadedTrainingSetInfo.featureList;
-	}
-	
-	public HashMap<String, Integer> getLabelCounts() {
-		return getParams().loadedTrainingSetInfo.labelCounts;
-	}
-	
-	public HashMap<String, Integer> getSubsetCounts() {
-		return getParams().loadedTrainingSetInfo.subsetCounts;
-	} */
-	
+	/**
+	 * @return Whether or not the classifier is ready for processing.
+	 */
 	public boolean isTrainingSetLoaded() {
 		return trainingSetLoaded;
 	}
 	
+	/**
+	 * Sets whether or not the classifier is ready for processing.
+	 */
 	public void setTrainingSetStatus(boolean inp) {
 		trainingSetLoaded = inp;
 	}
 	
+	/**
+	 * @return Whether or not the classifier's machine learning models are done being fitted.
+	 */
 	public boolean isModelFittingFinished() {
 		return modelFittingFinished;
 	}
 	
+	/**
+	 * Sets whether or not the classifier's machine learning models are done being fitted.
+	 */
 	public void setModelFittingStatus(boolean inp) {
 		modelFittingFinished = inp;
 	}
-	
-/*	public ArrayList<TCCallCluster> getCallClusterList() {
-		return callClusterList;
-	} */
 	
 	public LCParameters getParams() {
 		return parameters;
@@ -291,7 +193,6 @@ public class LCControl extends MIRRFControlledUnit implements PamSettings {
 
 	@Override
 	public long getSettingsVersion() {
-		// TODO Auto-generated method stub
 		return 0;
 	}
 

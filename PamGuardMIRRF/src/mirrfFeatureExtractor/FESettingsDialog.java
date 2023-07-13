@@ -126,6 +126,9 @@ public class FESettingsDialog extends PamDialog {
 	protected JTextField miscBelowAmpField;
 	protected JCheckBox miscAboveAmpCheck;
 	protected JTextField miscAboveAmpField;
+	protected JCheckBox miscPrintJavaCheck;
+	protected JCheckBox miscPrintInputCheck;
+	protected JCheckBox miscPrintOutputCheck;
 	protected JTextField miscTempField;
 	protected JButton miscTempButton;
 	
@@ -739,8 +742,26 @@ public class FESettingsDialog extends PamDialog {
 		
 		b.gridy++;
 		JPanel miscFP3 = new JPanel(new FlowLayout(FlowLayout.LEFT));
+		JPanel miscPrintPanel = new JPanel(new GridBagLayout());
+		miscFP3.setBorder(new TitledBorder("Troubleshooting"));
+		miscPrintPanel.setAlignmentX(LEFT_ALIGNMENT);
+		c = new PamGridBagContraints();
+		c.anchor = c.WEST;
+		miscPrintJavaCheck = new JCheckBox("Enable troubleshooting print statements from Java");
+		miscPrintPanel.add(miscPrintJavaCheck, c);
+		c.gridy++;
+		miscPrintInputCheck = new JCheckBox("Enable print statements for input Python commands");
+		miscPrintPanel.add(miscPrintInputCheck, c);
+		c.gridy++;
+		miscPrintOutputCheck = new JCheckBox("Enable print statements from Python output");
+		miscPrintPanel.add(miscPrintOutputCheck, c);
+		miscFP3.add(miscPrintPanel);
+		mainPanel5.add(miscFP3, b);
+		
+		b.gridy++;
+		JPanel miscFP4 = new JPanel(new FlowLayout(FlowLayout.LEFT));
 		JPanel miscTempPanel = new JPanel(new GridBagLayout());
-		miscFP3.setBorder(new TitledBorder("Temporary file storage"));
+		miscFP4.setBorder(new TitledBorder("Temporary file storage"));
 		miscTempPanel.setAlignmentX(LEFT_ALIGNMENT);
 		c = new PamGridBagContraints();
 		miscTempField = new JTextField(30);
@@ -751,8 +772,8 @@ public class FESettingsDialog extends PamDialog {
 		miscTempButton.setEnabled(false);
 		// add listener
 		miscTempPanel.add(miscTempButton, c);
-		miscFP3.add(miscTempPanel);
-		mainPanel5.add(miscFP3, b);
+		miscFP4.add(miscTempPanel);
+		mainPanel5.add(miscFP4, b);
 		
 		p5.add(mainPanel5);
 		tabbedPane.add("Miscellaneous", p5);
@@ -820,6 +841,9 @@ public class FESettingsDialog extends PamDialog {
 			this.miscBelowAmpField.setEnabled(false);
 			this.miscAboveAmpCheck.setEnabled(false);
 			this.miscAboveAmpField.setEnabled(false);
+			//this.miscPrintJavaCheck.setEnabled(false);
+			//this.miscPrintInputCheck.setEnabled(false);
+			//this.miscPrintOutputCheck.setEnabled(false);
 			this.miscTempField.setEnabled(false);
 			this.miscTempButton.setEnabled(false);
 		}
@@ -1448,6 +1472,9 @@ public class FESettingsDialog extends PamDialog {
 		miscAboveAmpCheck.setSelected(params.miscIgnoreLoudAmpChecked);
 		switchOn(miscAboveAmpCheck, params.miscIgnoreLoudAmpChecked);
 		miscAboveAmpField.setText(Integer.toString(params.miscIgnoreLoudAmp));
+		miscPrintJavaCheck.setSelected(params.miscPrintJavaChecked);
+		miscPrintInputCheck.setSelected(params.miscPrintInputChecked);
+		miscPrintOutputCheck.setSelected(params.miscPrintOutputChecked);
 		miscTempField.setText(params.tempFolder);
 		
 		return true;
@@ -1874,6 +1901,9 @@ public class FESettingsDialog extends PamDialog {
 		if (miscAboveAmpCheck.isSelected()) {
 			newParams.miscIgnoreLoudAmp = Integer.valueOf(miscAboveAmpField.getText());
 		}
+		newParams.miscPrintJavaChecked = miscPrintJavaCheck.isSelected();
+		newParams.miscPrintInputChecked = miscPrintInputCheck.isSelected();
+		newParams.miscPrintOutputChecked = miscPrintOutputCheck.isSelected();
 		
 		if (outputCSVCheck.isSelected()) {
 			ArrayList<String> unmatchedSettings = checkForUnmatchedOutputCSVSettings(newParams);
@@ -1888,7 +1918,7 @@ public class FESettingsDialog extends PamDialog {
 					if (unmatchedSettings.get(0).equals("Error 6")) {
 						message = "The selected file does not contain the same features.\n";
 					} else if (unmatchedSettings.get(0).startsWith("Error")) {
-						System.out.println(unmatchedSettings.get(0));
+						System.out.println("Unmatched settings: "+unmatchedSettings.get(0));
 						message = "The selected file is not formatted correctly.\n";
 					} else {
 						message = "Selected file contained settings that don't match:\n\n";

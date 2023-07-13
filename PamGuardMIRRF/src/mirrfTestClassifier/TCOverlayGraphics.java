@@ -8,6 +8,11 @@ import mirrfLiveClassifier.LCDataBlock;
 import mirrfLiveClassifier.LCOverlayGraphics;
 import whistlesAndMoans.WhistleMoanControl;
 
+/**
+ * The Test Classifier's overlay graphics.
+ * Subclass of the Live Classifier's overlay graphics.
+ * @author Holly LeBlond
+ */
 public class TCOverlayGraphics extends LCOverlayGraphics {
 
 	public TCOverlayGraphics(TCControl tcControl, LCDataBlock dataBlock) {

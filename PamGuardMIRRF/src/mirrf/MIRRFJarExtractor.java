@@ -29,12 +29,12 @@ public class MIRRFJarExtractor {
 					}
 				}
 				
-				System.out.println(destFile.getPath());
+				//System.out.println(destFile.getPath());
 				File destFolder = new File(destFolderName);
 				if (destFolder.exists()) {
 					File[] existingFiles = destFolder.listFiles();
 					for (int i = 0; i < existingFiles.length; i++) {
-						System.out.println(existingFiles[i].getName());
+						//System.out.println(existingFiles[i].getName());
 						if (existingFiles[i].isDirectory()) {
 							try {
 								FileUtils.deleteDirectory(existingFiles[i]);

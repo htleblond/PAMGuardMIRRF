@@ -12,9 +12,6 @@ public class FEDataBlock extends PamDataBlock<FEDataUnit> {
 	protected String[] featureNames;
 	protected volatile boolean finished;
 	
-	//private int fftLength;
-	//private int fftHop;
-	
 	public FEDataBlock(FEControl feControl, String dataName, FEProcess feProcess, int channelMap) {
 		super(FEDataUnit.class, dataName, feProcess, channelMap);
 		this.feControl = feControl;
@@ -27,7 +24,8 @@ public class FEDataBlock extends PamDataBlock<FEDataUnit> {
 	@Override
 	public void addPamData(FEDataUnit du) {
 		super.addPamData(du);
-		System.out.println("REACHED FEDataBlock.addPamData");
+		if (feControl.getParams().miscPrintJavaChecked)
+			System.out.println("REACHED FEDataBlock.addPamData");
 	}
 	
 	// Just use the features specified in FEParameters via getFeatureList() instead.
@@ -80,30 +78,10 @@ public class FEDataBlock extends PamDataBlock<FEDataUnit> {
 	 */
 	protected void setFinished(boolean inp) {
 		finished = inp;
-		if (inp) {
+		if (inp && feControl.getParams().miscPrintJavaChecked) {
 			System.out.println("FE: FINISHED");
 		}
 	}
-	
-/*	@Deprecated
-	protected void setFFTLength(int inp) {
-		fftLength = inp;
-	}
-	
-	@Deprecated
-	protected void setFFTHop(int inp) {
-		fftHop = inp;
-	}
-	
-	@Deprecated
-	public int getFFTLength() {
-		return fftLength;
-	}
-	
-	@Deprecated
-	public int getFFTHop() {
-		return fftHop;
-	} */
 	
 	/**
 	 * May incorrectly return 0 if the Feature Extractor hasn't been run yet.

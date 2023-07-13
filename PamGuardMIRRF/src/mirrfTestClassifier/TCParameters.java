@@ -4,16 +4,19 @@ import PamModel.parametermanager.PamParameterSet;
 import mirrfLiveClassifier.LCParameters;
 import mirrfLiveClassifier.LCTrainingSetInfo;
 
+/**
+ * The parameters object for the Test Classifier.
+ * Subclass of the Live Classifier's parameters.
+ * @author Holly LeBlond
+ */
 public class TCParameters extends LCParameters {
 	
-	// validation params
 	public static final int LEAVEONEOUT = 0;
 	public static final int KFOLD = 1;
 	public static final int TESTSUBSET = 2;
 	public static final int LABELLED = 3;
 	public static final int UNLABELLED = 4;
 	
-	//public String testPath;
 	public LCTrainingSetInfo loadedTestingSetInfo;
 	
 	public int validation;
@@ -23,23 +26,12 @@ public class TCParameters extends LCParameters {
 	public TCParameters() {
 		super();
 		
-		//testPath = "";
 		loadedTestingSetInfo = new LCTrainingSetInfo("");
 		
 		validation = LEAVEONEOUT;
 		kNum = 10; // Must be int > 1, only used if validation == "kfold"
 		testSubset = "";
 	}
-	
-/*	@Override
-	public String outputPythonParamsToText() {
-		if (tempFolder.length() == 0) {
-			return "";
-		}
-		String outp = "[\""+validation+"\","+String.valueOf(kNum)+",";
-		outp += super.outputPythonParamsToText().substring(1);
-		return outp;
-	} */
 	
 	public LCTrainingSetInfo getTestingSetInfo() {
 		return loadedTestingSetInfo;

@@ -1,0 +1,7 @@
+mirrf_0.04 CHANGELOG
+July 10th, 2023
+Holly LeBlond
+
+- Print statement toggles added to FE, LC and TC.
+- LCProcess.PamStop() while-loops re-instated.
+- Attribution and comments added to classes and functions.

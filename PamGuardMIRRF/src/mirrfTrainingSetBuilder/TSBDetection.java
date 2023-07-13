@@ -1,5 +1,9 @@
 package mirrfTrainingSetBuilder;
 
+/**
+ * Simple data object for storing individual data entries for output.
+ * @author Holly LeBlond
+ */
 public class TSBDetection {
 	
 	protected TSBControl tsbControl;

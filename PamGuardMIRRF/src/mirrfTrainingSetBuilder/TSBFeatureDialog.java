@@ -1,67 +1,15 @@
 package mirrfTrainingSetBuilder;
 
 import java.awt.*;
-import java.awt.List;
-import java.awt.event.*;
-import java.io.File;
-import java.io.FilenameFilter;
 
 import javax.swing.*;
-import javax.swing.table.*; //
-import javax.swing.text.AttributeSet;
-import javax.swing.text.BadLocationException;
-import javax.swing.text.Document;
-import javax.swing.text.PlainDocument;
 
-import Layout.PamFramePlots;
-import Layout.PamInternalFrame;
-import PamDetection.RawDataUnit;
-
-import javax.swing.filechooser.*;
-import javax.swing.event.*;
-import java.util.*; //
-import java.text.*; //
-import java.io.PrintWriter;
-
-import javax.swing.border.TitledBorder;
-
-import fftManager.Complex;
-import mirrfFeatureExtractor.FEFeatureDialog;
-import userDisplay.UserDisplayControl;
-import userDisplay.UserDisplayTabPanel;
-import userDisplay.UserDisplayTabPanelControl;
-import userDisplay.UserFramePlots;
-import whistlesAndMoans.AbstractWhistleDataUnit;
-import wmnt.WMNTSearchDialog;
-import userDisplay.UserDisplayFrame;
-import PamUtils.PamCalendar;
-import PamUtils.SelectFolder;
 import PamView.dialog.PamGridBagContraints;
-import PamView.dialog.PamLabel;
-import PamView.dialog.PamTextDisplay;
-import PamView.panel.PamBorderPanel;
 import PamView.panel.PamPanel;
-import PamView.PamList; //
-import PamView.PamTable;
-import PamView.dialog.PamButton; //
 import PamView.dialog.PamDialog;
-import PamView.dialog.PamTextField; //
-import PamView.dialog.SourcePanel;
-import binaryFileStorage.*;
-import PamguardMVC.DataUnitBaseData;
-import Spectrogram.SpectrogramDisplay;
-import PamUtils.SelectFolder;
-//import PamController.PamFolders;
-import pamScrollSystem.*;
-import PamUtils.PamFileChooser;
-
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
 
 /**
- * The panel where the GUI components are written.
+ * Dialog that occurs before output for selecting which features will occur in the new training set.
  * @author Holly LeBlond
  */
 public class TSBFeatureDialog extends PamDialog {

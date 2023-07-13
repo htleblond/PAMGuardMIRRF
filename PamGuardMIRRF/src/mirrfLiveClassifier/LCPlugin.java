@@ -1,22 +1,12 @@
-/* 
- * MIRRF Live Classifier
- * Version 1.01 
- * By Holly LeBlond
- * Fisheries and Oceans Canada
- * November 2022
- */
-
 package mirrfLiveClassifier;
 
 import PamModel.PamDependency;
 import PamModel.PamPluginInterface;
-//import mirrf.MIRRFPlugin;
-//import mirrfFeatureExtractor.FEPlugin;
+import mirrf.MIRRFInfo;
 
 /**
- * Music Information Retrieval Random Forest (MIRRF) Classifier - Live Classifier
- * (Write description here.)
- * @author Holly LeBlond
+ * Music Information Retrieval Random Forest (MIRRF) Classifier for PamGuard - Live Classifier
+ * @author Holly LeBlond (Fisheries and Oceans Canada)
  */
 public class LCPlugin implements PamPluginInterface {
 	
@@ -39,27 +29,27 @@ public class LCPlugin implements PamPluginInterface {
 
 	@Override
 	public String getDeveloperName() {
-		return "Holly LeBlond";
+		return MIRRFInfo.getDeveloperName();
 	}
 
 	@Override
 	public String getContactEmail() {
-		return "wtleblond@gmail.com";
+		return MIRRFInfo.getContactEmail();
 	}
 
 	@Override
 	public String getVersion() {
-		return "0.02b";
+		return MIRRFInfo.getVersion();
 	}
 
 	@Override
 	public String getPamVerDevelopedOn() {
-		return "2.02.09";
+		return MIRRFInfo.getPamVerDevelopedOn();
 	}
 
 	@Override
 	public String getPamVerTestedOn() {
-		return "2.02.09";
+		return MIRRFInfo.getPamVerTestedOn();
 	}
 
 	@Override
@@ -79,7 +69,8 @@ public class LCPlugin implements PamPluginInterface {
 
 	@Override
 	public String getToolTip() {
-		return "TBA";
+		return "Classifies Whistle and Moan Detector contours in conjunction "
+				+ "with the MIRRF Feature Extractor.";
 	}
 
 	@Override
@@ -114,8 +105,8 @@ public class LCPlugin implements PamPluginInterface {
 
 	@Override
 	public String getAboutText() {
-		String desc = "TBA";
-		return desc;
+		return "An ensemble classifier for Whistle and Moan Detector contours. "
+				+ "Used in conjunction with the MIRRF Feature Extractor during processing.";
 	}
 
 	/* (non-Javadoc)

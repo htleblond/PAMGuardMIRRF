@@ -5,7 +5,6 @@ import java.awt.CardLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
-import java.awt.Frame;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
@@ -15,7 +14,6 @@ import java.awt.event.ActionListener;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Scanner;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
@@ -43,17 +41,18 @@ import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.PlainDocument;
 
-import PamController.PamController;
 import PamUtils.PamFileChooser;
 import mirrfFeatureExtractor.FEDataBlock;
 import mirrfFeatureExtractor.FEDataUnit;
 import mirrfFeatureExtractor.FEParameters;
-import PamView.dialog.GroupedSourcePanel;
 import PamView.dialog.PamDialog;
 import PamView.dialog.PamGridBagContraints;
 import PamView.dialog.SourcePanel;
-import PamguardMVC.PamDataBlock;
 
+/**
+ * The settings dialog for the Live Classifier.
+ * @author Holly LeBlond
+ */
 public class LCSettingsDialog extends PamDialog {
 	
 	protected LCControl lcControl;
@@ -62,8 +61,6 @@ public class LCSettingsDialog extends PamDialog {
 	protected SourcePanel inputSourcePanel;
 	protected JTextField trainSetField;
 	protected JButton trainSetButton;
-	protected JTextField tempField;
-	protected JButton tempButton;
 	
 	protected JCheckBox kBestCheck;
 	protected JTextField kBestField;
@@ -109,11 +106,15 @@ public class LCSettingsDialog extends PamDialog {
 	protected JComboBox<String> worstLeadBox;
 	protected JCheckBox displayIgnoredCheck;
 	
-	//private String[] featureList;
+	protected JCheckBox printJavaCheck;
+	protected JCheckBox printInputCheck;
+	protected JCheckBox printOutputCheck;
+	protected JTextField tempField;
+	protected JButton tempButton;
+	
 	protected LCTrainingSetInfo loadedTrainingSet;
 	protected HashMap<String, Color> currentColours;
 	
-	//protected volatile LCWaitingDialog wDialog;
 	protected volatile LCWaitingDialogThread wdThread;
 	
 	public LCSettingsDialog(Window parentFrame, LCControl lcControl) {
@@ -136,10 +137,14 @@ public class LCSettingsDialog extends PamDialog {
 		tabbedPane.add("Training", createTrainingPanel());
 		tabbedPane.add("Classification", createClassificationPanel());
 		tabbedPane.add("Accuracy", createAccuracyPanel());
+		tabbedPane.add("Miscellaneous", createMiscPanel());
 		actuallyGetParams();
 		setDialogComponent(tabbedPane);
 	}
 	
+	/**
+	 * @return The panel for the "Input" tab.
+	 */
 	protected JPanel createInputPanel() {
 		JPanel outp = new JPanel(new GridBagLayout());
 		GridBagConstraints b = new PamGridBagContraints();
@@ -164,24 +169,12 @@ public class LCSettingsDialog extends PamDialog {
 		b.gridy++;
 		outp.add(trainingSetPanel, b);
 		
-		b.gridy++;
-		JPanel tempPanel = new JPanel(new GridBagLayout());
-		tempPanel.setBorder(new TitledBorder("Temporary file storage"));
-		tempPanel.setAlignmentX(LEFT_ALIGNMENT);
-		c = new PamGridBagContraints();
-		tempField = new JTextField(20);
-		tempField.setEnabled(false);
-		tempPanel.add(tempField, c);
-		c.gridx++;
-		tempButton = new JButton("Change (TBA)");
-		tempButton.setEnabled(false);
-		// add listener
-		tempPanel.add(tempButton, c);
-		outp.add(tempPanel, b);
-		
 		return outp;
 	}
 	
+	/**
+	 * @return The panel for the "Training" tab.
+	 */
 	protected JPanel createTrainingPanel() {
 		JPanel outp = new JPanel(new GridBagLayout());
 		GridBagConstraints b = new PamGridBagContraints();
@@ -356,7 +349,10 @@ public class LCSettingsDialog extends PamDialog {
 		
 		return outp;
 	}
-	
+
+	/**
+	 * @return The panel for the "Classification" tab.
+	 */
 	protected JPanel createClassificationPanel() {
 		JPanel outp = new JPanel(new GridBagLayout());
 		GridBagConstraints b = new PamGridBagContraints();
@@ -510,7 +506,10 @@ public class LCSettingsDialog extends PamDialog {
 		
 		return outp;
 	}
-	
+
+	/**
+	 * @return The panel for the "Accuracy" tab.
+	 */
 	protected JPanel createAccuracyPanel() {
 		JPanel outp = new JPanel(new GridBagLayout());
 		GridBagConstraints b = new PamGridBagContraints();
@@ -592,21 +591,52 @@ public class LCSettingsDialog extends PamDialog {
 		
 		return outp;
 	}
-	
-/*	public class WaitThread extends Thread {
-		protected String message;
+
+	/**
+	 * @return The panel for the "Miscellaneous" tab.
+	 */
+	protected JPanel createMiscPanel() {
+		JPanel outp = new JPanel(new GridBagLayout());
+		GridBagConstraints b = new PamGridBagContraints();
+		b.fill = GridBagConstraints.HORIZONTAL;
+		b.anchor = GridBagConstraints.WEST;
 		
-		public WaitThread(String message) {
-			this.message = message;
-		}
+		JPanel printPanel = new JPanel(new GridBagLayout());
+		printPanel.setBorder(new TitledBorder("Troubleshooting"));
+		GridBagConstraints c = new PamGridBagContraints();
+		c.fill = c.HORIZONTAL;
+		c.anchor = c.WEST;
+		printJavaCheck = new JCheckBox("Enable troubleshooting print statements from Java");
+		printPanel.add(printJavaCheck, c);
+		c.gridy++;
+		printInputCheck = new JCheckBox("Enable print statements for input Python commands");
+		printPanel.add(printInputCheck, c);
+		c.gridy++;
+		printOutputCheck = new JCheckBox("Enable print statements from Python output");
+		printPanel.add(printOutputCheck, c);
+		outp.add(printPanel, b);
 		
-		@Override
-		public void run() {
-			wdThread = new LCWaitingDialogThread(parentFrame, getControl(), message);
-			wdThread.start();
-		}
-	} */
+		b.gridy++;
+		JPanel tempPanel = new JPanel(new GridBagLayout());
+		tempPanel.setBorder(new TitledBorder("Temporary file storage"));
+		tempPanel.setAlignmentX(LEFT_ALIGNMENT);
+		c = new PamGridBagContraints();
+		tempField = new JTextField(20);
+		tempField.setEnabled(false);
+		tempPanel.add(tempField, c);
+		c.gridx++;
+		tempButton = new JButton("Change (TBA)");
+		tempButton.setEnabled(false);
+		// add listener
+		tempPanel.add(tempButton, c);
+		outp.add(tempPanel, b);
+		
+		return outp;
+	}
 	
+	/**
+	 * The ActionListener for trainSetButton.
+	 */
 	public class TrainSetListener implements ActionListener {
 		
 		protected boolean testSet;
@@ -621,6 +651,9 @@ public class LCSettingsDialog extends PamDialog {
 		}
 	}
 	
+	/**
+	 * The thread for trainSetButton.
+	 */
 	protected class TrainSetButtonThread extends Thread {
 		
 		protected boolean testSet;
@@ -635,6 +668,11 @@ public class LCSettingsDialog extends PamDialog {
 		}
 	}
 	
+	/**
+	 * What the TrainSetButtonThread actually does.
+	 * @param testSet - Whether or not the input set is a testing set as opposed to a training set.
+	 * More meant for use with the Test Classifier, which extends this function.
+	 */
 	protected void trainSetButtonThreadAction(boolean testSet) {
 		if (inputSourcePanel.getSourceCount() == 0) {
 			lcControl.SimpleErrorDialog("No Feature Extractor module found. "
@@ -646,13 +684,15 @@ public class LCSettingsDialog extends PamDialog {
 			if (wdThread != null) wdThread.halt();
 			return;
 		}
-		//lcControl.setTrainPath(pathName);
 		loadedTrainingSet = tsi;
 		trainSetField.setText(tsi.pathName);
 		updateLabelList(tsi);
 		if (wdThread != null) wdThread.halt();
 	}
 	
+	/**
+	 * Updates labelList with the values in the input LCTrainingSetInfo object.
+	 */
 	protected void updateLabelList(LCTrainingSetInfo tsi) {
 		boolean matchingTable = true;
 		if (tsi.labelCounts.size() == dlModel.size()) {
@@ -680,24 +720,13 @@ public class LCSettingsDialog extends PamDialog {
 		manageColoursButton.setEnabled(true);
 	}
 	
-	protected LCTrainingSetInfo readTrainingSet(boolean testSet, boolean showLoadingDialogs) {
-		if (testSet && loadedTrainingSet == null) {
-			lcControl.SimpleErrorDialog("Training set must be selected first.", 250);
-			return null;
-		}
-		PamFileChooser fc = new PamFileChooser();
-		fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
-		fc.setMultiSelectionEnabled(false);
-		fc.addChoosableFileFilter(new FileNameExtensionFilter("MIRRF training set file (*.mirrfts)","mirrfts"));
-		fc.addChoosableFileFilter(new FileNameExtensionFilter("Comma-separated values file (*.csv)","csv"));
-		int returnVal = fc.showOpenDialog(lcControl.getPamView().getGuiFrame());
-		if (returnVal == fc.APPROVE_OPTION) {
-			File f = getSelectedFileWithExtension(fc);
-			return readTrainingSet(testSet, showLoadingDialogs, f);
-		}
-		return null;
-	}
-	
+	/**
+	 * Checks if the features found in the selected training set match those in the selected Feature Extractor instance.
+	 * @param inp - List of features found in the training set
+	 * @param testSet - Whether or not the input set is a testing set as opposed to a training set.
+	 * More meant for use with the Test Classifier, which extends this function.
+	 * @return True if the features match. Otherwise, false.
+	 */
 	protected boolean compareFEFeatures(ArrayList<String> inp, boolean testSet) {
 		FEDataBlock vectorDataBlock = (FEDataBlock) inputSourcePanel.getSource();
 		String failureMessage = "Selected set uses different features than those "
@@ -718,6 +747,13 @@ public class LCSettingsDialog extends PamDialog {
 		return true;
 	}
 	
+	/**
+	 * Checks if the settings found in the selected training set match those in the selected Feature Extractor instance.
+	* @param inp - Hash map of settings found in the training set
+	 * @param testSet - Whether or not the input set is a testing set as opposed to a training set.
+	 * More meant for use with the Test Classifier, which extends this function.
+	 * @return True if the settings match or, if not, the user is okay with proceeding. Otherwise, false.
+	 */
 	protected boolean compareFEParams(HashMap<String, String> inp, boolean testSet) {
 		FEDataBlock vectorDataBlock = (FEDataBlock) inputSourcePanel.getSource();
 		FEParameters feParams = vectorDataBlock.getParamsClone();
@@ -734,11 +770,42 @@ public class LCSettingsDialog extends PamDialog {
 		return res == JOptionPane.OK_OPTION;
 	}
 	
+	/**
+	 * Opens a file chooser and attempts to read the selected training set.
+	 * @param testSet - Whether or not the input set is a testing set as opposed to a training set.
+	 * More meant for use with the Test Classifier, which extends this function.
+	 * @param showLoadingDialogs - Whether or not loading dialogs should appear.
+	 * @return LCTrainingSetInfo produced from selected training set if successful. Otherwise, null.
+	 */
+	protected LCTrainingSetInfo readTrainingSet(boolean testSet, boolean showLoadingDialogs) {
+		if (testSet && loadedTrainingSet == null) {
+			lcControl.SimpleErrorDialog("Training set must be selected first.", 250);
+			return null;
+		}
+		PamFileChooser fc = new PamFileChooser();
+		fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
+		fc.setMultiSelectionEnabled(false);
+		fc.addChoosableFileFilter(new FileNameExtensionFilter("MIRRF training set file (*.mirrfts)","mirrfts"));
+		fc.addChoosableFileFilter(new FileNameExtensionFilter("Comma-separated values file (*.csv)","csv"));
+		int returnVal = fc.showOpenDialog(lcControl.getPamView().getGuiFrame());
+		if (returnVal == fc.APPROVE_OPTION) {
+			File f = getSelectedFileWithExtension(fc);
+			return readTrainingSet(testSet, showLoadingDialogs, f);
+		}
+		return null;
+	}
+	
+	/**
+	 * Attempts to read a training set from an input file.
+	 * @param testSet - Whether or not the input set is a testing set as opposed to a training set.
+	 * More meant for use with the Test Classifier, which extends this function.
+	 * @param showLoadingDialogs - Whether or not loading dialogs should appear.
+	 * @param f - The input file
+	 * @return LCTrainingSetInfo produced from selected training set if successful. Otherwise, null.
+	 */
 	protected LCTrainingSetInfo readTrainingSet(boolean testSet, boolean showLoadingDialogs, File f) {
 		String message = "Validating training set...";
 		if (testSet) message = "Validating testing set...";
-		//WaitThread wt = new WaitThread(message);
-		//wt.start();
 		if (showLoadingDialogs) {
 			wdThread = new LCWaitingDialogThread(parentFrame, getControl(), message);
 			wdThread.start();
@@ -849,100 +916,11 @@ public class LCSettingsDialog extends PamDialog {
 			return null;
 		}
 		return outp;
-		
-	/*	if (f.exists()) {
-			Scanner sc;
-			try {
-				LCTrainingSetInfo outp = new LCTrainingSetInfo(f.getPath());
-				sc = new Scanner(f);
-				if (sc.hasNextLine()) {
-					String[] firstLine = sc.nextLine().split(",");
-					if (firstLine.length >= 10 && firstLine[0].equals("cluster") && firstLine[1].equals("uid")
-							&& firstLine[2].equals("location") && firstLine[3].equals("date") && firstLine[4].equals("duration")
-							&& firstLine[5].equals("lf") && firstLine[6].equals("hf") && firstLine[7].equals("label")) {
-						ArrayList<String[]> dataLines = new ArrayList<String[]>();
-						//ArrayList<String> currLabels = new ArrayList<String>();
-						while (sc.hasNextLine()) {
-							String[] nextLine = sc.nextLine().split(",");
-							if (nextLine.length == firstLine.length) {
-								boolean allValid = true;
-								if (nextLine[0].length() < 2) continue;
-								for (int i = 0; i < nextLine.length; i++) {
-									try {
-										if ((i < 4 && i != 3) || i == 7) {
-											assert nextLine[i].length() > 0;
-										} else if (i != 3) {
-											double test = Double.valueOf(nextLine[i]);
-										}
-									} catch (Exception e2) {
-										allValid = false;
-										break;
-									}
-								}
-								if (allValid) {
-									outp.addBatchID(nextLine[0].substring(0,2));
-									dataLines.add(nextLine);
-									//if (!currLabels.contains(nextLine[7])) {
-									//	currLabels.add(nextLine[7]);
-									//}
-									outp.addLabel(nextLine[7]);
-								}
-							}
-						}
-						if (dataLines.size() > 0) {
-							if (outp.labelCounts.size() > 1 || (testSet && outp.labelCounts.size() > 0)) {
-								//lcControl.trainPath = f.getPath();
-								//trainSetField.setText(lcControl.trainPath); */
-							/*	featureList = new String[firstLine.length-8];
-								for (int i = 8; i < firstLine.length; i++) {
-									featureList[i-8] = firstLine[i];
-								}
-								dlModel.clear();
-								for (int i = 0; i < currLabels.size(); i++) {
-									dlModel.addElement(currLabels.get(i));
-								}
-								String[] labelArr = new String[currLabels.size()];
-								for (int i = 0; i < currLabels.size(); i++) {
-									labelArr[i] = currLabels.get(i);
-								}
-								currentColours = lcControl.getParams().generateColours(labelArr);
-								manageColoursButton.setEnabled(true);
-								return f.getPath(); */
-	/*							for (int i = 8; i < firstLine.length; i++) {
-									outp.featureList.add(firstLine[i]);
-								}
-								sc.close();
-								return outp;
-							} else {
-								lcControl.SimpleErrorDialog("Selected training set must include at least two classes.", 250);
-								sc.close();
-								return null;
-							}
-						} else {
-							lcControl.SimpleErrorDialog("Selected set does not contain any valid data.", 250);
-							sc.close();
-							return null;
-						}
-					} else {
-						lcControl.SimpleErrorDialog("Selected set is not formatted like Training Set Builder output.", 250);
-						sc.close();
-						return null;
-					}
-				} else {
-					lcControl.SimpleErrorDialog("Selected set is a blank file.", 250);
-					sc.close();
-					return null;
-				}
-			} catch (Exception e2) {
-				e2.printStackTrace();
-				lcControl.SimpleErrorDialog("Error encountered when attempting to load set.", 250);
-				return null;
-			}
-		}
-		lcControl.SimpleErrorDialog("Selected file does not exist.", 250);
-		return null; */
 	}
 	
+	/**
+	 * The action listener for manageColoursButton.
+	 */
 	protected class ColourListener implements ActionListener {
 		private LCSettingsDialog sDialog;
 		
@@ -956,11 +934,17 @@ public class LCSettingsDialog extends PamDialog {
 		}
 	}
 	
+	/**
+	 * What the ColourListener actually does.
+	 */
 	protected void colourListenerAction(LCSettingsDialog sDialog) {
 		LCColourDialog cDialog = new LCColourDialog(parentFrame, lcControl, sDialog, false);
 		cDialog.setVisible(true);
 	}
 	
+	/**
+	 * Adjusts the settings in the dialog to match the current settings saved to LCControl.
+	 */
 	public void actuallyGetParams() {
 		LCParameters params = lcControl.getParams();
 		inputSourcePanel.setSource(params.inputProcessName);
@@ -1022,28 +1006,23 @@ public class LCSettingsDialog extends PamDialog {
 		highField.setText(String.valueOf(params.high).substring(2));
 		worstLeadBox.setSelectedItem(params.worstLead);
 		displayIgnoredCheck.setSelected(params.displayIgnored);
+		printJavaCheck.setSelected(params.printJava);
+		printInputCheck.setSelected(params.printInput);
+		printOutputCheck.setSelected(params.printOutput);
 	}
 	
-	public void switchOn(Object box, boolean boo) {
-		// TODO
-	}
-	
-	protected class CheckBoxListener implements ActionListener {
-		private JCheckBox box;
-		public CheckBoxListener(JCheckBox box) {
-			this.box = box;
-		}
-		public void actionPerformed(ActionEvent e) {
-			switchOn(box, box.isSelected());
-		}
-	}
-	
+	/**
+	 * Enables setMaxField if setMaxRB is selected.
+	 */
 	protected class samplingRBListener implements ActionListener {
 		public void actionPerformed(ActionEvent e) {
 			setMaxField.setEnabled(setMaxRB.isSelected());
 		}
 	}
 	
+	/**
+	 * Enables clusterSizeField if clusterSizeCheck is selected.
+	 */
 	protected class clusterSizeListener implements ActionListener {
 		@Override
 		public void actionPerformed(ActionEvent e) {
@@ -1072,16 +1051,6 @@ public class LCSettingsDialog extends PamDialog {
 	        file = new File(file.toString() + '.' + exts[0]);
 	    }
 	    return file;
-	}
-	
-	protected class RadioButtonListener implements ActionListener {
-		private JRadioButton rb;
-		public RadioButtonListener(JRadioButton rb) {
-			this.rb = rb;
-		}
-		public void actionPerformed(ActionEvent e) {
-			switchOn(rb, rb.isSelected());
-		}
 	}
 	
 	/**
@@ -1139,9 +1108,7 @@ public class LCSettingsDialog extends PamDialog {
 	}
 	
 	@Override
-	public void cancelButtonPressed() {
-		
-	}
+	public void cancelButtonPressed() {}
 	
 	/**
 	 * Streamlined error dialog with an editable message.
@@ -1153,6 +1120,9 @@ public class LCSettingsDialog extends PamDialog {
 			JOptionPane.ERROR_MESSAGE);
 	}
 	
+	/**
+	 * @return True if the settings in the dialog are valid. Otherwise, false.
+	 */
 	protected boolean checkIfSettingsAreValid() {
 		if (loadedTrainingSet == null || loadedTrainingSet.pathName.length() == 0) {
 			lcControl.SimpleErrorDialog("No training set has been loaded.", 250);
@@ -1265,6 +1235,9 @@ public class LCSettingsDialog extends PamDialog {
 		return true;
 	}
 	
+	/**
+	 * @return Generated LCParameters based off the input settings.
+	 */
 	public LCParameters generateParameters() {
 		LCParameters params = lcControl.getParams();
 		if (inputSourcePanel.getSource() != null)
@@ -1344,9 +1317,15 @@ public class LCSettingsDialog extends PamDialog {
 		}
 		params.worstLead = (String) worstLeadBox.getSelectedItem();
 		params.displayIgnored = displayIgnoredCheck.isSelected();
+		params.printJava = printJavaCheck.isSelected();
+		params.printInput = printInputCheck.isSelected();
+		params.printOutput = printOutputCheck.isSelected();
 		return params;
 	}
 	
+	/**
+	 * An action listener for the built-in OK button.
+	 */
 	protected class OKButtonListener implements ActionListener {
 		public void actionPerformed(ActionEvent e) {
 			OKButtonThread okThread = new OKButtonThread();
@@ -1354,6 +1333,10 @@ public class LCSettingsDialog extends PamDialog {
 		}
 	}
 	
+	/**
+	 * Thread activated by OKButtonListener.
+	 * Checks if the training set is valid before "pressing OK" and closing the dialog.
+	 */
 	protected class OKButtonThread extends Thread {
 		
 		protected OKButtonThread() {}
@@ -1366,31 +1349,17 @@ public class LCSettingsDialog extends PamDialog {
 		}
 	}
 	
+	/**
+	 * @return True if the training set is valid. Otherwise false.
+	 */
 	protected boolean validateTrainingSet() {
 		if (!checkIfSettingsAreValid()) return false;
 		
 		lcControl.setTrainingSetStatus(false);
 		
-	/*	FEDataBlock vectorDataBlock = (FEDataBlock) inputSourcePanel.getSource();
-		if (loadedTrainingSet.featureList.size() == vectorDataBlock.getFeatureList().length) {
-			for (int i = 0; i < loadedTrainingSet.featureList.size(); i++) {
-				if (!loadedTrainingSet.featureList.get(i).equals(vectorDataBlock.getFeatureList()[i][1])) {
-					lcControl.SimpleErrorDialog("Selected features in the Feature Extractor do not match the "
-							+ "features in the selected training set.", 250);
-					return false;
-				}
-			}
-		} else {
-			lcControl.SimpleErrorDialog("Selected features in the Feature Extractor do not match the "
-					+ "features in the selected training set.", 250);
-			return false;
-		} */
-		
 		if (!compareFEFeatures(loadedTrainingSet.featureList, false));
 		
 		LCParameters params = generateParameters();
-		
-		//lcControl.featureList = featureList;
 		
 		int result = JOptionPane.showConfirmDialog(this, 
 				lcControl.makeHTML("Training set will be sent to Python to be fit into a machine learning model. "
@@ -1488,12 +1457,21 @@ public class LCSettingsDialog extends PamDialog {
 		highField.setText("8");
 		worstLeadBox.setSelectedIndex(0);
 		displayIgnoredCheck.setSelected(true);
+		printJavaCheck.setSelected(false);
+		printInputCheck.setSelected(false);
+		printOutputCheck.setSelected(false);
 	}
 	
+	/**
+	 * @return The placeholder hash map for keeping track of colours.
+	 */
 	public HashMap<String, Color> getCurrentColours() {
 		return currentColours;
 	}
 	
+	/**
+	 * Replaces the placeholder hash map for colours.
+	 */
 	public void setCurrentColours(HashMap<String, Color> inp) {
 		currentColours = inp;
 	}
@@ -1501,13 +1479,4 @@ public class LCSettingsDialog extends PamDialog {
 	protected LCControl getControl() {
 		return lcControl;
 	}
-
-/*	
-	private class FragmentationListener implements ActionListener {
-		@Override
-		public void actionPerformed(ActionEvent arg0) {
-			enableControls();
-		}
-	}
-*/
 }

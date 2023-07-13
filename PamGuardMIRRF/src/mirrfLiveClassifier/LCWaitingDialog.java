@@ -10,6 +10,10 @@ import javax.swing.WindowConstants;
 
 import PamView.dialog.PamDialog;
 
+/**
+ * Simple waiting dialogs for when training sets are being loaded, fitted, etc.
+ * @author Holly LeBlond
+ */
 public class LCWaitingDialog extends PamDialog {
 	
 	protected LCControl lcControl;

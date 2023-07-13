@@ -23,6 +23,10 @@ import PamUtils.PamFileChooser;
 import PamView.dialog.PamDialog;
 import PamView.dialog.PamGridBagContraints;
 
+/**
+ * Dialog for selecting an external folder to store temporary sound files and Python code.
+ * @author Holly LeBlond
+ */
 //@SuppressWarnings("serial")
 public class MIRRFTempFolderDialog extends PamDialog {
 	

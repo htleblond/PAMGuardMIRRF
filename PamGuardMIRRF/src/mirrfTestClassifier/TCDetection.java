@@ -1,5 +1,9 @@
 package mirrfTestClassifier;
 
+/**
+ * Data object for single data entries directly from the training set.
+ * @author Holly LeBlond
+ */
 public class TCDetection {
 	
 	public String clusterID;

@@ -120,7 +120,7 @@ public class FEProcess extends PamProcess {
 					feControl.addOneToCounter(FEPanel.FAILURE, String.valueOf(clipRequest.getUID()));
 					li.remove();
 				} else if (clipErr == RawDataUnavailableException.DATA_NOT_ARRIVED) {
-					continue; // TODO TAYLOR - Find out if doing this doesn't break the CSV stuff.
+					continue;
 				} else if (clipErr == 4) {
 					feControl.addOneToCounter(FEPanel.IGNORE, String.valueOf(clipRequest.getUID()));
 					li.remove();
@@ -137,7 +137,6 @@ public class FEProcess extends PamProcess {
 	 */
 	@Override
 	public void prepareProcess() {
-		// TODO TAYLOR - There's probably a better way of communicating this.
 		if (feControl.getParams().audioSourceProcessName.length() > 0)
 			feControl.getParams().sr = 
 				(int) PamController.getInstance().getRawDataBlock(feControl.getParams().audioSourceProcessName).getSampleRate();
@@ -167,9 +166,14 @@ public class FEProcess extends PamProcess {
 	
 	@Override
 	public void pamStop() {
-		System.out.println("Went through pamStop().");
+		if (feControl.getParams().miscPrintJavaChecked)
+			System.out.println("Went through pamStop().");
 		FEPythonThreadManager threadManager = feControl.getThreadManager();
 		int waitNum = 0;
+		//System.out.println(String.valueOf(threadManager.getWaitlistSize() > 0)+
+		//		String.valueOf(threadManager.clipsLeft() > 0)+
+		//		String.valueOf(threadManager.vectorsLeft() > 0)+
+		//		String.valueOf(feControl.getParams().miscPrintJavaChecked));
 		while (threadManager.getWaitlistSize() > 0 || threadManager.clipsLeft() > 0 || threadManager.vectorsLeft() > 0) {
 			if (!(threadManager.getWaitlistSize() > 0 || threadManager.clipsLeft() > 0)) {
 				threadManager.resetActiveThread();
@@ -177,13 +181,11 @@ public class FEProcess extends PamProcess {
 					waitNum++;
 				}
 			}
-		/*	if (waitNum >= 5) {
-				threadManager.addVectorToDataBlock(); // Makes sure the occasional straggler gets dealt with.
-			} */
-			//threadManager.addVectorToDataBlock();
-			System.out.println("waitlistSize: "+String.valueOf(threadManager.getWaitlistSize())+
-					", clipsLeft: "+String.valueOf(threadManager.clipsLeft())+
-					", vectorsLeft: "+String.valueOf(threadManager.vectorsLeft()));
+			if (feControl.getParams().miscPrintJavaChecked) {
+				System.out.println("waitlistSize: "+String.valueOf(threadManager.getWaitlistSize())+
+						", clipsLeft: "+String.valueOf(threadManager.clipsLeft())+
+						", vectorsLeft: "+String.valueOf(threadManager.vectorsLeft()));
+			}
 			try {
 				TimeUnit.MILLISECONDS.sleep(200);
 				//TimeUnit.MILLISECONDS.sleep(1000);
@@ -191,10 +193,8 @@ public class FEProcess extends PamProcess {
 				e.printStackTrace();
 			}
 		}
-		vectorDataBlock.setFinished(true);
 		//feControl.getThreadManager().pythonCommand("currThread.runLast()");
 		File tempFolder = new File(feControl.getParams().tempFolder);
-		// TODO TAYLOR - Create a global list instead, in order for it to not delete everything if there's a second instance of PAMGuard running.
 		File[] filesToDelete = tempFolder.listFiles();
 		//System.out.println("filesToDelete.length: "+String.valueOf(filesToDelete.length));
 		for (int i = 0; i < filesToDelete.length; i++) {
@@ -202,6 +202,7 @@ public class FEProcess extends PamProcess {
 				filesToDelete[i].delete();
 			}
 		}
+		vectorDataBlock.setFinished(true);
 	}
 	
 	/**
@@ -350,7 +351,6 @@ public class FEProcess extends PamProcess {
 			boolean countUp = false;
 			if (prevDU == null || !params.miscClusterChecked || (params.audioNRChecked && nrData == null)) countUp = true;
 			else if (prevDU.getEndTimeInMilliseconds() + params.miscJoinDistance < dataUnit.getTimeMilliseconds()) countUp = true;
-			// TODO TAYLOR - binaryFileBreak stuff (may actually not be necessary)
 			
 			
 			if (params.audioNRChecked && countUp) {
@@ -587,7 +587,7 @@ public class FEProcess extends PamProcess {
 	 * Get the output folder, based on time and sub folder options.
 	 */
 	public String getClipFileFolder() {
-		return feControl.getParams().tempFolder; // TODO TAYLOR - MAKE SURE THIS IS CORRECT!!!
+		return feControl.getParams().tempFolder;
 	}
 	
 	/**
@@ -629,7 +629,6 @@ public class FEProcess extends PamProcess {
 		return ans;
 	}
 	
-	// TODO TAYLOR - Figure out what this does.
 	@Override
 	public long getRequiredDataHistory(PamObservable o, Object arg) {
 		long minH = 0;

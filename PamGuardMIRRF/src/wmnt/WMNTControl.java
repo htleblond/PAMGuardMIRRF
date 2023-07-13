@@ -31,11 +31,6 @@ public class WMNTControl extends PamControlledUnit implements PamSettings {
 	
 	protected WMNTSidePanel wmntSidePanel;
 	
-	//private String timezone;
-/*	protected String audioTZ;
-	protected String binaryTZ;
-	protected String databaseTZ; */
-	
 	protected WMNTProcess wmntProcess;
 	
 	public WMNTControl(String unitName) {
@@ -44,11 +39,6 @@ public class WMNTControl extends PamControlledUnit implements PamSettings {
 		
 		wmntSidePanel = new WMNTSidePanel(this);
 		setSidePanel(wmntSidePanel);
-		
-		//timezone = "Canada/Pacific";
-	/*	audioTZ = "UTC";
-		binaryTZ = "UTC";
-		databaseTZ = "UTC"; */
 		
 		this.wmntProcess = new WMNTProcess(this, null);
 		this.addPamProcess(wmntProcess);
@@ -60,7 +50,6 @@ public class WMNTControl extends PamControlledUnit implements PamSettings {
 	
 	/**
 	 * Streamlined error dialog.
-	 * @author Holly LeBlond
 	 */
 	public void SimpleErrorDialog() {
 		JOptionPane.showMessageDialog(this.getGuiFrame(),
@@ -71,7 +60,6 @@ public class WMNTControl extends PamControlledUnit implements PamSettings {
 	
 	/**
 	 * Streamlined error dialog with an editable message.
-	 * @author Holly LeBlond
 	 */
 	public void SimpleErrorDialog(String inptext) {
 		JOptionPane.showMessageDialog(this.getGuiFrame(),
@@ -81,23 +69,12 @@ public class WMNTControl extends PamControlledUnit implements PamSettings {
 	}
 	
 	/**
-	 * Used to set the time zone for converting binary dates/times from set time zone to UTC.
-	 * @param inpstr - Valid time zone name from java.utils.TimeZone. (String)
-	 * @author Holly LeBlond
+	 * Converts a date/time string formatted like yyyy-MM-dd HH:mm:ss(+SSS) to a new time zone.
+	 * @param tz1name - The original time zone's name
+	 * @param tz2name - The new time zone's name
+	 * @param originalDate - The original date/time string
+	 * @param includeMilliseconds - Whether or not milliseconds should be appended to the string
 	 */
-/*	public void setTimezone(String inpstr) {
-		timezone = inpstr;
-	} */
-	
-	/**
-	 * Getter function for the time zone.
-	 * @return String - time offset from UTC.
-	 * @author Holly LeBlond
-	 */
-/*	public String getTimezone() {
-		return timezone;
-	} */
-	
 	public String convertBetweenTimeZones(String tz1name, String tz2name, String originalDate, boolean includeMilliseconds) {
 		try {
 			String date_format = "yyyy-MM-dd HH:mm:ss";

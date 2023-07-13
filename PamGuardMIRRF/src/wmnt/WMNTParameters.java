@@ -6,6 +6,10 @@ import java.util.ArrayList;
 import PamModel.parametermanager.ManagedParameters;
 import PamModel.parametermanager.PamParameterSet;
 
+/**
+ * Parameters object for the WMNT.
+ * @author Holly LeBlond
+ */
 public class WMNTParameters implements Serializable, Cloneable, ManagedParameters {
 	
 	public String inputProcessName;

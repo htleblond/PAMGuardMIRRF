@@ -1,3 +1,6 @@
+# FEPythonThread.py (for MIRRF Classifier plugin for PAMGuard)
+# By Holly LeBlond
+
 import numpy as np
 import librosa
 from librosa import display
@@ -386,14 +389,14 @@ class FEThread():
         return [deriv[i+1] - deriv[i] for i in np.arange(len(deriv)-1)]
 
 class HeaderData:
-        def __init__(self, uid, datelong, amplitude, duration, freqhd_min, freqhd_max, slice_data):
-            self.uid = uid
-            self.datelong = datelong
-            self.amplitude = amplitude
-            self.duration = duration
-            self.freqhd_min = freqhd_min
-            self.freqhd_max = freqhd_max
-            self.slice_data = slice_data
+    def __init__(self, uid, datelong, amplitude, duration, freqhd_min, freqhd_max, slice_data):
+        self.uid = uid
+        self.datelong = datelong
+        self.amplitude = amplitude
+        self.duration = duration
+        self.freqhd_min = freqhd_min
+        self.freqhd_max = freqhd_max
+        self.slice_data = slice_data
 
 def loadAudio(fn: str, sr: int):
     warnings.simplefilter(action='ignore', category=FutureWarning)

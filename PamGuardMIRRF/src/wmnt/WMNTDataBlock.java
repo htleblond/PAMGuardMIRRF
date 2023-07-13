@@ -23,7 +23,6 @@ public class WMNTDataBlock extends PamDataBlock<WMNTDataUnit> {
 	 * data being fed into the unit's hash map at once (unless you can
 	 * work around it). All data is immediately wiped from the block after
 	 * being sent to the classifier, as it serves no other purpose.
-	 * @author Holly LeBlond
 	 */
 	@Override
 	public void addPamData(WMNTDataUnit du) {
@@ -32,7 +31,6 @@ public class WMNTDataBlock extends PamDataBlock<WMNTDataUnit> {
 	
 	/**
 	 * Just use the other one, as the UID isn't even used.
-	 * @author Holly LeBlond
 	 */
 	@Override
 	public void addPamData(WMNTDataUnit du, Long uid) {
@@ -43,7 +41,6 @@ public class WMNTDataBlock extends PamDataBlock<WMNTDataUnit> {
 	/**
 	 * Updates label and confusion matrix data for matching WMD detections in the MIRRF Live Classifier.
 	 * @param doFullTable - If true, the entire table will be sent; otherwise, it will only do selected rows.
-	 * @author Holly LeBlond
 	 */
 	public void updateLC(boolean doFullTable) {
 		final int loadnum = 1000;

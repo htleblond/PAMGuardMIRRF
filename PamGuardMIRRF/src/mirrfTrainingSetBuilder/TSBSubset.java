@@ -1,9 +1,11 @@
 package mirrfTrainingSetBuilder;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 
+/**
+ * Data object for storing subset data.
+ * @author Holly LeBlond
+ */
 public class TSBSubset {
 	
 	public String featurePath;

@@ -31,7 +31,6 @@ public class WMNTSidePanel implements PamSidePanel {
 	/**
 	 * Getter function for the WMNTPanel.
 	 * @return WMNTPanel
-	 * @author Holly LeBlond
 	 */
 	public WMNTPanel getWMNTPanel() {
 		return wmntPanel;

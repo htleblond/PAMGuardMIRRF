@@ -1,13 +1,13 @@
 package mirrfLiveClassifier;
 
-import java.util.List;
-import java.util.ListIterator;
-
-import PamUtils.FrequencyFormat;
 import PamguardMVC.PamDataUnit;
 import dataGram.DatagramProvider;
 import dataGram.DatagramScaleInformation;
 
+/**
+ * The Live Classifier's DatagramProvider.
+ * @author Holly LeBlond
+ */
 public class LCDatagramProvider implements DatagramProvider {
 	
 	protected LCControl lcControl;
@@ -34,7 +34,8 @@ public class LCDatagramProvider implements DatagramProvider {
 
 	@Override
 	public int addDatagramData(PamDataUnit dataUnit, float[] dataGramLine) {
-		System.out.println("Reached addDatagramData");
+		if (lcControl.getParams().printJava)
+			System.out.println("Reached addDatagramData");
 		LCDataUnit du = (LCDataUnit) dataUnit;
 		LCCallCluster cc = du.getCluster();
 		int totalPoints = 0;

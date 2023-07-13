@@ -1,21 +1,21 @@
 package mirrfLiveClassifier;
 
 import java.awt.Color;
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import PamModel.parametermanager.ManagedParameters;
 import PamModel.parametermanager.PamParameterSet;
-import PamView.GroupedSourceParameters;
 import mirrf.MIRRFParameters;
 
 import org.apache.commons.text.WordUtils;
 
+/**
+ * The parameters object for the Live Classifier.
+ * @author Holly LeBlond
+ */
 //@SuppressWarnings("serial")
 public class LCParameters extends MIRRFParameters {
 	
-	//public String trainPath; // This should be accessed from loadedTrainingSetInfo in control in most cases.
 	protected LCTrainingSetInfo loadedTrainingSetInfo;
 	
 	public String inputProcessName;
@@ -56,9 +56,12 @@ public class LCParameters extends MIRRFParameters {
 	public int samplingRate;
 	public int fftLength;
 	
+	public boolean printJava;
+	public boolean printInput;
+	public boolean printOutput;
+	
 	public LCParameters() {
 		
-		//this.trainPath = "";
 		this.loadedTrainingSetInfo = new LCTrainingSetInfo("");
 		
 		this.inputProcessName = "";
@@ -98,8 +101,15 @@ public class LCParameters extends MIRRFParameters {
 		
 		this.samplingRate = 48000;
 		this.fftLength = 2048;
+		
+		this.printJava = false;
+		this.printInput = false;
+		this.printOutput = false;
 	}
 	
+	/**
+	 * Easy means of representing the values in LCParameters as a String, for Python input.
+	 */
 	@Override
 	public String outputPythonParamsToText() {
 		if (tempFolder.length() == 0) {
@@ -147,9 +157,13 @@ public class LCParameters extends MIRRFParameters {
 		return outp;
 	}
 	
+	/**
+	 * @return Hash map that assigns colours to species.
+	 * If a species is already in the pre-existing labelColours map, it retains its old colour.
+	 */
 	public HashMap<String, Color> generateColours(String[] newLabels) {
-		Color[] defaultColours = new Color[] {new Color(0,255,0), new Color(255,0,0), new Color(0,0,255), new Color(255,175,0), new Color(255,0,255),
-											  new Color(0,255,0), new Color(0,255,255), new Color(255,150,150), new Color(150,150,150), new Color(255,255,255)};
+		Color[] defaultColours = new Color[] {new Color(0,255,0), new Color(255,0,0), new Color(0,255,255), new Color(255,175,0), new Color(255,0,255),
+											  new Color(0,255,0), new Color(0,0,255), new Color(255,150,150), new Color(150,150,150), new Color(255,255,255)};
 		HashMap<String, Color> newColours = new HashMap<String, Color>();
 		for (int i = 0 ; i < newLabels.length; i++) {
 			if (labelColours.containsKey(newLabels[i])) {
@@ -169,6 +183,9 @@ public class LCParameters extends MIRRFParameters {
 		return newColours;
 	}
 	
+	/**
+	 * @return Whether or not a cluster should be ignored based off of certain settings.
+	 */
 	public boolean shouldIgnoreCluster(LCCallCluster cc) {
 		if (cc.getSize() < minClusterSize) {
 			return true;
@@ -181,6 +198,9 @@ public class LCParameters extends MIRRFParameters {
 		return false;
 	}
 	
+	/**
+	 * Returns the subjective "lead descriptor" matching the input number, based off of specified settings.
+	 */
 	public String getLeadDescriptor(double inp) {
 		if (inp < this.veryLow) {
 			return "Very low";
@@ -194,32 +214,53 @@ public class LCParameters extends MIRRFParameters {
 		return "Very high";
 	}
 	
+	/**
+	 * @return labelOrder as an ArrayList.
+	 */
 	public ArrayList<String> getLabelOrderAsList() {
 		ArrayList<String> outp = new ArrayList<String>();
 		for (int i = 0; i < labelOrder.length; i++) outp.add(labelOrder[i]);
 		return outp;
 	}
 	
+	/**
+	 * @return The object representing the input training set.
+	 */
 	public LCTrainingSetInfo getTrainingSetInfo() {
 		return loadedTrainingSetInfo;
 	}
 	
+	/**
+	 * Sets the object representing the input training set.
+	 */
 	public void setTrainingSetInfo(LCTrainingSetInfo inp) {
 		loadedTrainingSetInfo = inp;
 	}
 	
+	/**
+	 * @return The training set file's path, stored in loadedTrainingSetInfo.
+	 */
 	public String getTrainPath() {
 		return loadedTrainingSetInfo.pathName;
 	}
 	
+	/**
+	 * @return The list of features stored in loadedTrainingSetInfo.
+	 */
 	public ArrayList<String> getFeatureList() {
 		return loadedTrainingSetInfo.featureList;
 	}
 	
+	/**
+	 * @return The hash map in loadedTrainingSetInfo counting how many of each label are in the set.
+	 */
 	public HashMap<String, Integer> getLabelCounts() {
 		return loadedTrainingSetInfo.labelCounts;
 	}
 	
+	/**
+	 * @return The hash map in loadedTrainingSetInfo counting how big each "subset" in the set is.
+	 */
 	public HashMap<String, Integer> getSubsetCounts() {
 		return loadedTrainingSetInfo.subsetCounts;
 	}

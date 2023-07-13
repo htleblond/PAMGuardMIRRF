@@ -6,6 +6,11 @@ import javax.swing.JToolBar;
 
 import PamView.PamTabPanel;
 
+/**
+ * The Live Classifier's PamTabPanel.
+ * Not the actual GUI panel - that's LCPanel.
+ * @author Holly LeBlond
+ */
 public class LCTabPanel implements PamTabPanel {
 	
 	protected LCControl control;

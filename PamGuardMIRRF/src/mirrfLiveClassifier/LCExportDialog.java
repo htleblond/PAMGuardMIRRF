@@ -4,11 +4,8 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Window;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
-import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Date;
@@ -23,7 +20,6 @@ import javax.swing.JPanel;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 import PamController.PamControlledUnit;
-import PamUtils.PamFileChooser;
 import PamView.PamTable;
 import PamView.dialog.PamDialog;
 import PamView.dialog.PamGridBagContraints;
@@ -34,6 +30,10 @@ import mirrfFeatureExtractor.FEControl;
 import mirrfFeatureExtractor.FEDataBlock;
 import mirrfFeatureExtractor.FEParameters;
 
+/**
+ * Dialog for exporting results.
+ * @author Holly LeBlond
+ */
 public class LCExportDialog extends PamDialog {
 	
 	protected LCControl lcControl;
@@ -85,13 +85,17 @@ public class LCExportDialog extends PamDialog {
 		this.setDialogComponent(mainPanel);
 	}
 	
+	/**
+	 * Opens a file chooser.
+	 * @param selectedIndex - The index of the selected option in optionsBox
+	 * @return The selected file
+	 */
 	protected File selectFile(int selectedIndex) {
 		File outp = null;
 		JFileChooser fc = new JFileChooser();
 		fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
 		fc.setAcceptAllFileFilterUsed(false);
 		fc.setMultiSelectionEnabled(false);
-		System.out.println(bsName);
 		if (selectedIndex == 0) {
 			fc.setSelectedFile(new File(bsName+"/"+dbName+"_ClusterResults.csv"));
 		} else if (selectedIndex == 1) {
@@ -158,6 +162,9 @@ public class LCExportDialog extends PamDialog {
 	    return file;
 	}
 	
+	/**
+	 * Basically exports the table into a .csv file.
+	 */
 	protected void exportClusterResults() {
 		sb.append("Cluster ID,First UID,Last UID,Date/Time (UTC),n,Actual species,Predicted sprecies,"
 				+ "Prediction counter,Prediction probabilities,Lead,Lead descriptor\n");
@@ -198,6 +205,9 @@ public class LCExportDialog extends PamDialog {
 				JOptionPane.INFORMATION_MESSAGE);
 	}
 	
+	/**
+	 * Exports all individual contour results into a .csv file.
+	 */
 	protected void exportIndividualContourResults() {
 		sb.append("Cluster ID,UID,Date/Time (UTC),Duration (ms),Lowest frequency,Highest Frequency,Actual Species,Predicted Species,");
 		for (int i = 0; i < lcControl.getParams().labelOrder.length; i++) {
@@ -242,6 +252,10 @@ public class LCExportDialog extends PamDialog {
 				JOptionPane.INFORMATION_MESSAGE);
 	}
 	
+	/**
+	 * Exports either the accuracy matrix or the confusion matrix into a .csv file.
+	 * @param doConfusion - If true, exports confusion matrix. If false, exports accuracy matrix.
+	 */
 	protected void exportMatrix(boolean doConfusion) {
 		LCPanel panel = (LCPanel) lcControl.getTabPanel().getPanel();
 		JLabel[][] matrix;
@@ -275,6 +289,9 @@ public class LCExportDialog extends PamDialog {
 				JOptionPane.INFORMATION_MESSAGE);
 	}
 	
+	/**
+	 * Exports detailed classification results into a .txt file.
+	 */
 	protected void exportFullResults() {
 		sb = produceHeaderInfo(sb);
 		sb = produceFeatureExtractorInfo(sb);
@@ -289,6 +306,9 @@ public class LCExportDialog extends PamDialog {
 				JOptionPane.INFORMATION_MESSAGE);
 	}
 	
+	/**
+	 * Produces header info for "full results".
+	 */
 	protected StringBuilder produceHeaderInfo(StringBuilder sb) {
 		sb.append(lcControl.getUnitName().toUpperCase()+", FULL RESULTS\n\n");
 		sb.append("NOTE - Some of the parameters listed here may be incorrect if the binary files were changed, "
@@ -302,6 +322,9 @@ public class LCExportDialog extends PamDialog {
 		return sb;
 	}
 	
+	/**
+	 * Produces Feature Extractor header info for "full results".
+	 */
 	protected StringBuilder produceFeatureExtractorInfo(StringBuilder sb) {
 		FEParameters feParams = null;
 		LCParameters lcParams = lcControl.getParams();
@@ -342,6 +365,9 @@ public class LCExportDialog extends PamDialog {
 		return sb;
 	}
 	
+	/**
+	 * Produces Feature Extractor settings info from a loaded Feature Extractor module for "full results".
+	 */
 	protected StringBuilder printParamsFromFEParametersObject(StringBuilder sb, FEParameters feParams) {
 		if (feParams.inputFromCSV) {
 			sb.append("Input source: CSV file\n");
@@ -416,6 +442,9 @@ public class LCExportDialog extends PamDialog {
 		return sb;
 	}
 	
+	/**
+	 * Produces unmatched Feature Extractor settings info from the loaded training set for "full results".
+	 */
 	protected StringBuilder printFEParamsFromTrainingSetFile(StringBuilder sb, HashMap<String, String> map, 
 			FEParameters feParams, String message) {
 		ArrayList<String> unmatched = new ArrayList<String>();
@@ -464,6 +493,9 @@ public class LCExportDialog extends PamDialog {
 		return sb;
 	}
 	
+	/**
+	 * Produces classifier settings info for "full results".
+	 */
 	protected StringBuilder produceClassifierInfo(StringBuilder sb) {
 		sb = new StringBuilder();
 		sb.append("LIVE CLASSIFIER PARAMETERS\n\n");
@@ -533,6 +565,9 @@ public class LCExportDialog extends PamDialog {
 		return sb;
 	}
 	
+	/**
+	 * Produces matrix results for "full results".
+	 */
 	protected StringBuilder produceMatrixInfo(StringBuilder sb) {
 		sb = new StringBuilder();
 		sb.append("ACCURACY MATRIX\n\n");
@@ -569,6 +604,9 @@ public class LCExportDialog extends PamDialog {
 		return sb;
 	}
 	
+	/**
+	 * Produces individual contour results for "full results".
+	 */
 	protected StringBuilder produceIndividualContourInfo(StringBuilder sb) {
 		sb = new StringBuilder();
 		sb.append("INDIVIDUAL CLUSTER RESULTS");
@@ -665,9 +703,7 @@ public class LCExportDialog extends PamDialog {
 	}
 
 	@Override
-	public void cancelButtonPressed() {
-		// (Does nothing)
-	}
+	public void cancelButtonPressed() {}
 
 	@Override
 	public void restoreDefaultSettings() {

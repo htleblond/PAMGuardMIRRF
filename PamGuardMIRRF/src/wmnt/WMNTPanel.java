@@ -50,68 +50,66 @@ import java.time.format.DateTimeFormatter;
  */
 public class WMNTPanel {
 
-	private WMNTControl wmntControl;
+	protected WMNTControl wmntControl;
 	
-	private PamPanel mainPanel;
+	protected PamPanel mainPanel;
 	
-	private PamFileChooser fc;
+	protected PamFileChooser fc;
 	
-	private PamTextField fileField;
-	private PamButton fileButton;
-	private PamButton importButton;
-	private PamButton exportButton;
+	protected PamTextField fileField;
+	protected PamButton fileButton;
+	protected PamButton importButton;
+	protected PamButton exportButton;
 	public PamTable ttable;
-	private DefaultTableModel dtmodel;
+	protected DefaultTableModel dtmodel;
 	public DefaultComboBoxModel<String> speciesModel;
 	public JComboBox<String> speciesBox;
 	public DefaultComboBoxModel<String> calltypeModel;
 	public JComboBox<String> calltypeBox;
-	private PamTextField commentField;
-	private PamButton speciesButton;
-	private PamButton calltypeButton;
-	private PamButton commentButton;
-	private PamButton allButton;
-	private PamButton selectAllButton;
-	private PamButton clearSelectionButton;
-	private PamButton selectStartButton;
-	private PamButton searchButton;
-	private PamButton connectButton;
+	protected PamTextField commentField;
+	protected PamButton speciesButton;
+	protected PamButton calltypeButton;
+	protected PamButton commentButton;
+	protected PamButton allButton;
+	protected PamButton selectAllButton;
+	protected PamButton clearSelectionButton;
+	protected PamButton selectStartButton;
+	protected PamButton searchButton;
+	protected PamButton connectButton;
 	protected PamButton checkButton;
 	protected PamButton commitButton;
-	private PamButton scrollButton;
-	private PamButton undoButton;
+	protected PamButton scrollButton;
+	protected PamButton undoButton;
 	
 	public Object[][] originalTable;
 	public boolean[] tableChangeLog;
 	
 	protected HashMap<String, ConnectedRegionDataUnit> crduMap;
 	
-	private WMNTSearchDialog searchDialog;
+	protected WMNTSearchDialog searchDialog;
 	
-	private int currformat;
+	protected int currformat;
 	
-	static private final int textLength = 35;
+	static protected final int textLength = 35;
 	
-	private WMNTBinaryReader reader;
+	protected WMNTBinaryReader reader;
 	protected WMNTMarkControl marker;
-	private List dataDates;
-	//public int startInterval;
+	protected List dataDates;
 	
-	private String defaultloc;
-	private File[] files;
+	protected String defaultloc;
+	protected File[] files;
 	
-	private WMNTSQLLogging testLogger;
+	protected WMNTSQLLogging testLogger;
 	
-	private int[] backupIndexes;
-	private Object[][] backupValues;
+	protected int[] backupIndexes;
+	protected Object[][] backupValues;
 	
-	private WMNTBinaryLoadingBarWindow loadingBarWindow;
-	private LoadingBarThread loadingBarThread;
+	protected WMNTBinaryLoadingBarWindow loadingBarWindow;
+	protected LoadingBarThread loadingBarThread;
 	
 	public WMNTPanel(WMNTControl wmntControl) {
 		this.wmntControl = wmntControl;
 		currformat = 6;
-		//startInterval = 2000;
 		this.crduMap = new HashMap<String, ConnectedRegionDataUnit>();
 		testLogger = null;
 		backupIndexes = null;
@@ -175,8 +173,7 @@ public class WMNTPanel {
 		dtmodel = new DefaultTableModel(columnNames,0) {
 			Class[] types = {Long.class, String.class, Integer.class, Integer.class, Integer.class, Integer.class,
 					String.class, String.class, String.class};
-			boolean[] canEdit = {false, false, false, false, false, false,
-					true, true, true};
+			boolean[] canEdit = {false, false, false, false, false, false, true, true, true};
 			
 			@Override
 			public Class getColumnClass(int index) {
@@ -261,9 +258,7 @@ public class WMNTPanel {
 		c.gridy++;
 		c.gridx = 0;
 		c.gridwidth = 1;
-		String[] speciesString = {"", "False positive", "KW", "HW", "CSL", "PWSD", "KW/HW?", "KW/PWSD?", "Fish", "Vessel", "Mooring",
-									"Unk", "Unk-Anthro", "Unk-Odontocete", "Unk-Mysticete", "Unk-Cetacean", "Deployment", "Aliens"};
-		speciesModel = new DefaultComboBoxModel<String>(speciesString);
+		speciesModel = new DefaultComboBoxModel<String>((String[]) wmntControl.getParams().speciesList.toArray());
 		speciesBox = new JComboBox<String>(speciesModel);
 		speciesBox.setPrototypeDisplayValue("aaaaaaaaaaaaaaaaaaaaaaaaa");
 		memPanel.add(speciesBox, c);
@@ -275,15 +270,7 @@ public class WMNTPanel {
 		memPanel.add(speciesButton, c);
 		
 		c.gridx++;
-		String[] callTypeString = {"","n/a","N01i","N01ii","N01iii","N01iv","N01v","N02","N03",
-				"N04","N05i","N05ii","N07i","N07ii","N07iii","N07iv","N08i","N08ii","N08iii","N09i","N09ii",
-				"N09iii","N10","N11","N12","N13","N16i","N16ii","N16iii","N16iv","N17","N18","N20","N21",
-				"N27","N47","Unnamed Aclan","Unnamed AAsubclan","Unnamed ABsubclan","N23i","N23ii","N24i","N24ii","N25","N26",
-				"N28","N29","N30","N39","N40","N41","N44","N45","N46","N48","Unnamed Gclan","Unnamed GGsubclan","Unnamed GIsubclan",
-				"N32i","N32ii","N33","N34","N42","N43","N50","N51","N52","Unnamed Rclan","S01","S02i","S02ii","S02iii","S03","S04",
-				"S05","S06","S07","S08i","S08ii","S09","S10","S12","S13i","S13ii","S14","S16","S17","S18","S19","S22","S31","S33",
-				"S36","S37i","S37ii","S40","S41","S42","S44","Unnamed Jclan"};
-		calltypeModel = new DefaultComboBoxModel<String>(callTypeString);
+		calltypeModel = new DefaultComboBoxModel<String>((String[]) wmntControl.getParams().callTypeList.toArray());
 		calltypeBox = new JComboBox<String>(calltypeModel);
 		calltypeBox.setPrototypeDisplayValue("aaaaaaaaaaaaaaaaaaaaaaaaa");
 		memPanel.add(calltypeBox, c);
@@ -549,18 +536,6 @@ public class WMNTPanel {
 					return;
 				}
 			}
-			
-		/*	String[] tz_list = TimeZone.getAvailableIDs();
-			String tz = (String)JOptionPane.showInputDialog(wmntControl.getGuiFrame(),
-					"Select a time zone.\n"
-					+ "(NOTE: This will convert dates/times from the binary files FROM the\n"
-					+ "selected time zone to UTC. Therefore, you should select the time zone\n"
-					+ "of the computer that processed the audio through the WMD.)", 
-	                "Select time zone", JOptionPane.QUESTION_MESSAGE, null, tz_list, wmntControl.getTimezone());
-			if (tz == null) {
-				return;
-			}
-			wmntControl.setTimezone(tz); */
 			
 			try {
 				WhistleToneConnectProcess wmDetector = null;
@@ -1133,6 +1108,7 @@ public class WMNTPanel {
 	 * Used with JTextField.setDocument(new JTextFieldLimit(int limit).getDocument());
 	 * Copied from https://stackoverflow.com/questions/3519151/how-to-limit-the-number-of-characters-in-jtextfield
 	 * Author page: https://stackoverflow.com/users/1866109/francisco-j-g%c3%bcemes-sevilla
+	 * (Also modified to filter out commas.)
 	 */
 	public class JTextFieldLimit extends JTextField {
 	    private int limit;
@@ -1149,11 +1125,9 @@ public class WMNTPanel {
 
 	        @Override
 	        public void insertString( int offset, String  str, AttributeSet attr ) throws BadLocationException {
-	            if (str == null) return;
-
-	            if ((getLength() + str.length()) <= limit) {
-	                super.insertString(offset, str, attr);
-	            }
+	        	 if (str == null) return;
+		         if (str.length() == 1 && str.charAt(0) == ',') return;
+		         if ((getLength() + str.length()) <= limit) super.insertString(offset, str, attr);
 	        }       
 	    }
 	}

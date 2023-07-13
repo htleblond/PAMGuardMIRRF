@@ -3,7 +3,6 @@ package mirrfTrainingSetBuilder;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
@@ -19,6 +18,10 @@ import PamView.dialog.PamDialog;
 import PamView.dialog.PamGridBagContraints;
 import mirrfTrainingSetBuilder.TSBAudioTestBatchDialog.DetectionSetObject;
 
+/**
+ * Loading dialog for TSBAudioTestBatchDialog.
+ * @author Holly LeBlond
+ */
 public class TSBAudioTestBatchLoadingBarWindow extends PamDialog {
 	
 	protected TSBControl tsbControl;
@@ -113,21 +116,41 @@ public class TSBAudioTestBatchLoadingBarWindow extends PamDialog {
 		this.setDialogComponent(mainPanel);
 	}
 	
+	/**
+	 * Begins the "searching through folders" bit in the loading bar.
+	 * @param numberOfFolders - Total number of folders that are to be searched.
+	 */
 	public void startFolderCheck(int numberOfFolders) {
 		loadingBar.setValue(0);
 		loadingBar.setString("Searching through folders (0/"+String.valueOf(numberOfFolders)+")");
 	}
 	
+	/**
+	 * Updates the number of folders that have been loaded.
+	 * @param folderNum - Current number of folders that have been searched.
+	 * @param numberOfFolders - Total number of folders that are to be searched.
+	 */
 	public void updateFolderLoad(int folderNum, int numberOfFolders) {
 		loadingBar.setValue((int) 100*folderNum/numberOfFolders);
 		loadingBar.setString("Searching through folders ("+String.valueOf(folderNum)+"/"+String.valueOf(numberOfFolders)+")");
 	}
 	
+	/**
+	 * @param n - Number of files run through.
+	 * @param numberOfFiles - Total number of files to run through.
+	 * @return String - "Copying files ([n]/[numberOfFiles], [100*n/numberOfFiles]%)"
+	 */
 	public String getFileIterationString(int n, int numberOfFiles) {
 		return "Copying files ("+String.valueOf(n)+"/"+String.valueOf(numberOfFiles)+
 				", "+String.format("%.1f", (float) 100*((double) n)/numberOfFiles)+"%)";
 	}
 	
+	/**
+	 * Starts the file counting process.
+	 * @param numberOfFiles - Total number of files to run through.
+	 * @param initialIgnoreCount - Number of files that have already been ignored.
+	 * @param initialErrorCount - Number of files that have already caused errors.
+	 */
 	public void startFileCount(int numberOfFiles, int initialIgnoreCount, int initialErrorCount) {
 		int initialCounted = initialIgnoreCount + initialErrorCount;
 		loadingBar.setValue((int) 100*initialCounted/numberOfFiles);
@@ -137,6 +160,15 @@ public class TSBAudioTestBatchLoadingBarWindow extends PamDialog {
 		totalCounted = initialCounted;
 	}
 	
+	/**
+	 * Adds the number of detections in the DetectionSetObject to the specified counter.
+	 * @param counterID - Which counter is being added to.
+	 * <br>0 == SAVED
+	 * <br>1 == IGNORED
+	 * <br>2 == ERROR
+	 * @param numberOfFiles - Total number of files to run through.
+	 * @param dso - The DetectionSetObject in question.
+	 */
 	public void addToCounter(int counterID, int numberOfFiles, DetectionSetObject dso) {
 		totalCounted += 1;
 		loadingBar.setValue((int) 100*totalCounted/numberOfFiles);
@@ -154,6 +186,9 @@ public class TSBAudioTestBatchLoadingBarWindow extends PamDialog {
 		}
 	}
 	
+	/**
+	 * Enables the OK button when processing has finished.
+	 */
 	public void setToFinished() {
 		this.getOkButton().setEnabled(true);
 		this.getCancelButton().setEnabled(false);
@@ -166,6 +201,9 @@ public class TSBAudioTestBatchLoadingBarWindow extends PamDialog {
 		return true;
 	}
 	
+	/**
+	 * Replaces the cancel button's action listener.
+	 */
 	protected class NewCancelButtonPressed implements ActionListener {
 		public void actionPerformed(ActionEvent e) {
 		/*	if (cancelObserver != null) {
@@ -178,7 +216,7 @@ public class TSBAudioTestBatchLoadingBarWindow extends PamDialog {
 			//setVisible(false);
 		}
 	}
-
+	
 	@Override
 	public void cancelButtonPressed() {
 		if (!this.getCancelButton().isEnabled()) { // For the "X" button if processing has finished.

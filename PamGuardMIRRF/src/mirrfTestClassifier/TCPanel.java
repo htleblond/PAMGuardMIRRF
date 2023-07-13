@@ -1,16 +1,17 @@
 package mirrfTestClassifier;
 
 import java.awt.GridLayout;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 
 import javax.swing.JPanel;
-import javax.swing.table.DefaultTableModel;
 
-import mirrfLiveClassifier.LCExportDialog;
 import mirrfLiveClassifier.LCPanel;
 import mirrfLiveClassifier.LCWaitingDialogThread;
 
+/**
+ * The panel where the GUI components are written.
+ * Subclass of the Live Classifier's GUI panel.
+ * @author Holly LeBlond
+ */
 public class TCPanel extends LCPanel {
 	
 	public TCPanel(TCControl control) {
@@ -23,13 +24,13 @@ public class TCPanel extends LCPanel {
 	protected void bestFeaturesButtonAction() {
 		TCParameters params = getControl().getParams();
 		if (params.getTrainingSetInfo() == null || params.getTrainPath().equals("")) {
-			control.SimpleErrorDialog("Training and/or testing sets have not been configured yet.", 250);
+			getControl().SimpleErrorDialog("Training and/or testing sets have not been configured yet.", 250);
 			return;
 		}
 		wdThread = new LCWaitingDialogThread(getControl().getGuiFrame(), getControl(), "Waiting for response from Python script...");
 		wdThread.start();
 		if (getControl().getThreadManager().initializeBestFeaturesSet())
-			control.getThreadManager().pythonCommand("tcmBest.printBestFeatureOrder()", false);
+			getControl().getThreadManager().pythonCommand("tcmBest.printBestFeatureOrder()", getControl().getParams().printInput);
 		else wdThread.halt();
 	}
 	

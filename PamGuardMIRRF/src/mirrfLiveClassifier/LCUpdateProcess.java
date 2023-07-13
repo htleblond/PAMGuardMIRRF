@@ -1,13 +1,15 @@
 package mirrfLiveClassifier;
 
-import PamController.PamControlledUnit;
-import PamguardMVC.PamDataBlock;
 import PamguardMVC.PamDataUnit;
 import PamguardMVC.PamObservable;
 import PamguardMVC.PamProcess;
 import wmnt.WMNTDataBlock;
 import wmnt.WMNTDataUnit;
 
+/**
+ * Updates the "actual species" column in the classifier's table when changes are made in the WMNT's species column.
+ * @author Holly LeBlond
+ */
 public class LCUpdateProcess extends PamProcess {
 	
 	private LCControl lcControl;

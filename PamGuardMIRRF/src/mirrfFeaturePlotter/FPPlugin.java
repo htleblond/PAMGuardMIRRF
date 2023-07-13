@@ -1,22 +1,12 @@
-/* 
- * MIRRF Feature Plotter
- * Version 1.01 
- * By Holly LeBlond
- * Fisheries and Oceans Canada
- * August 2022
- */
-
 package mirrfFeaturePlotter;
 
 import PamModel.PamDependency;
 import PamModel.PamPluginInterface;
-//import mirrf.MIRRFPlugin;
-//import mirrfFeatureExtractor.FEPlugin;
+import mirrf.MIRRFInfo;
 
 /**
- * Music Information Retrieval Random Forest (MIRRF) Classifier - Feature Plotter
- * (Write description here.)
- * @author Holly LeBlond
+ * Music Information Retrieval Random Forest (MIRRF) Classifier for PamGuard - Feature Plotter
+ * @author Holly LeBlond (Fisheries and Oceans Canada)
  */
 public class FPPlugin implements PamPluginInterface {
 	
@@ -39,27 +29,27 @@ public class FPPlugin implements PamPluginInterface {
 
 	@Override
 	public String getDeveloperName() {
-		return "Holly LeBlond";
+		return MIRRFInfo.getDeveloperName();
 	}
 
 	@Override
 	public String getContactEmail() {
-		return "wtleblond@gmail.com";
+		return MIRRFInfo.getContactEmail();
 	}
 
 	@Override
 	public String getVersion() {
-		return "0.02b";
+		return MIRRFInfo.getVersion();
 	}
 
 	@Override
 	public String getPamVerDevelopedOn() {
-		return "2.02.09";
+		return MIRRFInfo.getPamVerDevelopedOn();
 	}
 
 	@Override
 	public String getPamVerTestedOn() {
-		return "2.02.09";
+		return MIRRFInfo.getPamVerTestedOn();
 	}
 
 	@Override

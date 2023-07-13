@@ -1,66 +1,25 @@
 package mirrfTrainingSetBuilder;
 
 import java.awt.*;
-import java.awt.List;
 import java.awt.event.*;
 import java.io.File;
-import java.io.FilenameFilter;
 import java.io.IOException;
 
 import javax.swing.*;
-import javax.swing.table.*; //
-import javax.swing.text.AttributeSet;
-import javax.swing.text.BadLocationException;
-import javax.swing.text.Document;
-import javax.swing.text.PlainDocument;
-
-import org.renjin.primitives.subset.ArraySubsettable;
-
-import Layout.PamFramePlots;
-import Layout.PamInternalFrame;
-import PamDetection.RawDataUnit;
+import javax.swing.table.*;
 
 import javax.swing.filechooser.*;
 import javax.swing.event.*;
 import java.util.*; //
-import java.text.*; //
 import java.io.PrintWriter;
 
 import javax.swing.border.TitledBorder;
 
-import fftManager.Complex;
-import mirrfFeatureExtractor.FEFeatureDialog;
-import userDisplay.UserDisplayControl;
-import userDisplay.UserDisplayTabPanel;
-import userDisplay.UserDisplayTabPanelControl;
-import userDisplay.UserFramePlots;
-import whistlesAndMoans.AbstractWhistleDataUnit;
-import wmnt.WMNTSearchDialog;
-import userDisplay.UserDisplayFrame;
-import PamUtils.PamCalendar;
-import PamUtils.SelectFolder;
 import PamView.dialog.PamGridBagContraints;
-import PamView.dialog.PamLabel;
-import PamView.dialog.PamTextDisplay;
 import PamView.panel.PamBorderPanel;
 import PamView.panel.PamPanel;
-import PamView.PamList; //
 import PamView.PamTable;
-import PamView.dialog.PamButton; //
-import PamView.dialog.PamTextField; //
-import PamView.dialog.SourcePanel;
-import binaryFileStorage.*;
-import PamguardMVC.DataUnitBaseData;
-import Spectrogram.SpectrogramDisplay;
-import PamUtils.SelectFolder;
-//import PamController.PamFolders;
-import pamScrollSystem.*;
 import PamUtils.PamFileChooser;
-
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
 
 /**
  * The panel where the GUI components are written.
@@ -366,6 +325,10 @@ public class TSBPanel extends PamBorderPanel {
 		}
 	}
 	
+	/**
+	 * Function performed by the load button.
+	 * Opens a file chooser and attempts to load a pre-existing training set into the table for modifying.
+	 */
 	protected void loadButtonAction() {
 		PamFileChooser fc = new PamFileChooser();
 		fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
@@ -493,17 +456,6 @@ public class TSBPanel extends PamBorderPanel {
 						curr.classList.add(currLine[7]);
 						curr.validEntriesList.add(new ArrayList<TSBDetection>());
 					}
-				/*	String[] outp = new String[currLine.length-1];
-					outp[0] = currLine[0].substring(3);
-					outp[1] = currLine[1];
-					outp[2] = currLine[3];
-					outp[3] = currLine[4];
-					outp[4] = currLine[5];
-					outp[5] = currLine[6];
-					outp[6] = currLine[7];
-					for (int k = 7; k < outp.length; k++) {
-						outp[k] = currLine[k+1];
-					} */
 					try {
 						currLine[0] = currLine[0].substring(3); //TODO MAKE SURE THIS IS OKAY
 						TSBDetection outp = new TSBDetection(tsbControl, firstLine.length-8, currLine);
@@ -615,6 +567,10 @@ public class TSBPanel extends PamBorderPanel {
 		}
 	}
 	
+	/**
+	 * Function performed by the save button.
+	 * Basically attempts to create a .mirrfts file containing the new training set.
+	 */
 	protected void saveButtonAction() {
 		outputFeatureIndices = new int[0];
 		if (subsetTable.getRowCount() > 0) {
@@ -761,18 +717,31 @@ public class TSBPanel extends PamBorderPanel {
 		outputFeatureIndices = new int[0];
 	}
 	
+	/**
+	 * Sets which features will be output to the new .mirrfts file.
+	 * Supposed to be done via the TSBFeatureDialog.
+	 */
 	public void setOutputFeatureIndices(int[] inp) {
 		outputFeatureIndices = inp;
 	}
 	
+	/**
+	 * @return The DefaultTableModel for the big table in the middle of the panel.
+	 */
 	public DefaultTableModel getSubsetTableModel() {
 		return subsetTableModel;
 	}
 	
+	/**
+	 * @return The big table in the middle of the panel.
+	 */
 	public JTable getSubsetTable() {
 		return subsetTable;
 	}
 	
+	/**
+	 * Sets the model for the table in the middle of the panel.
+	 */
 	public void setTableModel(DefaultTableModel stm) {
 		subsetTableModel = stm;
 		subsetTable.setModel(subsetTableModel);

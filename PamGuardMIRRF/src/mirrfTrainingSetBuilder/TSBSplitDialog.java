@@ -1,82 +1,36 @@
 package mirrfTrainingSetBuilder;
 
-import java.awt.BorderLayout;
-import java.awt.Component;
-import java.awt.Dimension;
-import java.awt.FlowLayout;
-import java.awt.Frame;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.awt.GridLayout;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
-import java.util.Scanner;
 import java.util.TimeZone;
 import java.util.Comparator;
 
-import javax.swing.ButtonGroup;
-import javax.swing.DefaultListModel;
-import javax.swing.DefaultListSelectionModel;
 import javax.swing.JButton;
-import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
-import javax.swing.JFileChooser;
 import javax.swing.JLabel;
-import javax.swing.JList;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.JRadioButton;
-import javax.swing.JScrollPane;
-import javax.swing.JTabbedPane;
-import javax.swing.JTable;
 import javax.swing.JTextField;
-import javax.swing.ListCellRenderer;
-import javax.swing.ListSelectionModel;
 import javax.swing.SwingConstants;
 import javax.swing.border.TitledBorder;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
-import javax.swing.filechooser.FileNameExtensionFilter;
-import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableModel;
-import javax.swing.table.TableRowSorter;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
 import javax.swing.text.PlainDocument;
 
-import com.sun.jna.platform.win32.Winevt.EVT_VARIANT.field1_union;
-
-import PamController.PamController;
-import PamDetection.RawDataUnit;
-import PamUtils.PamFileChooser;
-import spectrogramNoiseReduction.SpectrogramNoiseDialogPanel;
-import spectrogramNoiseReduction.SpectrogramNoiseSettings;
-import whistlesAndMoans.AbstractWhistleDataUnit;
-//import wmnt.WMNTSearchDialog.JTextFieldLimit;
-//import wmnt.WMNTSearchDialog.JTextFieldLimit.LimitDocument;
-import fftManager.FFTDataBlock;
-import fftManager.FFTDataUnit;
-import mirrfFeatureExtractor.FEControl;
-import PamView.dialog.GroupedSourcePanel;
 import PamView.dialog.PamDialog;
 import PamView.dialog.PamGridBagContraints;
-import PamView.dialog.SourcePanel;
 import PamView.panel.PamPanel;
-import PamguardMVC.PamDataBlock;
-import PamguardMVC.PamProcess;
-import cepstrum.CepstrumProcess;
 
+/**
+ * Dialog for splitting subsets in two by date.
+ * @author Holly LeBlond
+ */
 public class TSBSplitDialog extends PamDialog {
 	
 	public TSBControl tsbControl;
@@ -372,6 +326,9 @@ public class TSBSplitDialog extends PamDialog {
 		newIDDigit2Box.setSelectedItem(newID.substring(1));
 	}
 	
+	/**
+	 * Updates the dates and detection count for both new subsets to match the new input date/time.
+	 */
 	protected class UpdateButtonListener implements ActionListener{
 		public void actionPerformed(ActionEvent e) {
 			String newDate = "";

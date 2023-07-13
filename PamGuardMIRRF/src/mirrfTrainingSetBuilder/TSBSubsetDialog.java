@@ -1,79 +1,47 @@
 package mirrfTrainingSetBuilder;
 
 import java.awt.BorderLayout;
-import java.awt.Component;
-import java.awt.Dimension;
-import java.awt.FlowLayout;
-import java.awt.Frame;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.awt.GridLayout;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Scanner;
 import java.util.TimeZone;
 import java.util.Comparator;
 
-import javax.swing.ButtonGroup;
 import javax.swing.DefaultListModel;
 import javax.swing.DefaultListSelectionModel;
 import javax.swing.JButton;
-import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JList;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
-import javax.swing.JTabbedPane;
-import javax.swing.JTable;
 import javax.swing.JTextField;
-import javax.swing.ListCellRenderer;
-import javax.swing.ListSelectionModel;
-import javax.swing.SwingConstants;
 import javax.swing.border.TitledBorder;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableModel;
-import javax.swing.table.TableRowSorter;
-import javax.swing.text.AttributeSet;
-import javax.swing.text.BadLocationException;
-import javax.swing.text.PlainDocument;
 
-import PamController.PamController;
-import PamDetection.RawDataUnit;
 import PamUtils.PamFileChooser;
-import spectrogramNoiseReduction.SpectrogramNoiseDialogPanel;
-import spectrogramNoiseReduction.SpectrogramNoiseSettings;
-import whistlesAndMoans.AbstractWhistleDataUnit;
-import fftManager.FFTDataBlock;
-import fftManager.FFTDataUnit;
-import mirrfFeatureExtractor.FEControl;
 import mirrfFeatureExtractor.FEParameters;
-import PamView.dialog.GroupedSourcePanel;
 import PamView.dialog.PamDialog;
 import PamView.dialog.PamGridBagContraints;
-import PamView.dialog.SourcePanel;
 import PamView.panel.PamPanel;
-import PamguardMVC.PamDataBlock;
-import PamguardMVC.PamProcess;
-import cepstrum.CepstrumProcess;
 
+/**
+ * Dialog for creating and adding new subsets to the training set.
+ * @author Holly LeBlond
+ */
 public class TSBSubsetDialog extends PamDialog {
 	
 	protected TSBControl tsbControl;
@@ -139,7 +107,7 @@ public class TSBSubsetDialog extends PamDialog {
 		c.anchor = c.WEST;
 		c.fill = c.HORIZONTAL;
 		featuresCSVButton = new JButton("Select file");
-		featuresCSVButton.addActionListener(new CSVListener(CSVListener.LOAD_FE));
+		featuresCSVButton.addActionListener(new FileListener(FileListener.LOAD_FE));
 		topLeftSubPanel.add(featuresCSVButton, c);
 		c.gridy++;
 		c.gridx = 0;
@@ -154,12 +122,12 @@ public class TSBSubsetDialog extends PamDialog {
 		c.anchor = c.WEST;
 		c.fill = c.HORIZONTAL;
 		wmntCSVButton = new JButton("Select file");
-		wmntCSVButton.addActionListener(new CSVListener(CSVListener.LOAD_WMNT));
+		wmntCSVButton.addActionListener(new FileListener(FileListener.LOAD_WMNT));
 		topLeftSubPanel.add(wmntCSVButton, c);
 		topLeftPanel.add(topLeftSubPanel);
 		c.gridy++;
 		reloadButton = new JButton("Reload");
-		reloadButton.addActionListener(new CSVListener(CSVListener.RELOAD));
+		reloadButton.addActionListener(new FileListener(FileListener.RELOAD));
 		reloadButton.setEnabled(false);
 		topLeftSubPanel.add(reloadButton, c);
 		topLeftPanel.add(topLeftSubPanel);
@@ -303,14 +271,21 @@ public class TSBSubsetDialog extends PamDialog {
 		}
 	}
 	
-	protected class CSVListener implements ActionListener {
+	/**
+	 * Action listener for loading files.
+	 * @param action
+	 * <br>0 == loading in a .mirrffe file
+	 * <br>1 == loading in a .wmnt file
+	 * <br>2 == reloading both if both are already selected
+	 */
+	protected class FileListener implements ActionListener {
 		public static final int LOAD_FE = 0;
 		public static final int LOAD_WMNT = 1;
 		public static final int RELOAD = 2;
 		
 		protected int action;
 		
-		protected CSVListener(int action) {
+		protected FileListener(int action) {
 			this.action = action;
 		}
 		
@@ -351,6 +326,11 @@ public class TSBSubsetDialog extends PamDialog {
 		}
 	}
 	
+	/**
+	 * Attempts to read a .mirrffe file and stores the data for merging with .wmnt data.
+	 * @param f - The input file
+	 * @return True if the file was valid. Otherwise, false.
+	 */
 	protected boolean loadFE(File f) {
 		HashMap<String, String> outpSettingsMap = new HashMap<String, String>();
 		ArrayList<String> outpFeatures = new ArrayList<String>();
@@ -458,6 +438,11 @@ public class TSBSubsetDialog extends PamDialog {
 		return true;
 	}
 	
+	/**
+	 * Attempts to read a .wmnt file and stores the data for merging with .mirrffe data.
+	 * @param f - The input file
+	 * @return True if the file was valid. Otherwise, false.
+	 */
 	protected boolean loadWMNT(File f) {
 		Scanner sc;
 		try {
@@ -514,6 +499,9 @@ public class TSBSubsetDialog extends PamDialog {
 		return true;
 	}
 	
+	/**
+	 * Merges input .mirrffe and .wmnt data to create labelled vector data for training and/or testing.
+	 */
 	protected void mergeFEandWMNT() {
 		if (featuresEntriesList.size() == 0 || wmntEntriesList.size() == 0) return;
 		classList = new ArrayList<String>();
@@ -603,573 +591,9 @@ public class TSBSubsetDialog extends PamDialog {
 		}
 	}
 	
-/*	class CSVListener implements ActionListener {
-		
-		protected boolean featuresNotWMNT;
-		
-		public CSVListener(boolean featuresNotWMNT) {
-			this.featuresNotWMNT = featuresNotWMNT;
-		}
-		
-		public void actionPerformed(ActionEvent e) {
-			PamFileChooser fc = new PamFileChooser();
-			fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
-			fc.setMultiSelectionEnabled(false);
-			if (featuresNotWMNT) {
-				fc.addChoosableFileFilter(new FileNameExtensionFilter("MIRRF feature vector data file (*.mirrffe)","mirrffe"));
-			} else {
-				fc.addChoosableFileFilter(new FileNameExtensionFilter("WMNT table export file (*.wmnt)","wmnt"));
-			}
-			fc.addChoosableFileFilter(new FileNameExtensionFilter("Comma-separated values file (*.csv)","csv"));
-			int returnVal = fc.showOpenDialog(parentFrame);
-			if (returnVal == fc.APPROVE_OPTION) {
-				File f = getSelectedFileWithExtension(fc);
-				if (f.exists()) {
-					Scanner sc;
-					try {
-						sc = new Scanner(f);
-						if (sc.hasNextLine()) {
-							if (featuresNotWMNT) {
-								ArrayList<String[]> currFEList = new ArrayList<String[]>();
-								ArrayList<String> currFeatureList = new ArrayList<String>();
-								String[] firstLine = sc.nextLine().split(",");
-								if (firstLine.length > 6) {
-									if (firstLine[0].equals("cluster") && firstLine[1].equals("uid") && firstLine[2].equals("date") &&
-											firstLine[3].equals("duration") && firstLine[4].equals("lf") && firstLine[5].equals("hf")) {
-										SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss+SSS");
-										df.setTimeZone(TimeZone.getTimeZone("UTC"));
-										if (tsbControl.getFeatureList().size() > 0) {
-											if (firstLine.length-6 == tsbControl.getFeatureList().size()) {
-												for (int i = 6; i < firstLine.length; i++) {
-													System.out.println(firstLine[i]+" -> "+tsbControl.getFeatureList().get(i-6));
-													if (!firstLine[i].equals(tsbControl.getFeatureList().get(i-6))) {
-														tsbControl.SimpleErrorDialog("The features of the selected file do not match those "
-																+ "of subsets already loaded into the table. To add this subset, either "
-																+ "clear the table or re-run the subset through the Feature Extractor with "
-																+ "the correct features.", 300);
-														sc.close();
-														return;
-													}
-												}
-											} else {
-												tsbControl.SimpleErrorDialog("The features of the selected file do not match those "
-														+ "of subsets already loaded into the table. To add this subset, either "
-														+ "clear the table or re-run the subset through the Feature Extractor with "
-														+ "the correct features.", 300);
-												sc.close();
-												return;
-											}
-										} else {
-											for (int i = 6; i < firstLine.length; i++) {
-												currFeatureList.add(firstLine[i]);
-											}
-										}
-										//boolean printFirst = true;
-										while (sc.hasNextLine()) {
-											String[] nextLine = sc.nextLine().split(",");
-											try {
-												Long.valueOf(nextLine[1]);
-												df.parse(nextLine[2]);
-												for (int i = 3; i < firstLine.length; i++) {
-													nextLine[i] = String.valueOf(Double.valueOf(nextLine[i]));
-												}
-												currFEList.add(nextLine);
-											} catch (Exception e2){
-												// TODO
-											}
-										}
-										if (currFEList.size() > 0) {
-											featuresEntriesList = currFEList;
-											featuresCSVField.setText(f.getPath());
-											if (tsbControl.getFeatureList().size() > 0) {
-												featureList = new ArrayList<String>(tsbControl.getFeatureList());
-											} else {
-												featureList = new ArrayList<String>(currFeatureList);
-											}
-										} else {
-											tsbControl.SimpleErrorDialog("Selected file contained no valid entries.", 150);
-											sc.close();
-											return;
-										}
-									} else {
-										tsbControl.SimpleErrorDialog("Selected file not formatted like Feature Extractor output.", 150);
-										sc.close();
-										return;
-									}
-								} else {
-									tsbControl.SimpleErrorDialog("Selected file not formatted like Feature Extractor output.", 150);
-									sc.close();
-									return;
-								}
-							} else {
-								ArrayList<String[]> currWMNTList = new ArrayList<String[]>();
-								String[] firstLine = sc.nextLine().split(",");
-								if (firstLine.length >= 8) {
-									if (firstLine[0].equals("uid") && firstLine[1].equals("datetime") && firstLine[2].equals("lf")
-											 && firstLine[3].equals("hf") && firstLine[4].equals("duration") && firstLine[5].equals("amplitude")
-											 && firstLine[6].equals("species") && firstLine[7].equals("calltype")) {
-										SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss+SSS");
-										df.setTimeZone(TimeZone.getTimeZone("UTC"));
-										while (sc.hasNextLine()) {
-											String[] nextLine = sc.nextLine().split(",");
-											try {
-												Long.valueOf(nextLine[0]);
-												df.parse(nextLine[1]);
-												Integer.valueOf(nextLine[2]);
-												Integer.valueOf(nextLine[3]);
-												Integer.valueOf(nextLine[4]);
-												Integer.valueOf(nextLine[5]);
-												if (tsbControl.includeCallType && nextLine.length > 7) {
-													if (nextLine[6].length() > 0 || nextLine[7].length() > 0) {
-														currWMNTList.add(nextLine);
-													}
-												} else {
-													if (nextLine[6].length() > 0) {
-														currWMNTList.add(nextLine);
-													}
-												}
-											} catch (Exception e2){
-												// TODO
-											}
-										}
-										if (currWMNTList.size() > 0) {
-											wmntEntriesList = currWMNTList;
-											wmntCSVField.setText(f.getPath());
-										} else {
-											tsbControl.SimpleErrorDialog("Selected file contained no valid entries.", 150);
-											sc.close();
-											return;
-										}
-									} else {
-										tsbControl.SimpleErrorDialog("Selected file not formatted like WMNT output.", 150);
-										sc.close();
-										return;
-									}
-								} else {
-									tsbControl.SimpleErrorDialog("Selected file not formatted like WMNT output.", 150);
-									sc.close();
-									return;
-								}
-							}
-							//System.out.println(featuresEntriesList.size());
-							//System.out.println(wmntEntriesList.size());
-							if (featuresEntriesList.size() > 0 && wmntEntriesList.size() > 0) {
-								classList = new ArrayList<String>();
-								for (int i = 0; i < wmntEntriesList.size(); i++) {
-									String[] curr = wmntEntriesList.get(i);
-									String className = "";
-									if (tsbControl.includeCallType) {
-										if (curr.length > 7) {
-											if (curr[6].length() > 0 && curr[7].length() > 0) {
-												className = curr[6]+" ("+curr[7]+")";
-											} else if (curr[6].length() > 0) {
-												className = curr[6];
-											} else if (curr[7].length() > 0) {
-												className = curr[7];
-											}
-										}
-									} else {
-										className = curr[6];
-									}
-									if (className.length() > 0 && !classList.contains(className)) {
-										classList.add(className);
-									}
-									wmntEntriesList.get(i)[6] = className;
-								}
-								Collections.sort(classList);
-								
-								validEntriesList = new ArrayList<ArrayList<TSBDetection>>();
-								//boolean printFirst = true;
-								for (int i = 0; i < classList.size(); i++) {
-									ArrayList<TSBDetection> currDetectionList = new ArrayList<TSBDetection>();
-									for (int j = 0; j < wmntEntriesList.size(); j++) {
-										String[] currWMNT = wmntEntriesList.get(j);
-										String className = "";
-										if (tsbControl.includeCallType) {
-											if (currWMNT.length > 7) {
-												if (currWMNT[6].length() > 0 && currWMNT[7].length() > 0) {
-													className = currWMNT[6]+" ("+currWMNT[7]+")";
-												} else if (currWMNT[6].length() > 0) {
-													className = currWMNT[6];
-												} else if (currWMNT[7].length() > 0) {
-													className = currWMNT[7];
-												}
-											}
-										} else {
-											className = currWMNT[6];
-										}
-										if (className.equals(classList.get(i))) {
-											for (int k = 0; k < featuresEntriesList.size(); k++) {
-												String[] currFE = featuresEntriesList.get(k);
-												if (currWMNT[0].equals(currFE[1]) && currWMNT[1].equals(currFE[2])) {
-												/*	String[] outp = new String[currFE.length + 1];
-													outp[0] = currFE[0];
-													outp[1] = currFE[1];
-													outp[2] = currFE[2];
-													outp[3] = currFE[3];
-													outp[4] = currFE[4];
-													outp[5] = currFE[5];
-													outp[6] = className;
-													for (int l = 6; l < currFE.length; l++) {
-														outp[l+1] = currFE[l];
-													} */
-/*													try {
-														TSBDetection outp = new TSBDetection(tsbControl, featureList.size(),
-																currFE[0], currWMNT, Arrays.copyOfRange(currFE, 6, currFE.length));
-														currDetectionList.add(outp);
-													} catch (AssertionError | Exception e2) {
-														e2.printStackTrace();
-													} */
-												/*	if (printFirst) {
-														System.out.print(outp[0]);
-														for (int l = 1; l < outp.length; l++) {
-															System.out.print(", "+outp[l]);
-														}
-														System.out.println();
-														printFirst = false;
-													} */
-/*													break;
-												}
-											}
-										}
-									}
-									if (currDetectionList.size() > 0) {
-										//currDetectionList.sort(Comparator.comparing(a -> a[2]));
-										Collections.sort(currDetectionList, Comparator.comparingLong(TSBDetection::getDateTimeAsLong));
-										validEntriesList.add(currDetectionList);
-									} else {
-										classList.remove(i);
-										i--;
-									}
-								}
-								checkList.removeAll();
-								if (validEntriesList.size() > 0) {
-									DefaultListModel dlm = new DefaultListModel();
-									for (int i = 0; i < classList.size(); i++) {
-										dlm.addElement(classList.get(i));
-									}
-									checkList.setModel(dlm);
-									for (int i = 0; i < checkList.getModel().getSize(); i++) {
-										if (tsbControl.getFullClassList().contains(checkList.getModel().getElementAt(i))) {
-											checkList.setSelectedIndex(i);
-										}
-									}
-									updateFields();
-									reloadButton.setEnabled(true);
-								} else {
-									tsbControl.SimpleErrorDialog("Selected files contain no matching valid data.", 150);
-								}
-							}
-						} else {
-							tsbControl.SimpleErrorDialog("Selected file is blank.", 150);
-							sc.close();
-							return;
-						}
-						sc.close();
-					} catch (Exception e2) {
-						tsbControl.SimpleErrorDialog("Could not parse through selected file.", 150);
-						return;
-					}
-				} else {
-					tsbControl.SimpleErrorDialog("Selected file does not exist.", 150);
-					return;
-				}
-			}
-		}
-	} */
-	
-/*	class ReloadListener implements ActionListener {
-		public void actionPerformed(ActionEvent e) {
-			if (featuresCSVField.getText().length() == 0 || wmntCSVField.getText().length() == 0) {
-				tsbControl.SimpleErrorDialog("Both feature data and WMNT data files need to be selected.", 150);
-				reloadButton.setEnabled(false);
-				return;
-			}
-			File f = new File(featuresCSVField.getText());
-			if (f.exists()) {
-				Scanner sc = null;
-				try {
-					sc = new Scanner(f);
-					if (sc.hasNextLine()) {
-						ArrayList<String[]> currFEList = new ArrayList<String[]>();
-						ArrayList<String> currFeatureList = new ArrayList<String>();
-						String[] firstLine = sc.nextLine().split(",");
-						if (firstLine.length > 3) {
-							if (firstLine[0].equals("cluster") && firstLine[1].equals("uid") && firstLine[2].equals("date") &&
-									firstLine[3].equals("duration") && firstLine[4].equals("lf") && firstLine[5].equals("hf")) {
-								SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss+SSS");
-								df.setTimeZone(TimeZone.getTimeZone("UTC"));
-								if (tsbControl.getFeatureList().size() > 0) {
-									if (firstLine.length-6 == tsbControl.getFeatureList().size()) {
-										for (int i = 6; i < firstLine.length; i++) {
-											if (!firstLine[i].equals(tsbControl.getFeatureList().get(i-6))) {
-												tsbControl.SimpleErrorDialog("The features of the selected file do not match those "
-														+ "of subsets already loaded into the table. To add this subset, either "
-														+ "clear the table or re-run the subset through the Feature Extractor with "
-														+ "the correct features.", 300);
-												sc.close();
-												return;
-											}
-										}
-									} else {
-										tsbControl.SimpleErrorDialog("The features of the selected file do not match those "
-												+ "of subsets already loaded into the table. To add this subset, either "
-												+ "clear the table or re-run the subset through the Feature Extractor with "
-												+ "the correct features.", 300);
-										sc.close();
-										return;
-									}
-								} else {
-									for (int i = 6; i < firstLine.length; i++) {
-										currFeatureList.add(firstLine[i]);
-									}
-								}
-								while (sc.hasNextLine()) {
-									String[] nextLine = sc.nextLine().split(",");
-									try {
-										Long.valueOf(nextLine[1]);
-										df.parse(nextLine[2]);
-										for (int i = 3; i < firstLine.length; i++) {
-											Double.valueOf(nextLine[i]);
-										}
-										currFEList.add(nextLine);
-									} catch (Exception e2){
-										// TODO
-									}
-								}
-								if (currFEList.size() > 0) {
-									featuresEntriesList = currFEList;
-									featuresCSVField.setText(f.getPath());
-									if (tsbControl.getFeatureList().size() > 0) {
-										featureList = new ArrayList<String>(tsbControl.getFeatureList());
-									} else {
-										featureList = new ArrayList<String>(currFeatureList);
-									}
-								} else {
-									tsbControl.SimpleErrorDialog("Selected feature data file contained no valid entries.", 150);
-									sc.close();
-									//reloadButton.setEnabled(false);
-									return;
-								}
-							} else {
-								tsbControl.SimpleErrorDialog("Selected feature data file not formatted like Feature Extractor output.", 150);
-								sc.close();
-								//reloadButton.setEnabled(false);
-								return;
-							}
-						} else {
-							tsbControl.SimpleErrorDialog("Selected feature data file not formatted like Feature Extractor output.", 150);
-							sc.close();
-							//reloadButton.setEnabled(false);
-							return;
-						}
-					} else {
-						tsbControl.SimpleErrorDialog("Selected feature data file is blank.", 150);
-						sc.close();
-						//reloadButton.setEnabled(false);
-						return;
-					}
-				} catch (Exception e2) {
-					tsbControl.SimpleErrorDialog("Exception thrown when parsing through feature data file.", 150);
-					e2.printStackTrace();
-					if (sc != null) {
-						sc.close();
-					}
-					//reloadButton.setEnabled(false);
-					return;
-				}
-			} else {
-				tsbControl.SimpleErrorDialog("Feature data file at specified path does not exist.", 150);
-				//reloadButton.setEnabled(false);
-				return;
-			}
-			f = new File(wmntCSVField.getText());
-			if (f.exists()) {
-				Scanner sc = null;
-				try {
-					sc = new Scanner(f);
-					if (sc.hasNextLine()) {
-						ArrayList<String[]> currWMNTList = new ArrayList<String[]>();
-						String[] firstLine = sc.nextLine().split(",");
-						if (firstLine.length >= 8) {
-							if (firstLine[0].equals("uid") && firstLine[1].equals("datetime") && firstLine[2].equals("lf")
-									 && firstLine[3].equals("hf") && firstLine[4].equals("duration") && firstLine[5].equals("amplitude")
-									 && firstLine[6].equals("species") && firstLine[7].equals("calltype")) {
-								SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss+SSS");
-								df.setTimeZone(TimeZone.getTimeZone("UTC"));
-								while (sc.hasNextLine()) {
-									String[] nextLine = sc.nextLine().split(",");
-									try {
-										Long.valueOf(nextLine[0]);
-										df.parse(nextLine[1]);
-										Integer.valueOf(nextLine[2]);
-										Integer.valueOf(nextLine[3]);
-										Integer.valueOf(nextLine[4]);
-										Integer.valueOf(nextLine[5]);
-										if (tsbControl.includeCallType && nextLine.length > 7) {
-											if (nextLine[6].length() > 0 || nextLine[7].length() > 0) {
-												currWMNTList.add(nextLine);
-											}
-										} else {
-											if (nextLine[6].length() > 0) {
-												currWMNTList.add(nextLine);
-											}
-										}
-									} catch (Exception e2){
-										// TODO
-									}
-								}
-								if (currWMNTList.size() > 0) {
-									wmntEntriesList = currWMNTList;
-									wmntCSVField.setText(f.getPath());
-								} else {
-									tsbControl.SimpleErrorDialog("Selected file contained no valid entries.", 150);
-									sc.close();
-									return;
-								}
-							} else {
-								tsbControl.SimpleErrorDialog("Selected file not formatted like WMNT output.", 150);
-								sc.close();
-								return;
-							}
-						} else {
-							tsbControl.SimpleErrorDialog("Selected file not formatted like WMNT output.", 150);
-							sc.close();
-							return;
-						}
-					} else {
-						tsbControl.SimpleErrorDialog("Selected WMNT data file is blank.", 150);
-						sc.close();
-						//reloadButton.setEnabled(false);
-						return;
-					}
-				} catch (Exception e2) {
-					tsbControl.SimpleErrorDialog("Exception thrown when parsing through WMNT data file.", 150);
-					e2.printStackTrace();
-					if (sc != null) {
-						sc.close();
-					}
-					//reloadButton.setEnabled(false);
-					return;
-				}
-			} else {
-				tsbControl.SimpleErrorDialog("WMNT data file at specified path does not exist.", 150);
-				//reloadButton.setEnabled(false);
-				return;
-			}
-			if (featuresEntriesList.size() > 0 && wmntEntriesList.size() > 0) {
-				classList = new ArrayList<String>();
-				for (int i = 0; i < wmntEntriesList.size(); i++) {
-					String[] currWMNT = wmntEntriesList.get(i);
-					String className = "";
-					if (tsbControl.includeCallType) {
-						if (currWMNT.length > 7) {
-							if (currWMNT[6].length() > 0 && currWMNT[7].length() > 0) {
-								className = currWMNT[6]+" ("+currWMNT[7]+")";
-							} else if (currWMNT[6].length() > 0) {
-								className = currWMNT[6];
-							} else if (currWMNT[7].length() > 0) {
-								className = currWMNT[7];
-							}
-						}
-					} else {
-						className = currWMNT[6];
-					}
-					if (className.length() > 0 && !classList.contains(className)) {
-						classList.add(className);
-					}
-					wmntEntriesList.get(i)[6] = className;
-				}
-				Collections.sort(classList);
-				
-				validEntriesList = new ArrayList<ArrayList<TSBDetection>>();
-				for (int i = 0; i < classList.size(); i++) {
-					ArrayList<TSBDetection> currDetectionList = new ArrayList<TSBDetection>();
-					for (int j = 0; j < wmntEntriesList.size(); j++) {
-						String[] currWMNT = wmntEntriesList.get(j);
-						String className = "";
-						if (tsbControl.includeCallType) {
-							if (currWMNT.length > 7) {
-								if (currWMNT[6].length() > 0 && currWMNT[7].length() > 0) {
-									className = currWMNT[6]+" ("+currWMNT[7]+")";
-								} else if (currWMNT[6].length() > 0) {
-									className = currWMNT[6];
-								} else if (currWMNT[7].length() > 0) {
-									className = currWMNT[7];
-								}
-							}
-						} else {
-							className = currWMNT[6];
-						}
-						if (className.equals(classList.get(i))) {
-							for (int k = 0; k < featuresEntriesList.size(); k++) {
-								String[] currFE = featuresEntriesList.get(k);
-								if (currWMNT[0].equals(currFE[1]) && currWMNT[1].equals(currFE[2])) {
-								/*	String[] outp = new String[currFE.length + 1];
-									outp[0] = currFE[0];
-									outp[1] = currFE[1];
-									outp[2] = currFE[2];
-									outp[3] = currFE[3];
-									outp[4] = currFE[4];
-									outp[5] = currFE[5];
-									outp[6] = className;
-									for (int l = 6; l < currFE.length; l++) {
-										outp[l+1] = currFE[l];
-									} */
-/*									try {
-										TSBDetection outp = new TSBDetection(tsbControl, featureList.size(),
-												currFE[0], currWMNT, Arrays.copyOfRange(currFE, 6, currFE.length));
-										currDetectionList.add(outp);
-									} catch (AssertionError | Exception e2) {
-										e2.printStackTrace();
-									}
-									break;
-								}
-							}
-						}
-					}
-					if (currDetectionList.size() > 0) {
-						//currDetectionList.sort(Comparator.comparing(a -> a[2]));
-						Collections.sort(currDetectionList, Comparator.comparingLong(TSBDetection::getDateTimeAsLong));
-						validEntriesList.add(currDetectionList);
-					} else {
-						classList.remove(i);
-						i--;
-					}
-				}
-				checkList.removeAll();
-				if (validEntriesList.size() > 0) {
-					DefaultListModel dlm = new DefaultListModel();
-					for (int i = 0; i < classList.size(); i++) {
-						dlm.addElement(classList.get(i));
-					}
-					checkList.setModel(dlm);
-					for (int i = 0; i < checkList.getModel().getSize(); i++) {
-						if (tsbControl.getFullClassList().contains(checkList.getModel().getElementAt(i))) {
-							checkList.setSelectedIndex(i);
-						}
-					}
-					updateFields();
-				} else {
-					tsbControl.SimpleErrorDialog("Selected files contain no matching valid data.", 150);
-					//reloadButton.setEnabled(false);
-				}
-			} else {
-				tsbControl.SimpleErrorDialog("Selected files contain no matching valid data.", 150);
-				//reloadButton.setEnabled(false);
-			}
-		}
-	} */
-	
-/*	public class CheckListener implements ActionListener {
-		public void actionPerformed(ActionEvent e) {
-			for (int i = 0; i < classList.size(); i++) {
-				System.out.println("Listener worked!");
-				updateFields();
-			}
-		}
-	} */
-	
+	/**
+	 * Updates text fields for dates and detection counts when data is loaded in.
+	 */
 	public void updateFields() {
 		String startDate = "";
 		String endDate = "";
@@ -1190,28 +614,6 @@ public class TSBSubsetDialog extends PamDialog {
 		endField.setText(endDate);
 		totalField.setText(String.valueOf(total));
 	}
-	
-	// Copied from Rene Link at: https://stackoverflow.com/questions/19766/how-do-i-make-a-list-with-checkboxes-in-java-swing?noredirect=1&lq=1
-/*	public class CheckboxListCellRenderer extends JCheckBox implements ListCellRenderer {
-
-	    public Component getListCellRendererComponent(JList list, Object value, int index, 
-	            boolean isSelected, boolean cellHasFocus) {
-
-	        setComponentOrientation(list.getComponentOrientation());
-	        setFont(list.getFont());
-	        setBackground(list.getBackground());
-	        setForeground(list.getForeground());
-	        setSelected(isSelected);
-	        setEnabled(list.isEnabled());
-
-	        //setText(value == null ? "" : value.toString());  
-	        JCheckBox valueBox = (JCheckBox) value;
-	        setText(valueBox.getText());
-	        //addActionListener(new CheckListener());
-
-	        return this;
-	    }
-	} */
 	
 	/**
 	 * Returns the selected file from a JFileChooser, including the extension from
@@ -1352,11 +754,9 @@ public class TSBSubsetDialog extends PamDialog {
 						row[j] = classTotal;
 					}
 					row[4] = currTotal;
-					//subsetTableModel.addRow(row);
 					rowList.add(row);
 				}
 			}
-			//tsbControl.getTabPanel().getPanel().getSubsetTable().setModel(subsetTableModel);
 			tsbControl.getTabPanel().getPanel().setTableModel(subsetTableModel);
 			tsbControl.getTabPanel().getPanel().getSubsetTable().getColumnModel().getColumn(0).setPreferredWidth(30);
 			tsbControl.getTabPanel().getPanel().getSubsetTable().getColumnModel().getColumn(1).setPreferredWidth(100);
@@ -1387,7 +787,6 @@ public class TSBSubsetDialog extends PamDialog {
 				row[j] = classTotal;
 			}
 			row[4] = currTotal;
-			//subsetTableModel.addRow(row);
 			if (editing) {
 				for (int i = 0; i < tsbControl.getTabPanel().getPanel().subsetTable.getColumnCount(); i++) {
 					tsbControl.getTabPanel().getPanel().subsetTableModel.setValueAt(row[i],
@@ -1399,9 +798,7 @@ public class TSBSubsetDialog extends PamDialog {
 		}
 		tsbControl.setFullClassList(outpClassList);
 		tsbControl.setClassMap(outpMap);
-		//if (tsbControl.getFeatureList().size() == 0) tsbControl.setFeatureList(featureList);
 		tsbControl.setFeatureList(featureList);
-		//if (tsbControl.getSubsetList().size() == 0) tsbControl.setFEParamsMap(feSettingsMap);
 		tsbControl.setFEParamsMap(feSettingsMap);
 		tsbControl.getTabPanel().getPanel().clearButton.setEnabled(true);
 		tsbControl.getTabPanel().getPanel().saveButton.setEnabled(true);

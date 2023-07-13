@@ -13,6 +13,10 @@ import javax.swing.WindowConstants;
 import PamView.dialog.PamDialog;
 import PamView.dialog.PamGridBagContraints;
 
+/**
+ * Loading bar window for SQL commits.
+ * @author Holly LeBlond
+ */
 public class WMNTSQLLoadingBarWindow extends PamDialog {
 	
 	private int totalToUpdate;
@@ -73,6 +77,10 @@ public class WMNTSQLLoadingBarWindow extends PamDialog {
 		}
 	}
 	
+	/**
+	 * Adds one to the loading bar and one to either the success or failure counter.
+	 * @param success - Whether or not the single commit was successful.
+	 */
 	public void updateLoadingBar(boolean success) {
 		totalCounted++;
 		loadingBar.setValue((int) Math.floor(100*(((double) totalCounted)/totalToUpdate)));
@@ -90,6 +98,9 @@ public class WMNTSQLLoadingBarWindow extends PamDialog {
 		}
 	}
 	
+	/**
+	 * For when all commits have finished.
+	 */
 	private void finish() {
 		loadingMessage.setText("Commit completed!");
 		loadingBar.setValue(100);

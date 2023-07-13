@@ -8,6 +8,10 @@ import binaryFileStorage.BinaryHeader;
 import binaryFileStorage.BinaryObjectData;
 import binaryFileStorage.ModuleHeader;
 
+/**
+ * The Live Classifier's module header for binary files.
+ * @author Holly LeBlond
+ */
 public class LCBinaryModuleHeader extends ModuleHeader implements Serializable, ManagedParameters {
 	
 	private static final long serialVersionUID = 1L;
@@ -20,8 +24,7 @@ public class LCBinaryModuleHeader extends ModuleHeader implements Serializable, 
 	}
 
 	@Override
-	public boolean createHeader(BinaryObjectData binaryObjectData,
-			BinaryHeader binaryHeader) {			// TODO Auto-generated method stub
+	public boolean createHeader(BinaryObjectData binaryObjectData, BinaryHeader binaryHeader) {
 		return false;
 	}
 	

@@ -10,6 +10,10 @@ import javax.swing.JPanel;
 
 import PamView.dialog.PamDialog;
 
+/**
+ * Just brings up a JColorChooser for LCColourDialog.
+ * @author Holly LeBlond
+ */
 public class LCColourPickerDialog extends PamDialog {
 	
 	private LCControl lcControl;

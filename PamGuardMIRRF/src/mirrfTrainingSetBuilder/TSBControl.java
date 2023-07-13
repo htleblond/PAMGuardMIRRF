@@ -1,8 +1,5 @@
 package mirrfTrainingSetBuilder;
 
-import java.awt.Frame;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -10,23 +7,10 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 
-import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 
-import com.jogamp.newt.Window;
-
-import PamView.PamSidePanel;
-import PamView.PamTabPanel;
-import PamguardMVC.PamDataBlock;
-import whistlesAndMoans.*;
-//import whistlesAndMoans.WhistleMoanControl.DetectionSettings;
-import Layout.DisplayPanelProvider;
-import Layout.DisplayProviderList;
 import PamController.PamControlledUnit;
 import PamController.PamControlledUnitSettings;
-import userDisplay.*;
-import PamController.PamController;
-import PamController.PamSettingManager;
 import PamController.PamSettings;
 
 /**
@@ -71,6 +55,9 @@ public class TSBControl extends PamControlledUnit implements PamSettings {
 			JOptionPane.ERROR_MESSAGE);
 	}
 	
+	/**
+	 * Converts date/time strings formatted as yyyy-MM-dd HH:mm:ss+SSS back to longs.
+	 */
 	public long convertDateStringToLong(String inp) {
 		// Kudos: https://stackoverflow.com/questions/12473550/how-to-convert-a-string-date-to-long-millseconds
 		SimpleDateFormat f = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss+SSS");
@@ -83,26 +70,46 @@ public class TSBControl extends PamControlledUnit implements PamSettings {
 		return -1;
 	}
 	
+	/**
+	 * Streamlined means of converting text to HTML for dialogs.
+	 * @param inp - The text
+	 * @param width - How wide the dialog should be
+	 */
 	public String makeHTML(String inp, int width) {
 		return String.format("<html><body style='width: %1spx'>%1s", width, inp);
 	}
 	
+	/**
+	 * Sets the list of classes found in the input subsets.
+	 */
 	public void setFullClassList(ArrayList<String> inp) {
 		fullClassList = new ArrayList<String>(inp);
 	}
 		
+	/**
+	 * @return The list of classes found in the input subsets.
+	 */
 	public ArrayList<String> getFullClassList() {
 		return fullClassList;
 	}
 	
+	/**
+	 * Sets the list of "umbrella classes" (merging multiple classes to be output as a single class).
+	 */
 	public void setUmbrellaClassList(ArrayList<String> inp) {
 		umbrellaClassList = new ArrayList<String>(inp);
 	}
 	
+	/**
+	 * @return The list of "umbrella classes" (merging multiple classes to be output as a single class).
+	 */
 	public ArrayList<String> getUmbrellaClassList() {
 		return umbrellaClassList;
 	}
 	
+	/**
+	 * @return List of what class names are actually going to be output.
+	 */
 	public ArrayList<String> getOutputClassLabels() {
 		ArrayList<String> outp = new ArrayList<String>();
 		Iterator<String> it = getClassMap().values().iterator();
@@ -113,38 +120,67 @@ public class TSBControl extends PamControlledUnit implements PamSettings {
 		return outp;
 	}
 	
+	/**
+	 * Sets a hash map matching class names from the loaded subsets to umbrella classes.
+	 */
 	public void setClassMap(HashMap<String, String> inp) {
 		classMap = new HashMap<String, String>(inp);
 	}
 	
+	/**
+	 * @return A hash map matching class names from the loaded subsets to umbrella classes.
+	 */
 	public HashMap<String, String> getClassMap() {
 		return classMap;
 	}
 	
+	/**
+	 * Sets the list of loaded TSBSubsets.
+	 */
 	public void setSubsetList(ArrayList<TSBSubset> inp) {
 		subsetList = new ArrayList<TSBSubset>(inp);
 	}
 	
+	/**
+	 * @return The list of loaded TSBSubsets.
+	 */
 	public ArrayList<String> getFeatureList() {
 		return featureList;
 	}
 	
+	/**
+	 * Sets the list of features found in the first loaded subset.
+	 * All other subsets must have the same features.
+	 */
 	public void setFeatureList(ArrayList<String> inp) {
 		featureList = new ArrayList<String>(inp);
 	}
 	
+	/**
+	 * @return The list of features found in the first loaded subset.
+	 * All other subsets must have the same features.
+	 */
 	public ArrayList<TSBSubset> getSubsetList() {
 		return subsetList;
 	}
 	
+	/**
+	 * Clears subsetList.
+	 */
 	public void resetSubsetList() {
 		subsetList = new ArrayList<TSBSubset>();
 	}
 	
+	/**
+	 * @return The hash map of Feature Extractor parameters found in the first loaded subset.
+	 */
 	public HashMap<String, String> getFEParamsMap() {
 		return feParamsMap;
 	}
 	
+	/**
+	 * Sets the hash map of Feature Extractor parameters found in the first loaded subset.
+	 */
 	public void setFEParamsMap(HashMap<String, String> inp) {
 		feParamsMap = inp;
 	}

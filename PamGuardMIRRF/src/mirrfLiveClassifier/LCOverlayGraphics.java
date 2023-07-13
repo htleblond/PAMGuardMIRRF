@@ -2,41 +2,35 @@ package mirrfLiveClassifier;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
-import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.Rectangle;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.ListIterator;
-import java.util.TimeZone;
 
 import PamController.PamControlledUnit;
-import PamController.PamController;
 import PamUtils.Coordinate3d;
 import PamView.GeneralProjector;
 import PamView.PamDetectionOverlayGraphics;
 import PamView.PamSymbol;
 import PamView.PamSymbolType;
 import PamView.GeneralProjector.ParameterType;
-import PamView.GeneralProjector.ParameterUnits;
 import PamView.symbol.SymbolData;
-import PamguardMVC.PamDataBlock;
 import PamguardMVC.PamDataUnit;
 import PamguardMVC.PamProcess;
 import fftManager.FFTDataBlock;
 import mirrfFeatureExtractor.FEDataBlock;
 import whistlesAndMoans.WhistleMoanControl;
 
+/**
+ * The Live Classifier's overlay graphics.
+ * Partially copied from whistleAndMoans.CROverlayGraphics.
+ * @author Holly LeBlond
+ */
 public class LCOverlayGraphics extends PamDetectionOverlayGraphics {
 
 	protected LCControl lcControl;
 	protected LCDataBlock dataBlock;
 	protected boolean isViewer;
-	//private GeneralProjector gp;
 	
 	public static final SymbolData defaultSymbol = new SymbolData(PamSymbolType.SYMBOL_SQUARE, 10, 10, true,
 			Color.RED, Color.RED); // FIGURE OUT WHAT THIS DOES
@@ -50,13 +44,15 @@ public class LCOverlayGraphics extends PamDetectionOverlayGraphics {
 
 	@Override
 	public Rectangle drawDataUnit(Graphics g, PamDataUnit pamDataUnit, GeneralProjector generalProjector) {
-		//System.out.println("REACHED drawDataUnit");
+		if (lcControl.getParams().printJava)
+			System.out.println("REACHED drawDataUnit");
 		return drawOnSpectrogram(g, pamDataUnit, generalProjector);
 	}
 	
 	@Override
 	protected Rectangle drawOnSpectrogram(Graphics g, PamDataUnit pamDataUnit, GeneralProjector generalProjector) {
-		//System.out.println("REACHED drawOnSpectrogram");
+		if (lcControl.getParams().printJava)
+			System.out.println("REACHED drawOnSpectrogram");
 		LCDataUnit lcDataUnit = (LCDataUnit) pamDataUnit;
 //		setLineColor(Color.RED);
 		// use the super class to draw a rectangle. 
@@ -65,6 +61,9 @@ public class LCOverlayGraphics extends PamDetectionOverlayGraphics {
 		return r;
 	}
 	
+	/**
+	 * @return The FFT data block from the source Feature Extractor's source.
+	 */
 	protected FFTDataBlock retrieveFFTDataBlock() {
 		FFTDataBlock fftDB = null;
 		FEDataBlock vectorDB = (FEDataBlock) lcControl.getProcess().getParentDataBlock();
@@ -101,8 +100,9 @@ public class LCOverlayGraphics extends PamDetectionOverlayGraphics {
 		return fftDB;
 	}
 	
-	private Rectangle drawShape(Graphics g, LCDataUnit dataUnit, GeneralProjector generalProjector) {
-		//System.out.println("REACHED drawShape");
+	protected Rectangle drawShape(Graphics g, LCDataUnit dataUnit, GeneralProjector generalProjector) {
+		if (lcControl.getParams().printJava)
+			System.out.println("REACHED drawShape");
 		try {
 			LCCallCluster cc = dataUnit.getCluster();
 			
@@ -134,16 +134,7 @@ public class LCOverlayGraphics extends PamDetectionOverlayGraphics {
 			if (lcControl.getParams().labelColours.containsKey(cc.getPredictedSpeciesString())) {
 				g2.setColor(lcControl.getParams().labelColours.get(cc.getPredictedSpeciesString()));
 			}
-			//System.out.println("("+String.valueOf(p1.x)+", "+String.valueOf(p1.y)+"), ("+
-			//		String.valueOf(p2.x)+", "+String.valueOf(p2.y)+")");
-		/*	g2.drawLine(p1.x, p1.y, p1.x, p2.y);
-			g2.drawLine(p1.x, p2.y, p2.x, p2.y);
-			g2.drawLine(p2.x, p2.y, p2.x, p1.y);
-			g2.drawLine(p2.x, p1.y, p1.x, p1.y); */
 			
-			
-			//Font defaultFont = g2.getFont();
-			//Font wingdings = new Font("Wingdings", defaultFont.getStyle(), defaultFont.getSize());
 			c3d = generalProjector.getCoord3d(first-(Integer) fftHop/5.12, highest+(Integer) fftLength/2.56, 0);
 			Point p3 = c3d.getXYPoint();
 			c3d = generalProjector.getCoord3d(first-(Integer) fftHop/5.12, highest+(Integer) fftLength/5.12, 0);
@@ -155,7 +146,6 @@ public class LCOverlayGraphics extends PamDetectionOverlayGraphics {
 				if (actualSpecies.endsWith(" *")) {
 					actualSpecies = actualSpecies.substring(0, actualSpecies.length()-2);
 				}
-				//g2.setFont(wingdings);
 				if (actualSpecies.equals("Other")) {
 					g2.setColor(Color.GRAY);
 					g2.drawString(cc.getActualSpeciesString()+" "+new String(Character.toChars(0x2192))+" "+cc.getPredictedSpeciesString(), p4.x, p4.y);
@@ -188,20 +178,6 @@ public class LCOverlayGraphics extends PamDetectionOverlayGraphics {
 		return null; //???????????
 	}
 
-//	@Override
-//	public double getDefaultRange(GeneralProjector projector) {
-//		return whistleControl.whistleToneParameters.getMapLineLength();
-//	}
-
-	/* (non-Javadoc)
-	 * @see PamView.PamDetectionOverlayGraphics#drawOnMap(java.awt.Graphics, PamguardMVC.PamDataUnit, PamView.GeneralProjector)
-	 */
-/*	@Override
-	protected Rectangle drawOnMap(Graphics g, PamDataUnit pamDetection,
-			GeneralProjector generalProjector) {
-		return super.drawOnMap(g, pamDetection, generalProjector);
-	} */
-
 	@Override
 	public String getHoverText(GeneralProjector generalProjector,
 			PamDataUnit dataUnit, int iSide) {
@@ -214,13 +190,7 @@ public class LCOverlayGraphics extends PamDetectionOverlayGraphics {
 		boolean outp = false;
 		if (generalProjector.getParameterTypes()[0] == ParameterType.TIME && generalProjector.getParameterTypes()[1] == ParameterType.FREQUENCY) {
 			outp = true;
-			//gp = generalProjector;
 		}
-		//System.out.println("CANDRAW: "+generalProjector.toString()+", "+String.valueOf(outp));
-	/*	ArrayList<PamDataBlock> detectorDataBlocks = PamController.getInstance().getDataBlocks(PamDataUnit.class, true);
-		for (int i = 0; i < detectorDataBlocks.size(); i++) {
-			System.out.println(detectorDataBlocks.get(i).getDataName());
-		} */
 		return outp;
 	}
 }

@@ -5,7 +5,6 @@ import fftManager.FFTDataBlock;
 import whistlesAndMoans.ConnectedRegion;
 import whistlesAndMoans.ConnectedRegionDataBlock;
 import whistlesAndMoans.ConnectedRegionDataUnit;
-import whistlesAndMoans.SliceData;
 import whistlesAndMoans.WhistleBearingInfo;
 import whistlesAndMoans.WhistleToneConnectProcess;
 import whistlesAndMoans.WhistleToneConnectProcess.ShapeConnector;
@@ -13,10 +12,7 @@ import whistlesAndMoans.WhistleToneConnectProcess.ShapeConnector;
 import java.io.*;
 
 import Localiser.algorithms.timeDelayLocalisers.bearingLoc.BearingLocaliser;
-import PamController.PamControlledUnit;
-import PamController.PamController;
 import PamUtils.PamUtils;
-import PamguardMVC.PamProcess;
 
 /**
  * This is the class used for reading the contents of binary files into the table in the side panel.

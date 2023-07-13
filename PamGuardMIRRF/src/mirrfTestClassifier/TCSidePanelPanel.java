@@ -19,6 +19,10 @@ import PamView.dialog.PamGridBagContraints;
 import PamView.panel.PamBorderPanel;
 import PamView.panel.PamPanel;
 
+/**
+ * The actual GUI components of the side panel.
+ * @author Holly LeBlond
+ */
 public class TCSidePanelPanel extends PamBorderPanel {
 	
 	protected TCControl tcControl;
@@ -92,6 +96,9 @@ public class TCSidePanelPanel extends PamBorderPanel {
 		
 	}
 	
+	/**
+	 * When the start button is pressed.
+	 */
 	protected void start() {
 		if (getControl().getTabPanel().getPanel().getTableModel().getRowCount() > 0) {
 			int result = JOptionPane.showConfirmDialog(this, 
@@ -153,6 +160,9 @@ public class TCSidePanelPanel extends PamBorderPanel {
 		}
 	}
 	
+	/**
+	 * When the stop button is pressed.
+	 */
 	protected void stop() {
 		getControl().getThreadManager().stop();
 	}
@@ -165,6 +175,9 @@ public class TCSidePanelPanel extends PamBorderPanel {
 		ignoreField.setText(String.valueOf(Integer.valueOf(ignoreField.getText()).intValue() + 1));
 	}
 	
+	/**
+	 * Resets the error and ignore counters to 0.
+	 */
 	public void resetCounters() {
 		errorField.setText("0");
 		ignoreField.setText("0");

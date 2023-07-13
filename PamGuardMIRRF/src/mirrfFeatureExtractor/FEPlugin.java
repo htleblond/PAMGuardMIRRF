@@ -1,20 +1,12 @@
-/* 
- * MIRRF Feature Extractor
- * Version 1.01 
- * By Holly LeBlond
- * Fisheries and Oceans Canada
- * Started May 2022
- * Uploaded May 2023
- */
-
 package mirrfFeatureExtractor;
 
 import PamModel.PamDependency;
 import PamModel.PamPluginInterface;
+import mirrf.MIRRFInfo;
 
 /**
- * Music Information Retrieval Random Forest (MIRRF) Classifier - Feature Extractor
- * @author Holly LeBlond
+ * Music Information Retrieval Random Forest (MIRRF) Classifier for PamGuard - Feature Extractor
+ * @author Holly LeBlond (Fisheries and Oceans Canada)
  */
 public class FEPlugin implements PamPluginInterface {
 	
@@ -37,27 +29,27 @@ public class FEPlugin implements PamPluginInterface {
 
 	@Override
 	public String getDeveloperName() {
-		return "Holly LeBlond";
+		return MIRRFInfo.getDeveloperName();
 	}
 
 	@Override
 	public String getContactEmail() {
-		return "wtleblond@gmail.com";
+		return MIRRFInfo.getContactEmail();
 	}
 
 	@Override
 	public String getVersion() {
-		return "0.02b";
+		return MIRRFInfo.getVersion();
 	}
 
 	@Override
 	public String getPamVerDevelopedOn() {
-		return "2.02.09";
+		return MIRRFInfo.getPamVerDevelopedOn();
 	}
 
 	@Override
 	public String getPamVerTestedOn() {
-		return "2.02.09";
+		return MIRRFInfo.getPamVerTestedOn();
 	}
 
 	@Override
@@ -113,7 +105,8 @@ public class FEPlugin implements PamPluginInterface {
 
 	@Override
 	public String getAboutText() {
-		return getToolTip();
+		return getToolTip() + " Extracted feature vectors are used for creating training sets using the "
+				+ "Training Set Builder, or can be sent directly to the Live Classifier.";
 	}
 
 	/* (non-Javadoc)

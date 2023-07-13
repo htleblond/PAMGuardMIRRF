@@ -6,6 +6,10 @@ import javax.swing.JOptionPane;
 
 import PamController.PamControlledUnit;
 
+/**
+ * Streamlined abstract PamControlledUnit extension for MIRRF modules that use Python scripts.
+ * @author Holly LeBlond
+ */
 public abstract class MIRRFControlledUnit extends PamControlledUnit {
 
 	public MIRRFControlledUnit(String unitType, String unitName) {

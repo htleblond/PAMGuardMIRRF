@@ -2,13 +2,15 @@ package mirrfTestClassifier;
 
 import PamguardMVC.PamDataUnit;
 import PamguardMVC.PamObservable;
-import mirrfLiveClassifier.LCBinaryDataSource;
-import mirrfLiveClassifier.LCControl;
 import mirrfLiveClassifier.LCDataBlock;
 import mirrfLiveClassifier.LCDatagramProvider;
-import mirrfLiveClassifier.LCOverlayGraphics;
 import mirrfLiveClassifier.LCProcess;
 
+/**
+ * The Test Classifier's PamProcess, which is only used for setting the output data block.
+ * Subclass of the Live Classifier's PamProcess.
+ * @author Holly LeBlond
+ */
 public class TCProcess extends LCProcess {
 
 	public TCProcess(TCControl tcControl) {

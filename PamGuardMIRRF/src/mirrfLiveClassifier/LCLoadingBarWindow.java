@@ -12,6 +12,10 @@ import javax.swing.WindowConstants;
 import PamView.dialog.PamDialog;
 import PamView.dialog.PamGridBagContraints;
 
+/**
+ * The loading dialog for when the WMNT has a large amount of updates for the classifier's table.
+ * @author Holly LeBlond
+ */
 public class LCLoadingBarWindow extends PamDialog {
 	
 	private int totalToUpdate;
@@ -42,6 +46,9 @@ public class LCLoadingBarWindow extends PamDialog {
 		setDialogComponent(mainPanel);
 	}
 	
+	/**
+	 * Adds the input value to the loading bar.
+	 */
 	public void updateLoadingBar(int addition) {
 		totalCounted += addition;
 		loadingBar.setValue((int) Math.floor(100*(((double) totalCounted)/totalToUpdate)));

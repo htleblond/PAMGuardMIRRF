@@ -76,17 +76,11 @@ public class FEFeatureDialog extends PamDialog {
 	
 	protected JButton addButton;
 	
-	//protected JComboBox amp_sd_box;
-	
-	//protected JComboBox ampslope_box;
-	
 	protected JComboBox<String> freq_hd_box;
 	
 	protected JComboBox<String> freq_sd_options_box;
 	protected JLabel freq_sd_text;
 	protected JComboBox<String> freq_sd_box;
-	
-	//protected JComboBox fslope_sd_box;
 	
 	protected JComboBox<String> mfcc_box;
 	protected JTextField mfcc_n_field;
@@ -163,8 +157,6 @@ public class FEFeatureDialog extends PamDialog {
 		c.gridx = 0;
 		c.fill = GridBagConstraints.BOTH;
 		c.anchor = GridBagConstraints.WEST;
-		//p_left.add(new JLabel("Select a feature to add to vector:"), c);
-		//c.gridy++;
 		String[] featureNames = new String[] {"Amplitude","Duration","Frequency (header data)","Frequency range (header data)",
 				"Frequency slope (header data)","Frequency (slice data)","Mel-frequency cepstral coefficients","Polynomial features","Root mean square",
 				"Spectral bandwidth","Spectral centroid","Spectral contrast","Spectral flatness","Spectral flux (onset strength)",
@@ -184,9 +176,6 @@ public class FEFeatureDialog extends PamDialog {
 		
 		p_right = new JPanel(new BorderLayout());
 		p_cards = new JPanel(new CardLayout());
-		//subPanel.add(p_cards);
-		
-		//Object[][] test = {{"",""},{""}};
 		
 		CardLayout cl = (CardLayout) p_cards.getLayout();
 		
@@ -587,12 +576,10 @@ public class FEFeatureDialog extends PamDialog {
             }
         });
 		
-		//p_right.add(p_cards, BorderLayout.NORTH);
 		p_right.add(p_cards, BorderLayout.CENTER);
 		subPanel.add(p_right);
 		mainPanel.add(subPanel, b);
 		b.gridy++;
-		//b.gridx++;
 		b.anchor = GridBagConstraints.WEST;
 		addButton = new JButton("Add to vector");
 		addButton.addActionListener(new AddButtonListener());
@@ -799,7 +786,6 @@ public class FEFeatureDialog extends PamDialog {
 		c.gridy = 0;
 		c.gridx = 0;
 		c.gridwidth = 2;
-		//c.fill = GridBagConstraints.HORIZONTAL;
 		c.fill = GridBagConstraints.NONE;
 		c.anchor = GridBagConstraints.NORTHWEST;
 		JLabel descLabel = new JLabel();
@@ -838,19 +824,6 @@ public class FEFeatureDialog extends PamDialog {
 		}
 		return outp;
 	}
-	
-/*	public void fieldToBoxUpdate(JTextField field, JComboBox box) {
-		if (field.getText().length() < 1) {
-        	field.setText("1");
-        } else if (Integer.valueOf(field.getText()) < 1) {
-        	field.setText("1");
-        }
-		box.removeAllItems();
-        box.addItem("All");
-        for (int i = 1; i <= Integer.valueOf(field.getText()); i++) {
-        	box.addItem(Integer.toString(i));
-        }
-	} */
 	
 	/**
 	 * Used for ensuring a numerical text box has a minimum possible value.
