@@ -570,7 +570,7 @@ public class FESettingsDialog extends PamDialog {
 		c.gridwidth = 4;
 		JPanel featureButtonPanel = new JPanel(new GridLayout(1, 4, 5, 5));
 		featureAddButton = new JButton("Add");
-		featureAddButton.addActionListener(new AddButtonListener());
+		featureAddButton.addActionListener(new AddButtonListener(this));
 		featureButtonPanel.add(featureAddButton);
 		featureDeleteButton = new JButton("Delete");
 		featureDeleteButton.addActionListener(new DeleteButtonListener());
@@ -995,7 +995,7 @@ public class FESettingsDialog extends PamDialog {
 	/**
 	 * ActionListener for checkboxes.
 	 */
-	class CheckBoxListener implements ActionListener {
+	protected class CheckBoxListener implements ActionListener {
 		private JCheckBox box;
 		public CheckBoxListener(JCheckBox box) {
 			this.box = box;
@@ -1008,7 +1008,7 @@ public class FESettingsDialog extends PamDialog {
 	/**
 	 * ActionListener for radio buttons.
 	 */
-	class RadioButtonListener implements ActionListener {
+	protected class RadioButtonListener implements ActionListener {
 		private JRadioButton rb;
 		public RadioButtonListener(JRadioButton rb) {
 			this.rb = rb;
@@ -1021,9 +1021,17 @@ public class FESettingsDialog extends PamDialog {
 	/**
 	 * ActionListener for the "add" button in the "Features" tab.
 	 */
-	class AddButtonListener implements ActionListener{
+	protected class AddButtonListener implements ActionListener {
+		protected FESettingsDialog settingsDialog;
+		
+		protected AddButtonListener(FESettingsDialog settingsDialog) {
+			super();
+			this.settingsDialog = settingsDialog;
+		}
+		
 		public void actionPerformed(ActionEvent e) {
-			FEFeatureDialog featureDialog = new FEFeatureDialog(feControl.getPamView().getGuiFrame(), feControl, feControl.getSettingsDialog(), featureTableModel);
+			FEFeatureDialog featureDialog = new FEFeatureDialog(feControl.getPamView().getGuiFrame(), feControl,
+					settingsDialog, featureTableModel);
 			featureDialog.setVisible(true);
 		}
 	}
@@ -1031,7 +1039,7 @@ public class FESettingsDialog extends PamDialog {
 	/**
 	 * ActionListener for the "delete" button in the "Features" tab.
 	 */
-	class DeleteButtonListener implements ActionListener{
+	protected class DeleteButtonListener implements ActionListener{
 		public void actionPerformed(ActionEvent e) {
 			if (featureTable.getSelectedRow() > -1) {
 				int currIndex = featureTable.getSelectedRow();
@@ -1050,7 +1058,7 @@ public class FESettingsDialog extends PamDialog {
 	/**
 	 * ActionListener for the "move up" button in the "Features" tab.
 	 */
-	class MoveUpButtonListener implements ActionListener{
+	protected class MoveUpButtonListener implements ActionListener{
 		public void actionPerformed(ActionEvent e) {
 			if (featureTable.getSelectedRow() > 0) {
 				featureTableModel.moveRow(featureTable.getSelectedRow(),featureTable.getSelectedRow(),featureTable.getSelectedRow()-1);
@@ -1062,7 +1070,7 @@ public class FESettingsDialog extends PamDialog {
 	/**
 	 * ActionListener for the "move down" button in the "Features" tab.
 	 */
-	class MoveDownButtonListener implements ActionListener{
+	protected class MoveDownButtonListener implements ActionListener{
 		public void actionPerformed(ActionEvent e) {
 			if (featureTable.getSelectedRow() > -1 && featureTable.getSelectedRow() < featureTable.getRowCount()-1) {
 				featureTableModel.moveRow(featureTable.getSelectedRow(),featureTable.getSelectedRow(),featureTable.getSelectedRow()+1);
@@ -1074,7 +1082,7 @@ public class FESettingsDialog extends PamDialog {
 	/**
 	 * ActionListener for the "import" buttons in the "Features" tab.
 	 */
-	class ImportCSVFeaturesButtonListener implements ActionListener{
+	protected class ImportCSVFeaturesButtonListener implements ActionListener{
 		private boolean importFromLoadedOutput;
 		
 		public ImportCSVFeaturesButtonListener(boolean importFromLoadedOutput) {
@@ -1161,7 +1169,7 @@ public class FESettingsDialog extends PamDialog {
 	protected boolean addFeaturesToTable(ArrayList<String> inp) {
 		ArrayList<String> validFeatures = new ArrayList<String>();
 		ArrayList<String> invalidFeatures = new ArrayList<String>();
-		ArrayList<String> calcs = new ArrayList<String>(Arrays.asList("mean","med","std","min","max"));
+		ArrayList<String> calcs = new ArrayList<String>(Arrays.asList("mean","med","std","min","max","rng"));
 		for (int i = 0; i < inp.size(); i++) {
 			String[] tokens = inp.get(i).split("_");
 			if (tokens.length == 1) {
@@ -1599,6 +1607,11 @@ public class FESettingsDialog extends PamDialog {
 		return true;
 	}
 	
+	public float getSamplingRateFromAudioSource() {
+		if (audioSourcePanel.getSource() == null) return -1;
+		return audioSourcePanel.getSource().getSampleRate();
+	}
+	
 	@Override
 	public boolean getParams() {
 		if (feControl.isViewer()) {
@@ -1636,6 +1649,9 @@ public class FESettingsDialog extends PamDialog {
 		}
 		
 		FEParameters newParams = feControl.getParams().clone();
+		newParams.inputCSVEntries.clear();
+		newParams.inputCSVIndexes.clear();
+		//FEParameters newParams = new FEParameters();
 		
 		newParams.inputFromCSV = inputCSVRB.isSelected();
 		if (inputProcessRB.isSelected()) {
@@ -1672,7 +1688,7 @@ public class FESettingsDialog extends PamDialog {
 						feControl.SimpleErrorDialog("Input .wmnt file is not correctly formatted.", 250);
 						return false;
 					}
-					while(sc.hasNextLine()) {
+					while (sc.hasNextLine()) {
 						String[] nextLine = sc.nextLine().split(",");
 						try {
 							if ((inputIgnoreBlanksCheck.isSelected() && nextLine[6].length() == 0)
@@ -1725,108 +1741,6 @@ public class FESettingsDialog extends PamDialog {
 			newParams.inputIgnore2SecondGlitch = inputIgnore2SecondGlitchCheck.isSelected();
 			newParams.inputIgnoreFalsePositives = inputIgnoreFalsePositivesCheck.isSelected();
 			newParams.inputIgnoreUnk = inputIgnoreUnkCheck.isSelected();
-			
-		/*	if (inputCSVField.getText() != "No file selected.") {
-				try {
-					File f = new File(inputCSVField.getText());
-					SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss+SSS");
-					df.setTimeZone(TimeZone.getTimeZone("UTC"));
-					if (f.exists()) {
-						boolean validWMNT = false;
-						Scanner sc;
-						try {
-							sc = new Scanner(f);
-							if (sc.hasNextLine()) {
-								String[] firstLine = sc.nextLine().split(",");
-								if (firstLine.length >= 7) {
-									if (firstLine[0].equals("uid") && firstLine[1].equals("datetime") && firstLine[2].equals("lf")
-											 && firstLine[3].equals("hf") && firstLine[4].equals("duration") && firstLine[5].equals("amplitude")
-											 && firstLine[6].equals("species") && sc.hasNextLine()) {
-										String[] secondLine = sc.nextLine().split(",");
-										try {
-											df.parse(secondLine[1]);
-											validWMNT = true;
-										} catch (Exception e2) {
-											//
-										}
-									}
-								}
-							}
-						} catch (FileNotFoundException e1) {
-							e1.printStackTrace();
-						}
-						if (validWMNT) {
-							newParams.inputCSVEntries = new ArrayList<String[]>();
-							try {
-								sc = new Scanner(f);
-								while(sc.hasNextLine()) {
-									String[] nextLine = sc.nextLine().split(",");
-									boolean validEntry = true;
-									if (nextLine.length < 6 || (inputIgnoreBlanksCheck.isSelected() && nextLine.length < 7)) {
-										validEntry = false;
-									} else if (nextLine.length >= 7) {
-										if ((inputIgnoreBlanksCheck.isSelected() && nextLine[6].length() == 0)
-												|| (inputIgnore2SecondGlitchCheck.isSelected() && nextLine[6].equals("2-second glitch"))
-												|| (inputIgnoreFalsePositivesCheck.isSelected() && nextLine[6].equals("False positive"))
-												|| (inputIgnoreUnkCheck.isSelected() && 
-														(nextLine[6].equals("Unk") || nextLine[6].equals("Unknown")))) {
-											validEntry = false;
-										}
-									}
-									if (validEntry) {
-										try {
-											Long.valueOf(nextLine[0]);
-											df.parse(nextLine[1]);
-											Integer.valueOf(nextLine[2]);
-											Integer.valueOf(nextLine[3]);
-											Integer.valueOf(nextLine[4]);
-											Integer.valueOf(nextLine[5]);
-										} catch (Exception e2) {
-											validEntry = false;
-										}
-									}
-									if (validEntry) {
-										newParams.inputCSVEntries.add(nextLine);
-									}
-								}
-								if (newParams.inputCSVEntries.size() == 0) {
-									feControl.SimpleErrorDialog("Selected input .wmnt file did not contain any valid entries.");
-									return false;
-								}
-							} catch (Exception e) {
-								feControl.SimpleErrorDialog("Error occured when attempting to read selected input .wmnt file.");
-								return false;
-							}
-						} else {
-							feControl.SimpleErrorDialog("Selected input .wmnt file is not valid WMNT output.");
-							return false;
-						}
-					} else {
-						feControl.SimpleErrorDialog("Selected input .wmnt file does not exist.");
-						return false;
-					}
-				} catch (Exception e) {
-					feControl.SimpleErrorDialog("Error occured when attempting to read selected input .wmnt file.");
-					return false;
-				}
-				newParams.inputCSVName = inputCSVField.getText();
-				// Kudos to Lukas Eder on https://stackoverflow.com/questions/4699807/sort-arraylist-of-array-in-java.
-				newParams.inputCSVEntries.sort(Comparator.comparing(a -> a[1]));
-				ArrayList<Integer> intList = new ArrayList<Integer>();
-				for (int i = 0; i < newParams.inputCSVEntries.size(); i++) {
-					intList.add(i);
-				}
-				newParams.inputCSVIndexes = new ArrayList<Integer>(intList);
-				newParams.inputCSVExpectedFileSize = Integer.valueOf(inputCSVFileSizeField.getText());
-				newParams.inputIgnoreBlanks = inputIgnoreBlanksCheck.isSelected();
-				newParams.inputIgnore2SecondGlitch = inputIgnore2SecondGlitchCheck.isSelected();
-				newParams.inputIgnoreFalsePositives = inputIgnoreFalsePositivesCheck.isSelected();
-				newParams.inputIgnoreUnk = inputIgnoreUnkCheck.isSelected();
-				feControl.getSidePanel().getFEPanel().getReloadCSVButton().setEnabled(true);
-			} else {
-				newParams.inputCSVName = "";
-				feControl.getSidePanel().getFEPanel().getReloadCSVButton().setEnabled(false);
-			} */
 		}
 		newParams.outputCSVChecked = outputCSVCheck.isSelected();
 		if (outputCSVCheck.isSelected()) {

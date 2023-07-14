@@ -21,6 +21,7 @@ import matplotlib.markers
 
 import logging
 import threading
+import multiprocessing
 import time
 import warnings
 from builtins import FileNotFoundError
@@ -67,18 +68,18 @@ class FEThread():
         #print("Reached addClip().")
         self.clipList.append(fn)
         headerData = HeaderData(uid, datelong, amplitude, duration, freqhd_min, freqhd_max, slice_data)
-        #thread = threading.Thread(target=self.threadFunc(fn, extras), args=(1,))
         thread = threading.Thread(target=self.threadFunc, args=(fn,headerData,))
+        #thread = multiprocessing.Process(target=self.threadFunc, args=(fn,headerData,))
         thread.start()
-        print("Thread "+str(uid)+" has finished.", flush=True)
+        #print("Thread "+str(uid)+" has finished.", flush=True)
     
     # The processing thread's function.
     def threadFunc(self, fn: str, headerData):
         #print("Reached threadFunc().")
         if self.audioNRChecked and len(self.y_nr) == 0:
-            print("Error: Could not process "+str(headerData.uid), flush=True)
-            if os.path.exists(fn):
-                os.remove(fn)
+            print("Error: Could not process "+str(headerData.uid), flush=True, file=sys.stderr)
+            #if os.path.exists(fn):
+            #    os.remove(fn)
             return
         try:
             outp = self.extractFeatures(fn, headerData)
@@ -86,10 +87,10 @@ class FEThread():
             self.clipList.pop(0);
         except Exception:
             #print("Error: Could not process "+str(extras[0]), file=sys.stderr)
-            print("Error: Could not process "+str(headerData.uid), flush=True)
+            print("Error: Could not process "+str(headerData.uid), flush=True, file=sys.stderr)
             print(traceback.format_exc(), flush=True, file=sys.stderr)
-        if os.path.exists(fn):
-            os.remove(fn)
+       # if os.path.exists(fn):
+       #     os.remove(fn)
     
     # Loads and manipulates the audio before sending it to the functions
     # that perform the feature extraction.

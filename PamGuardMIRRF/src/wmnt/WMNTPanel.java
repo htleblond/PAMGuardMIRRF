@@ -258,7 +258,9 @@ public class WMNTPanel {
 		c.gridy++;
 		c.gridx = 0;
 		c.gridwidth = 1;
-		speciesModel = new DefaultComboBoxModel<String>((String[]) wmntControl.getParams().speciesList.toArray());
+		speciesModel = new DefaultComboBoxModel<String>();
+		for (int i = 0; i < wmntControl.getParams().speciesList.size(); i++)
+			speciesModel.addElement(wmntControl.getParams().speciesList.get(i));
 		speciesBox = new JComboBox<String>(speciesModel);
 		speciesBox.setPrototypeDisplayValue("aaaaaaaaaaaaaaaaaaaaaaaaa");
 		memPanel.add(speciesBox, c);
@@ -270,7 +272,9 @@ public class WMNTPanel {
 		memPanel.add(speciesButton, c);
 		
 		c.gridx++;
-		calltypeModel = new DefaultComboBoxModel<String>((String[]) wmntControl.getParams().callTypeList.toArray());
+		calltypeModel = new DefaultComboBoxModel<String>();
+		for (int i = 0; i < wmntControl.getParams().callTypeList.size(); i++)
+			calltypeModel.addElement(wmntControl.getParams().callTypeList.get(i));
 		calltypeBox = new JComboBox<String>(calltypeModel);
 		calltypeBox.setPrototypeDisplayValue("aaaaaaaaaaaaaaaaaaaaaaaaa");
 		memPanel.add(calltypeBox, c);
@@ -542,6 +546,9 @@ public class WMNTPanel {
 				if (wmntControl.getParams().inputProcessName.length() != 0) {
 					PamDataBlock db = wmntControl.getPamController().getDetectorDataBlock(wmntControl.getParams().inputProcessName);
 					if (db != null) wmDetector = (WhistleToneConnectProcess) db.getParentProcess();
+				} else {
+					wmntControl.SimpleErrorDialog("A Whistle and Moan Detector contour source should be selected in the settings first.");
+					return;
 				}
 				if (wmDetector == null) {
 					wmntControl.SimpleErrorDialog("No actual Whistle and Moan Detector module appears to be in this configuration. "

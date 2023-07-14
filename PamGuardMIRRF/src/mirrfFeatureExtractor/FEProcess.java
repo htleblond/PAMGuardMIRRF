@@ -147,6 +147,8 @@ public class FEProcess extends PamProcess {
 
 	@Override
 	public void pamStart() {
+		if (feControl.getParams().miscPrintJavaChecked)
+			System.out.println("REACHED pamStart().");
 		//super.pamStart();
 		clipRequestQueue.clear(); // just in case anything hanging around from previously. 
 		// if there is it may crash since the ClipblockProcess will probably have been replaced anyway.
@@ -187,8 +189,8 @@ public class FEProcess extends PamProcess {
 						", vectorsLeft: "+String.valueOf(threadManager.vectorsLeft()));
 			}
 			try {
-				TimeUnit.MILLISECONDS.sleep(200);
-				//TimeUnit.MILLISECONDS.sleep(1000);
+				//TimeUnit.MILLISECONDS.sleep(200);
+				TimeUnit.MILLISECONDS.sleep(1000);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
@@ -315,10 +317,6 @@ public class FEProcess extends PamProcess {
 			this.clipProcess = clipProcess;
 			this.dataBlock = dataBlock;
 			dataBlock.addObserver(this, true);
-			
-			ConnectedRegionDataBlock crdb = (ConnectedRegionDataBlock) dataBlock;
-			ConnectedRegionDataUnit crdu = (ConnectedRegionDataUnit) crdb.getLastUnit();
-			// TODO SLICE DATA !!!!!!!!!!!!!!!!
 		}
 		
 		/**

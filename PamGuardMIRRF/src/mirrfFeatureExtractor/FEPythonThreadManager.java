@@ -41,7 +41,7 @@ public class FEPythonThreadManager {
 	public volatile ArrayList<String> commandList;
 	public PythonInterpreterThread pit = null;
 	
-	private final int maxThreads = 10; // TODO ADD THIS TO FEPARAMETERS EVENTUALLY
+	private final int maxThreads = 2; // TODO ADD THIS TO FEPARAMETERS EVENTUALLY
 	protected volatile ArrayList<ContourClip> waitList;
 	protected volatile ArrayList<String> idList;
 	protected volatile ArrayList<ArrayList<ContourClip>> ccList;

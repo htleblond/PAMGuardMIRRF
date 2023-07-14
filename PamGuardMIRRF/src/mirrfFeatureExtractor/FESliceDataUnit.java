@@ -33,9 +33,11 @@ public class FESliceDataUnit extends PamDataUnit {
 			}
 		}
 		splitList.sort(Comparator.comparingLong(a -> Long.valueOf(a[0])));
-		sliceStartSamples = new long[splitList.size()];
-		sliceFreqs = new double[splitList.size()];
-		for (int i = 0; i < splitList.size(); i++) {
+		int arrSize = splitList.size();
+		//if (arrSize > 5) arrSize = 5; // FOR TESTING, REMOVE IF IT'S NOT THE PROBLEM
+		sliceStartSamples = new long[arrSize];
+		sliceFreqs = new double[arrSize];
+		for (int i = 0; i < arrSize; i++) {
 			sliceStartSamples[i] = Long.valueOf(splitList.get(i)[0]);
 			sliceFreqs[i] = Double.valueOf(splitList.get(i)[1]);
 		}

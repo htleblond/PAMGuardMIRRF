@@ -659,6 +659,14 @@ public class FEFeatureDialog extends PamDialog {
 					outp = "centroid_";
 					outp += outpAbbr((String) centroid_box.getSelectedItem());
 				} else if (selection.equals("Spectral contrast")) {
+					float sr = settingsDialog.getSamplingRateFromAudioSource();
+					float freq = Float.valueOf(contrast_freq_field.getText());
+					int n_bands = Integer.valueOf(contrast_bands_field.getText());
+					if (freq * Math.pow(2, n_bands) >= sr/2) {
+						feControl.SimpleErrorDialog("Frequency cutoff * (2 ^ number of bands) must be less than "
+								+ "half the sampling rate.", 300);
+						return;
+					}
 					outp = "contrast_";
 					outp += contrast_freq_field.getText() + "_";
 					outp += contrast_bands_field.getText() + "_";
