@@ -33,8 +33,8 @@ public class TSBPanel extends PamBorderPanel {
 	protected JButton addButton;
 	protected JButton deleteButton;
 	protected JButton clearButton;
-	protected JButton moveUpButton;
-	protected JButton moveDownButton;
+	//protected JButton moveUpButton;
+	//protected JButton moveDownButton;
 	protected JButton editButton;
 	protected JButton splitButton;
 	
@@ -49,6 +49,7 @@ public class TSBPanel extends PamBorderPanel {
 	protected JButton saveButton;
 	
 	protected int[] outputFeatureIndices;
+	protected ArrayList<String> outputLabelList;
 	
 	public TSBPanel(TSBControl tsbControl) {
 		this.tsbControl = tsbControl;
@@ -64,7 +65,8 @@ public class TSBPanel extends PamBorderPanel {
 		GridBagConstraints b = new PamGridBagContraints();
 		memPanel.setBorder(new TitledBorder("MIRRF Training Set Builder"));
 		
-		JPanel topButtonsPanel = new JPanel(new GridLayout(1, 7, 5, 5));
+		//JPanel topButtonsPanel = new JPanel(new GridLayout(1, 7, 5, 5));
+		JPanel topButtonsPanel = new JPanel(new GridLayout(1, 5, 5, 5));
 		addButton = new JButton("Add subset");
 		addButton.addActionListener(new AddButtonListener());
 		topButtonsPanel.add(addButton);
@@ -76,14 +78,14 @@ public class TSBPanel extends PamBorderPanel {
 		splitButton.addActionListener(new SplitButtonListener());
 		splitButton.setEnabled(false);
 		topButtonsPanel.add(splitButton);
-		moveUpButton = new JButton("Move up");
-		moveUpButton.addActionListener(new MoveButtonListener(true));
-		moveUpButton.setEnabled(false);
-		topButtonsPanel.add(moveUpButton);
-		moveDownButton = new JButton("Move down");
-		moveDownButton.addActionListener(new MoveButtonListener(false));
-		moveDownButton.setEnabled(false);
-		topButtonsPanel.add(moveDownButton);
+		//moveUpButton = new JButton("Move up");
+		//moveUpButton.addActionListener(new MoveButtonListener(true));
+		//moveUpButton.setEnabled(false);
+		//topButtonsPanel.add(moveUpButton);
+		//moveDownButton = new JButton("Move down");
+		//moveDownButton.addActionListener(new MoveButtonListener(false));
+		//moveDownButton.setEnabled(false);
+		//topButtonsPanel.add(moveDownButton);
 		deleteButton = new JButton("Delete subset");
 		deleteButton.addActionListener(new DeleteButtonListener());
 		deleteButton.setEnabled(false);
@@ -131,14 +133,14 @@ public class TSBPanel extends PamBorderPanel {
 	                if (selected > -1) {
 	                	editButton.setEnabled(true);
 	                	splitButton.setEnabled(true);
-	                	moveUpButton.setEnabled(selected > 0);
-	                	moveDownButton.setEnabled(selected < subsetTable.getRowCount()-1);
+	                	//moveUpButton.setEnabled(selected > 0);
+	                	//moveDownButton.setEnabled(selected < subsetTable.getRowCount()-1);
 	                	deleteButton.setEnabled(true);
 	                } else {
 	                	editButton.setEnabled(false);
 	                	splitButton.setEnabled(false);
-	                	moveUpButton.setEnabled(false);
-	                	moveDownButton.setEnabled(false);
+	                	//moveUpButton.setEnabled(false);
+	                	//moveDownButton.setEnabled(false);
 	                	deleteButton.setEnabled(false);
 	                }
             	}
@@ -210,7 +212,7 @@ public class TSBPanel extends PamBorderPanel {
 		}
 	}
 	
-	protected class MoveButtonListener implements ActionListener{
+/*	protected class MoveButtonListener implements ActionListener{
 		
 		private boolean up;
 		public MoveButtonListener(boolean up) {
@@ -240,7 +242,7 @@ public class TSBPanel extends PamBorderPanel {
 				moveDownButton.setEnabled(false);
 			}
 		}
-	}
+	} */
 	
 	protected class DeleteButtonListener implements ActionListener {
 		public void actionPerformed(ActionEvent e) {
@@ -253,7 +255,12 @@ public class TSBPanel extends PamBorderPanel {
 						break;
 					}
 				}
-				subsetTableModel.removeRow(selection);
+				for (int i = 0 ; i < subsetTableModel.getRowCount(); i++) {
+					if (rowID.equals(subsetTableModel.getValueAt(i, 0))) {
+						subsetTableModel.removeRow(i);
+						break;
+					}
+				}
 				if (subsetTable.getRowCount() > 0) {
 					if (selection == subsetTable.getRowCount()) {
 						subsetTable.setRowSelectionInterval(selection-1, selection-1);
@@ -265,8 +272,8 @@ public class TSBPanel extends PamBorderPanel {
 					tsbControl.setFeatureList(new ArrayList<String>());
 				}
 				editButton.setEnabled(subsetTable.getRowCount() > 0);
-				moveUpButton.setEnabled(subsetTable.getRowCount() > 0 && selection > 0);
-				moveDownButton.setEnabled(subsetTable.getRowCount() > 0 && selection < subsetTable.getRowCount()-1);
+				//moveUpButton.setEnabled(subsetTable.getRowCount() > 0 && selection > 0);
+				//moveDownButton.setEnabled(subsetTable.getRowCount() > 0 && selection < subsetTable.getRowCount()-1);
 				deleteButton.setEnabled(subsetTable.getRowCount() > 0);
 				clearButton.setEnabled(subsetTable.getRowCount() > 0);
 				saveButton.setEnabled(subsetTable.getRowCount() > 0);
@@ -293,8 +300,8 @@ public class TSBPanel extends PamBorderPanel {
 			}
 			tsbControl.setFeatureList(new ArrayList<String>());
 			editButton.setEnabled(false);
-			moveUpButton.setEnabled(false);
-			moveDownButton.setEnabled(false);
+			//moveUpButton.setEnabled(false);
+			//moveDownButton.setEnabled(false);
 			deleteButton.setEnabled(false);
 			clearButton.setEnabled(false);
 			saveButton.setEnabled(false);
@@ -349,7 +356,7 @@ public class TSBPanel extends PamBorderPanel {
 					tsbControl.makeHTML("Loading in a pre-existing training set will clear all progress. Proceed?", 250),
 					"MIRRF Training Set Builder",
 					JOptionPane.YES_NO_OPTION);
-			if (res == JOptionPane.NO_OPTION) {
+			if (res != JOptionPane.YES_OPTION) {
 				return;
 			}
 			while (subsetTable.getRowCount() > 0) {
@@ -360,7 +367,7 @@ public class TSBPanel extends PamBorderPanel {
 			tsbControl.getSubsetList().clear();
 			tsbControl.getFeatureList().clear();
 		}
-		String[] firstLine = null;
+		String[] firstSplit = null;
 		ArrayList<String[]> dataLines = new ArrayList<String[]>();
 		Scanner sc = null;
 		try {
@@ -370,28 +377,36 @@ public class TSBPanel extends PamBorderPanel {
 				sc.close();
 				return;
 			}
-			firstLine = sc.nextLine().split(",");
-			if (firstLine.length < 10) {
+			String firstLine = sc.nextLine();
+			if (firstLine.equals("EXTRACTOR PARAMS START")) {
+				while (sc.hasNextLine() && !sc.nextLine().equals("EXTRACTOR PARAMS END"));
+				if (sc.hasNextLine()) firstLine = sc.nextLine();
+				else {
+					tsbControl.SimpleErrorDialog("Selected file does not contain any valid entries.", 250);
+					sc.close();
+					return;
+				}
+			}
+			firstSplit = firstLine.split(",");
+			if (firstSplit.length < 10) {
 				tsbControl.SimpleErrorDialog("Selected file is not formatted like Training Set Builder output.", 250);
 				sc.close();
 				return;
 			}
-			if (!(firstLine[0].equals("cluster") && firstLine[1].equals("uid") && firstLine[2].equals("location")
-					&& firstLine[3].equals("date") && firstLine[4].equals("duration") && firstLine[5].equals("lf")
-					&& firstLine[6].equals("hf") && firstLine[7].equals("label"))) {
+			if (!(firstLine.startsWith("cluster,uid,location,date,duration,lf,hf,label,"))) {
 				tsbControl.SimpleErrorDialog("Selected file is not formatted like Training Set Builder output.", 250);
 				sc.close();
 				return;
 			}
 			while (sc.hasNextLine()) {
 				String[] nextLine = sc.nextLine().split(",");
-				String[] outpLine = new String[firstLine.length];
-				if (nextLine.length >= firstLine.length) {
+				String[] outpLine = new String[firstSplit.length];
+				if (nextLine.length >= firstSplit.length) {
 					try {
 						assert (nextLine[0].length() > 3);
 						assert (nextLine[1].length() > 0);
 						assert (nextLine[3].length() == 23);
-						for (int i = 4; i < firstLine.length; i++) {
+						for (int i = 4; i < firstSplit.length; i++) {
 							assert (nextLine[i].length() > 0);
 						}
 						outpLine[0] = nextLine[0];
@@ -406,7 +421,7 @@ public class TSBPanel extends PamBorderPanel {
 							outpLine[i] = String.valueOf(Double.valueOf(nextLine[i]));
 						}
 						dataLines.add(outpLine);
-					} catch (Exception e2) {
+					} catch (AssertionError | Exception e2) {
 						//e2.printStackTrace();
 						// TODO
 					}
@@ -458,7 +473,7 @@ public class TSBPanel extends PamBorderPanel {
 					}
 					try {
 						currLine[0] = currLine[0].substring(3); //TODO MAKE SURE THIS IS OKAY
-						TSBDetection outp = new TSBDetection(tsbControl, firstLine.length-8, currLine);
+						TSBDetection outp = new TSBDetection(tsbControl, firstSplit.length-8, currLine);
 						curr.validEntriesList.get(curr.classList.indexOf(currLine[7])).add(outp);
 					} catch (AssertionError | Exception e2) {
 						e2.printStackTrace();
@@ -480,9 +495,8 @@ public class TSBPanel extends PamBorderPanel {
 				}
 			}
 		}
-		for (int i = 8; i < firstLine.length; i++) {
-			outpFeatureList.add(firstLine[i]);
-			//System.out.println(firstLine[i]);
+		for (int i = 8; i < firstSplit.length; i++) {
+			outpFeatureList.add(firstSplit[i]);
 		}
 		String[] columnNames = new String[5 + outpClassList.size()];
 		columnNames[0] = "ID";
@@ -574,6 +588,11 @@ public class TSBPanel extends PamBorderPanel {
 	protected void saveButtonAction() {
 		outputFeatureIndices = new int[0];
 		if (subsetTable.getRowCount() > 0) {
+			TSBLabelSelectionDialog labelDialog = new TSBLabelSelectionDialog(tsbControl.getPamView().getGuiFrame(), tsbControl);
+			labelDialog.setVisible(true);
+			if (outputLabelList.size() == 0) { // Note that selecting OK in TSBLabelSelectionDialog changes the list, so this isn't dead code.
+				return;
+			}
 			TSBFeatureDialog featureDialog = new TSBFeatureDialog(tsbControl.getPamView().getGuiFrame(), tsbControl);
 			featureDialog.setVisible(true);
 			if (outputFeatureIndices.length == 0) { // Note that selecting OK in TSBFeatureDialog changes outputFeatureIndices, so this isn't dead code.
@@ -655,6 +674,7 @@ public class TSBPanel extends PamBorderPanel {
 									nextLine[5] = String.valueOf(currDetection.lf);
 									nextLine[6] = String.valueOf(currDetection.hf);
 									nextLine[7] = tsbControl.getClassMap().get(currSubset.classList.get(currSubset.selectionArray[j]));
+									if (!outputLabelList.contains(nextLine[7])) continue;
 									for (int l = 0; l < outputFeatureIndices.length; l++) {
 										nextLine[l+8] = String.valueOf(currDetection.featureVector[outputFeatureIndices[l]]);
 									}
@@ -723,6 +743,14 @@ public class TSBPanel extends PamBorderPanel {
 	 */
 	public void setOutputFeatureIndices(int[] inp) {
 		outputFeatureIndices = inp;
+	}
+	
+	/**
+	 * Sets which labels will be output to the new .mirrfts file.
+	 * Supposed to be done via the TSBLabelSelectionDialog.
+	 */
+	public void setOutputLabelList(ArrayList<String> inp) {
+		outputLabelList = inp;
 	}
 	
 	/**

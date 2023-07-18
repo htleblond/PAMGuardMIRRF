@@ -29,8 +29,9 @@ public class TCPanel extends LCPanel {
 		}
 		wdThread = new LCWaitingDialogThread(getControl().getGuiFrame(), getControl(), "Waiting for response from Python script...");
 		wdThread.start();
-		if (getControl().getThreadManager().initializeBestFeaturesSet())
-			getControl().getThreadManager().pythonCommand("tcmBest.printBestFeatureOrder()", getControl().getParams().printInput);
+		if (getControl().getThreadManager().initializeBestFeaturesSet()) {
+			//getControl().getThreadManager().pythonCommand("tcmBest.printBestFeatureOrder()", getControl().getParams().printInput);
+		}
 		else wdThread.halt();
 	}
 	

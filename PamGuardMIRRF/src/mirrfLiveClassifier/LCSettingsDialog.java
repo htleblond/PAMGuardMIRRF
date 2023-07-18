@@ -1383,7 +1383,7 @@ public class LCSettingsDialog extends PamDialog {
 		}
         pyParams += "]";
         pyParams += "]";
-        String initCommand = "tcm = LCPythonScript.TCModel(r\""+loadedTrainingSet.pathName+"\","+pyParams+",[],[])";
+        String initCommand = "tcm = LCPythonScript.TCModel(r\""+loadedTrainingSet.pathName+"\","+pyParams+",[],[],False)";
         lcControl.setModelFittingStatus(false);
         lcControl.getThreadManager().addCommand(initCommand);
         

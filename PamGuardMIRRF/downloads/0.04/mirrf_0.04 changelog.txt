@@ -1,8 +1,8 @@
 mirrf_0.04 CHANGELOG
-July 10th, 2023
+July 10th-18th, 2023
 Holly LeBlond
 
-0.04
+0.04 (July 10th, 2023)
 - Print statement toggles added to FE, LC and TC.
 - LCProcess.PamStop() while-loops re-instated.
 - Attribution and comments added to classes and functions.
@@ -10,6 +10,15 @@ Holly LeBlond
 0.04a (bug fixes, July 14th, 2023)
 - Fixed casting exception caused by attempting to cast to an array of Strings in WMNTPanel.
 - csvEntriesList now clears itself in getParams() in FESettingsDialog.
-	- NOTE that this caused three times as many detections to be sent to Python, which repeatedly crashed the interpreter.
 - Fixed bug where invalid spectral contrast settings could be selected in FEFeatureDialog
 - Reduced maximum number of FE threads to 2 - somehow this improves it.
+
+0.04b (additions and bug fixes, July 14th-18th, 2023)
+- Added limit to number of clips that can be processed at once to FEPythonThreadManager (overloading this repeatedly caused the interpreter to crash).
+- Fixed the Training Set Builder not the reading the new .wmnt header correctly.
+- Apparently fixed printBestFeatureOrder() in LCPythonScript (was causing the BufferedReader to freeze - still haven't figured out why).
+- Fixed Training Set Builder's loader not taking Feature Extractor params into account.
+- Removed move up/down buttons from Training Set Builder as they were arguably pointless due to sorting by column value.
+- Fixed delete and edit buttons deleting/editing the wrong rows when the table is sorted by column value.
+- Fixed bug in the Training Set Builder where the feature list was accidentally cleared when a subset was edited.
+- Added dialog in Training Set Builder for selecting class labels when saving a training set (as opposed to automatically saving all of them).

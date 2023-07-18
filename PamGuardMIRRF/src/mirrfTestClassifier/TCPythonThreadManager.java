@@ -76,7 +76,7 @@ public class TCPythonThreadManager extends LCPythonThreadManager {
 			getLoadingBar().setString("Fitting classifier models 0/"+String.valueOf(idList.size())+" (0.0%)");
 			for (int i = 0; i < idList.size(); i++) {
 				String initCommand = "tcm"+idList.get(i)+" = LCPythonScript.TCModel(r\""+params.getTrainPath()+"\","
-						+pyParams+",[\""+idList.get(i)+"\"],[])";
+						+pyParams+",[\""+idList.get(i)+"\"],[],False)";
 				initializeModel(initCommand);
 				if (lastInitFailed || !running) {
 					endProcess("Stopped");
@@ -91,7 +91,7 @@ public class TCPythonThreadManager extends LCPythonThreadManager {
 			getLoadingBar().setString("Fitting classifier models 0/"+String.valueOf(params.kNum)+" (0.0%)");
 			for (int i = 0; i < params.kNum; i++) {
 				String initCommand = "tcm"+String.valueOf(i)+" = LCPythonScript.TCModel(r\""+params.getTrainPath()+"\","
-						+pyParams+",[],[\""+String.valueOf(i)+"\"])";
+						+pyParams+",[],[\""+String.valueOf(i)+"\"],False)";
 				initializeModel(initCommand);
 				if (lastInitFailed || !running) {
 					endProcess("Stopped");
@@ -119,7 +119,7 @@ public class TCPythonThreadManager extends LCPythonThreadManager {
 					}
 				} else initCommand += params.testSubset;
 			}
-			initCommand += "],[])";
+			initCommand += "],[],False)";
 			initializeModel(initCommand);
 			if (!lastInitFailed && running) {
 				getLoadingBar().setValue(100);
@@ -176,7 +176,7 @@ public class TCPythonThreadManager extends LCPythonThreadManager {
         pyParams += "]";
         pyParams += "]";
         running = true;
-        String initCommand = "tcmBest = LCPythonScript.TCModel(r\""+params.getTrainPath()+"\","+pyParams+",[],[])";
+        String initCommand = "tcmBest = LCPythonScript.TCModel(r\""+params.getTrainPath()+"\","+pyParams+",[],[],True)";
 		initializeModel(initCommand);
 		if (lastInitFailed || !running) {
 			if (lastInitFailed) getControl().SimpleErrorDialog("Error occured while attempting to fit classifier models in Python. "

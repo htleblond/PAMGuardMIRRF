@@ -8,6 +8,8 @@ import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
+import org.docx4j.wml.Br;
+
 import mirrf.MIRRFJarExtractor;
 
 /**
@@ -142,8 +144,8 @@ public class LCPythonThreadManager{
 	public void pythonCommand(String command, boolean toPrint) {
 		if (bw != null) {
 			try {
-				if (toPrint) System.out.println("COMMAND: "+command);
 				if (command != null) {
+					if (toPrint) System.out.println("COMMAND: "+command);
 					bw.write(command);
 					bw.newLine();
 					bw.flush();
@@ -204,6 +206,7 @@ public class LCPythonThreadManager{
 		public void run() {
 			while(printThreadsActive) {
 				try {
+					//System.out.println("Still in loop: "+String.valueOf(Math.random())); // (For testing if loop gets stuck.)
 					String outpstr = "";
 					if (br.ready()) {
 						while (br.ready() && printThreadsActive && (outpstr = br.readLine()) != null) {

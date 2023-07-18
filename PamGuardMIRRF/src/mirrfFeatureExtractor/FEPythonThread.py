@@ -21,7 +21,7 @@ import matplotlib.markers
 
 import logging
 import threading
-import multiprocessing
+#import multiprocessing
 import time
 import warnings
 from builtins import FileNotFoundError
@@ -252,7 +252,7 @@ class FEThread():
                    headerData.slice_data[len(headerData.slice_data)-1][1] - elbow[1])
             dot = np.dot(start, end)
             mag = np.sqrt(np.power(start[0],2)+np.power(start[1],2)) * np.sqrt(np.power(end[0],2)+np.power(end[1],2))
-            if mag == 0.0:
+            if mag == 0 or np.abs(dot/mag) > 1:
                 return 180.0
             return 180.0 * np.arccos(dot/mag) / np.pi
         elif feature == "freqsdslope":

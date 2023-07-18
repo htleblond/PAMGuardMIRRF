@@ -454,7 +454,7 @@ public class TSBSubsetDialog extends PamDialog {
 			}
 			ArrayList<String[]> outpWMNTList = new ArrayList<String[]>();
 			String firstLine = sc.nextLine();
-			if (!firstLine.equals("uid,datetime,lf,hf,duration,amplitude,species,calltype,comment")) {
+			if (!firstLine.startsWith("uid,datetime,lf,hf,duration,amplitude,species,calltype,comment")) {
 				sc.close();
 				tsbControl.SimpleErrorDialog("Selected file not formatted like WMNT output.", 150);
 				return false;
@@ -789,7 +789,7 @@ public class TSBSubsetDialog extends PamDialog {
 			row[4] = currTotal;
 			if (editing) {
 				for (int i = 0; i < tsbControl.getTabPanel().getPanel().subsetTable.getColumnCount(); i++) {
-					tsbControl.getTabPanel().getPanel().subsetTableModel.setValueAt(row[i],
+					tsbControl.getTabPanel().getPanel().subsetTable.setValueAt(row[i],
 							tsbControl.getTabPanel().getPanel().subsetTable.getSelectedRow(), i);
 				}
 			} else {
@@ -798,7 +798,8 @@ public class TSBSubsetDialog extends PamDialog {
 		}
 		tsbControl.setFullClassList(outpClassList);
 		tsbControl.setClassMap(outpMap);
-		tsbControl.setFeatureList(featureList);
+		if (tsbControl.getTabPanel().getPanel().subsetTable.getRowCount() < 1)
+			tsbControl.setFeatureList(featureList);
 		tsbControl.setFEParamsMap(feSettingsMap);
 		tsbControl.getTabPanel().getPanel().clearButton.setEnabled(true);
 		tsbControl.getTabPanel().getPanel().saveButton.setEnabled(true);

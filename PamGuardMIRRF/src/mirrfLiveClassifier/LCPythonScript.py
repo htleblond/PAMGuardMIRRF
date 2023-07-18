@@ -18,7 +18,7 @@ from sklearn.ensemble import ExtraTreesClassifier
 from sklearn.ensemble import HistGradientBoostingClassifier
 
 class TCModel():
-    def __init__(self, trainFN: str, txtParams: list, excludeIDs: list, excludeFolds: list):
+    def __init__(self, trainFN: str, txtParams: list, excludeIDs: list, excludeFolds: list, doBestFeatures: bool):
         try:
             self.trainFN = trainFN
             self.excludeIDs = excludeIDs
@@ -60,9 +60,11 @@ class TCModel():
             else:
                 self.featureIndices.append(np.arange(len(X[0])).tolist())
             self.modelList.append(self.createFittedModel(X,y))
-            print("Initialization succeeded")
+            if doBestFeatures:
+                self.printBestFeatureOrder()
+            print("Initialization succeeded", flush=True)
         except:
-            print("Initialization failed")
+            print("Initialization failed", flush=True)
             traceback.print_exc()
             
     def createXy(self):
@@ -196,12 +198,12 @@ class TCModel():
                     for row in outp[1:]:
                         outpStr += "|" + str(row)
                     outpStr = outpStr.replace("\n", "")
-                    print("RESULT: "+outpStr)
+                    print("RESULT: "+outpStr, flush=True)
                 except:
-                    print("Error encountered while attempting to process cluster "+str(testList[0][0])+".")
+                    print("Error encountered while attempting to process cluster "+str(testList[0][0])+".", flush=True)
                     traceback.print_exc()
             else:
-                print("Cluster ignored due to settings: "+str(testList[0][0]))
+                print("Cluster ignored due to settings: "+str(testList[0][0]), flush=True)
                 
     def printBestFeatureOrder(self):
         X, y = self.createXy()
@@ -213,8 +215,8 @@ class TCModel():
             outp += "("+self.featureList[currIndices[i]]+", "+str(scores[i]/len(X))+")"
             if (i < len(currIndices)-1):
                 outp += ", "
-        print(outp)
+        print(outp, flush=True)
 
     def runLast(self):
-        print("RUNLAST")
+        print("RUNLAST", flush=True)
     

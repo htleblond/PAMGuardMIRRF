@@ -160,21 +160,6 @@ public class TCSettingsDialog extends LCSettingsDialog {
 		b.gridy++;
 		outp.add(validationPanel, b);
 		
-		b.gridy++;
-		JPanel tempPanel = new JPanel(new GridBagLayout());
-		tempPanel.setBorder(new TitledBorder("Temporary file storage"));
-		tempPanel.setAlignmentX(LEFT_ALIGNMENT);
-		c = new PamGridBagContraints();
-		tempField = new JTextField(20);
-		tempField.setEnabled(false);
-		tempPanel.add(tempField, c);
-		c.gridx++;
-		tempButton = new JButton("Change (TBA)");
-		tempButton.setEnabled(false);
-		// add listener
-		tempPanel.add(tempButton, c);
-		outp.add(tempPanel, b);
-		
 		return outp;
 	}
 	
@@ -287,9 +272,19 @@ public class TCSettingsDialog extends LCSettingsDialog {
 			sc = new Scanner(f);
 			int numLines = -1;
 			ArrayList<String> clusterList = new ArrayList<String>();
+			if (!sc.hasNextLine()) {
+				getControl().SimpleErrorDialog("Selected training set is apparently now empty.", 250);
+				sc.close();
+				return false;
+			}
+			String nextLine = sc.nextLine();
+			if (nextLine.equals("EXTRACTOR PARAMS START")) {
+				while (sc.hasNextLine() && !sc.nextLine().equals("EXTRACTOR PARAMS END"));
+				if (sc.hasNextLine()) sc.nextLine();
+			}
 			while (sc.hasNextLine()) {
-				String[] nextLine = sc.nextLine().split(",");
-				if (nextLine.length > 0 && !clusterList.contains(nextLine[0]) && numLines > -1) clusterList.add(nextLine[0]);
+				String[] nextSplit = sc.nextLine().split(",");
+				if (nextSplit.length > 0 && !clusterList.contains(nextSplit[0]) && numLines > -1) clusterList.add(nextSplit[0]);
 				numLines++;
 			}
 			sc.close();
@@ -304,17 +299,21 @@ public class TCSettingsDialog extends LCSettingsDialog {
 			}
 			clusterList.sort(Comparator.naturalOrder());
 			sc = new Scanner(f);
-			String[] nextLine = sc.nextLine().split(",");
+			nextLine = sc.nextLine();
+			if (nextLine.equals("EXTRACTOR PARAMS START")) {
+				while (sc.hasNextLine() && !sc.nextLine().equals("EXTRACTOR PARAMS END"));
+				if (sc.hasNextLine()) sc.nextLine();
+			}
 			int lineNum = 0;
 			ArrayList<String> labelList = params.getLabelOrderAsList();
 			while (sc.hasNextLine()) {
-				nextLine = sc.nextLine().split(",");
-				if (nextLine.length < 8+curr.featureList.size() || nextLine[0].length() < 2) {
+				String[] nextSplit = sc.nextLine().split(",");
+				if (nextSplit.length < 8+curr.featureList.size() || nextSplit[0].length() < 2) {
 					continue;
 				}
-				String key = nextLine[0].substring(0,2);
+				String key = nextSplit[0].substring(0,2);
 				if (kFold) {
-					key = String.valueOf((int) Math.floor(kNum * (double) clusterList.indexOf(nextLine[0]) / clusterList.size()));
+					key = String.valueOf((int) Math.floor(kNum * (double) clusterList.indexOf(nextSplit[0]) / clusterList.size()));
 				} else if (testSubset) {
 					String currID = (String) testSubsetBox.getSelectedItem();
 					if (currID.length() == 1 && key.substring(0, 1).equals(currID)) continue;
@@ -325,7 +324,7 @@ public class TCSettingsDialog extends LCSettingsDialog {
 					for (int i = 0; i < labelList.size(); i++) boolArr[i] = false;
 					containMap.put(key, boolArr);
 				}
-				containMap.get(key)[labelList.indexOf(nextLine[7])] = true;
+				containMap.get(key)[labelList.indexOf(nextSplit[7])] = true;
 				lineNum++;
 			}
 			sc.close();
@@ -435,6 +434,7 @@ public class TCSettingsDialog extends LCSettingsDialog {
 		}
 		LCTrainingSetInfo curr = inp;
 		if (readThroughFile) curr = readTrainingSet(true, showLoadingDialogs, new File(loadedTestingSet.pathName));
+		if (curr == null) return false;
 		if (curr.pathName.equals(loadedTrainingSet.pathName)) {
 			getControl().SimpleErrorDialog("Training and testing sets cannot be the same file.", 250);
 			return false;

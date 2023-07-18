@@ -42,6 +42,7 @@ public class FEPythonThreadManager {
 	public PythonInterpreterThread pit = null;
 	
 	private final int maxThreads = 2; // TODO ADD THIS TO FEPARAMETERS EVENTUALLY
+	private final int maxClipsAtOnce = 25; // TODO ADD THIS TO FEPARAMETERS EVENTUALLY
 	protected volatile ArrayList<ContourClip> waitList;
 	protected volatile ArrayList<String> idList;
 	protected volatile ArrayList<ArrayList<ContourClip>> ccList;
@@ -319,7 +320,7 @@ public class FEPythonThreadManager {
 		@Override
 		public void run() {
 			while(printThreadsActive) {
-				if (waitList.size() > 0) {
+				if (waitList.size() > 0 && clipsLeft() < maxClipsAtOnce) {
 					ContourClip cc = waitList.get(0);
 					if (cc == null) {
 						waitList.remove(0);
