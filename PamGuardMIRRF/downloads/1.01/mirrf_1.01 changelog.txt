@@ -1,0 +1,6 @@
+mirrf_1.01 CHANGELOG
+July 20th, 2023
+Holly LeBlond
+
+1.01a (July 20th, 2023)
+- First public release of MIRRF.
