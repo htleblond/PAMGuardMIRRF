@@ -117,7 +117,7 @@ public class TCPythonThreadManager extends LCPythonThreadManager {
 							firstAdded = true;
 						}
 					}
-				} else initCommand += params.testSubset;
+				} else initCommand += "\""+params.testSubset+"\"";
 			}
 			initCommand += "],[],False)";
 			initializeModel(initCommand);
@@ -329,6 +329,7 @@ public class TCPythonThreadManager extends LCPythonThreadManager {
 		}
 		if (outpstr.substring(0,6).equals("RESULT")) {
 			getControl().getProcess().addResultsData(outpstr.substring(10));
+			//System.out.println("Units: "+String.valueOf(getControl().getProcess().getOutputDataBlock(0).getUnitsCount()));
 			addOneToLoadingBar();
 		}
 		if (outpstr.contains("Error encountered while attempting to process cluster")) {

@@ -365,10 +365,33 @@ public class TSBSubsetDialog extends PamDialog {
 					if (tsbControl.getSubsetList().size() > 0) {
 						for (int i = 0; i < tsbControl.getFeatureList().size(); i++) 
 							featureTestLine += ","+tsbControl.getFeatureList().get(i);
+						//System.out.println(featureTestLine);
+						//System.out.println(nextLine);
 						if (!nextLine.equals(featureTestLine)) {
 							sc.close();
-							tsbControl.SimpleErrorDialog("Selected file's features do not match those of "
-									+ "subsets loaded into the table.", 150);
+							String message = "Selected file's features do not match those of subsets loaded into the table.\n";
+							String[] nextSplit = nextLine.split(",");
+							String[] fileFeatures = new String[nextSplit.length-6];
+							for (int i = 0; i < fileFeatures.length; i++)
+								fileFeatures[i] = nextSplit[i+6];
+							int longer = fileFeatures.length;
+							int shorter = tsbControl.getFeatureList().size();
+							if (longer < shorter) {
+								longer = tsbControl.getFeatureList().size();
+								shorter = fileFeatures.length;
+							}
+							for (int i = 0; i < longer; i++) {
+								if (i < shorter) {
+									if (!fileFeatures[i].equals(tsbControl.getFeatureList().get(i)))
+										message += "\n"+fileFeatures[i]+" -> "+tsbControl.getFeatureList().get(i);
+								} else {
+									if (longer == fileFeatures.length)
+										message += "\n"+fileFeatures[i]+" -> (none)";
+									else
+										message += "\n(none) -> "+tsbControl.getFeatureList().get(i);
+								}
+							}
+							tsbControl.SimpleErrorDialog(message, 300);
 							return false;
 						}
 						outpFeatures = tsbControl.getFeatureList();
@@ -429,11 +452,12 @@ public class TSBSubsetDialog extends PamDialog {
 		}
 		featuresEntriesList = outpFEList;
 		featuresCSVField.setText(f.getPath());
-		if (tsbControl.getFeatureList().size() > 0) {
+	/*	if (tsbControl.getFeatureList().size() > 0) {
 			featureList = new ArrayList<String>(tsbControl.getFeatureList());
 		} else {
 			featureList = new ArrayList<String>(outpFeatures);
-		}
+		} */
+		featureList = new ArrayList<String>(outpFeatures);
 		feSettingsMap = outpSettingsMap;
 		return true;
 	}
@@ -798,8 +822,8 @@ public class TSBSubsetDialog extends PamDialog {
 		}
 		tsbControl.setFullClassList(outpClassList);
 		tsbControl.setClassMap(outpMap);
-		if (tsbControl.getTabPanel().getPanel().subsetTable.getRowCount() < 1)
-			tsbControl.setFeatureList(featureList);
+		//if (tsbControl.getTabPanel().getPanel().subsetTable.getRowCount() < 1)
+		tsbControl.setFeatureList(featureList);
 		tsbControl.setFEParamsMap(feSettingsMap);
 		tsbControl.getTabPanel().getPanel().clearButton.setEnabled(true);
 		tsbControl.getTabPanel().getPanel().saveButton.setEnabled(true);

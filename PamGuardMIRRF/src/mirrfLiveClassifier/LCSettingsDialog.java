@@ -45,6 +45,8 @@ import PamUtils.PamFileChooser;
 import mirrfFeatureExtractor.FEDataBlock;
 import mirrfFeatureExtractor.FEDataUnit;
 import mirrfFeatureExtractor.FEParameters;
+import wmnt.WMNTDataBlock;
+import wmnt.WMNTDataUnit;
 import PamView.dialog.PamDialog;
 import PamView.dialog.PamGridBagContraints;
 import PamView.dialog.SourcePanel;
@@ -61,6 +63,7 @@ public class LCSettingsDialog extends PamDialog {
 	protected SourcePanel inputSourcePanel;
 	protected JTextField trainSetField;
 	protected JButton trainSetButton;
+	protected SourcePanel updateSourcePanel;
 	
 	protected JCheckBox kBestCheck;
 	protected JTextField kBestField;
@@ -168,6 +171,12 @@ public class LCSettingsDialog extends PamDialog {
 		trainingSetPanel.add(trainSetButton, c);
 		b.gridy++;
 		outp.add(trainingSetPanel, b);
+		
+		if (lcControl.isViewer()) {
+			updateSourcePanel = new SourcePanel(this, "Annotation update data source", WMNTDataUnit.class, false, true);
+			b.gridy++;
+			outp.add(updateSourcePanel.getPanel(), b);
+		}
 		
 		return outp;
 	}
@@ -735,6 +744,7 @@ public class LCSettingsDialog extends PamDialog {
 				+ "Feature Extractor's settings.";
 		if (inp.size() == vectorDataBlock.getFeatureList().length) {
 			for (int i = 0; i < inp.size(); i++) {
+				System.out.println(inp.get(i)+" -> "+vectorDataBlock.getFeatureList()[i][1]);
 				if (!inp.get(i).equals(vectorDataBlock.getFeatureList()[i][1])) {
 					lcControl.SimpleErrorDialog(failureMessage, 350);
 					return false;
@@ -938,7 +948,8 @@ public class LCSettingsDialog extends PamDialog {
 	 * What the ColourListener actually does.
 	 */
 	protected void colourListenerAction(LCSettingsDialog sDialog) {
-		LCColourDialog cDialog = new LCColourDialog(parentFrame, lcControl, sDialog, false);
+		//LCColourDialog cDialog = new LCColourDialog(parentFrame, lcControl, sDialog, false);
+		LCColourDialog cDialog = new LCColourDialog(parentFrame, lcControl, sDialog);
 		cDialog.setVisible(true);
 	}
 	
@@ -1320,6 +1331,15 @@ public class LCSettingsDialog extends PamDialog {
 		params.printJava = printJavaCheck.isSelected();
 		params.printInput = printInputCheck.isSelected();
 		params.printOutput = printOutputCheck.isSelected();
+		if (lcControl.isViewer()) {
+			if (updateSourcePanel.getSource() != null) params.updateProcessName = updateSourcePanel.getSourceName();
+			else params.updateProcessName = "";
+			if (lcControl.getParams().updateProcessName.length() > 0) {
+				WMNTDataBlock db = (WMNTDataBlock) updateSourcePanel.getSource();
+				lcControl.getUpdateProcess().setParentDataBlock(db);
+				db.updateLC(true);
+			}
+		}
 		return params;
 	}
 	
@@ -1360,6 +1380,14 @@ public class LCSettingsDialog extends PamDialog {
 		if (!compareFEFeatures(loadedTrainingSet.featureList, false));
 		
 		LCParameters params = generateParameters();
+		
+		// This is pretty much just for re-applying the labels in case the parameters file is borked due to an update.
+		if (lcControl.isViewer()) {
+			lcControl.setParams(params);
+	    	//lcControl.getProcess().setParentDataBlock((FEDataBlock) inputSourcePanel.getSource(), true);
+	    	lcControl.getTabPanel().getPanel().createMatrices(params.labelOrder);
+	    	return true;
+		}
 		
 		int result = JOptionPane.showConfirmDialog(this, 
 				lcControl.makeHTML("Training set will be sent to Python to be fit into a machine learning model. "

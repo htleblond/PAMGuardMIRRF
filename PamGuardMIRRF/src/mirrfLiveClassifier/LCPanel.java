@@ -252,7 +252,7 @@ public class LCPanel extends PamBorderPanel {
 		}
 		wdThread = new LCWaitingDialogThread(control.getGuiFrame(), control, "Waiting for response from Python script...");
 		wdThread.start();
-		//control.getThreadManager().pythonCommand("tcm.printBestFeatureOrder()", control.getParams().printInput);
+		control.getThreadManager().pythonCommand("tcm.printBestFeatureOrder()", control.getParams().printInput);
 	}
 	
 	/**

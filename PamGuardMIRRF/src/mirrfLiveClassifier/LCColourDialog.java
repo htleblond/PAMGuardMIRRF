@@ -43,9 +43,10 @@ public class LCColourDialog extends PamDialog {
 	
 	protected JComboBox<String> tzBox;
 	
-	protected SourcePanel updateSourcePanel;
+	//protected SourcePanel updateSourcePanel;
 
-	public LCColourDialog(Window parentFrame, LCControl lcControl, LCSettingsDialog dialog, boolean includeWMNTOption) {
+	//public LCColourDialog(Window parentFrame, LCControl lcControl, LCSettingsDialog dialog, boolean includeWMNTOption) {
+	public LCColourDialog(Window parentFrame, LCControl lcControl, LCSettingsDialog dialog) {
 		super(parentFrame, "MIRRF Live Classifier", true);
 		this.lcControl = lcControl;
 		this.dialog = dialog;
@@ -86,7 +87,7 @@ public class LCColourDialog extends PamDialog {
 		b.anchor = b.NORTH;
 		p0.add(mainPanel0, b);
 		
-		if (includeWMNTOption) {
+	/*	if (includeWMNTOption) {
 			JPanel mainPanel1 = new JPanel(new FlowLayout(FlowLayout.CENTER));
 			mainPanel1.setBorder(new TitledBorder("Time zone"));
 			
@@ -102,7 +103,7 @@ public class LCColourDialog extends PamDialog {
 			updateSourcePanel = new SourcePanel(this, "Annotation update data source", WMNTDataUnit.class, false, true);
 			b.gridy++;
 			p0.add(updateSourcePanel.getPanel(), b);
-		}
+		} */
 		
 		setDialogComponent(p0);
 	}
@@ -152,7 +153,7 @@ public class LCColourDialog extends PamDialog {
 
 	@Override
 	public boolean getParams() {
-		if (lcControl.isViewer()) {
+	/*	if (lcControl.isViewer()) {
 			lcControl.getParams().labelColours = currentColours;
 			lcControl.getParams().timeZone = (String) tzBox.getSelectedItem();
 			if (updateSourcePanel.getSourceName() != null) {
@@ -167,7 +168,8 @@ public class LCColourDialog extends PamDialog {
 			}
 		} else {
 			dialog.setCurrentColours(currentColours);
-		}
+		} */
+		dialog.setCurrentColours(currentColours);
 		return true;
 	}
 

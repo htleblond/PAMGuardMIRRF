@@ -231,11 +231,12 @@ public class LCControl extends MIRRFControlledUnit implements PamSettings {
 	 */
 	protected void settingsDialog(Frame parentFrame) {
 		LCSettingsDialog settingsDialog = new LCSettingsDialog(this.getPamView().getGuiFrame(), this);
-		if (this.isViewer()) {
+	/*	if (this.isViewer()) {
 			LCColourDialog colourDialog = new LCColourDialog(this.getPamView().getGuiFrame(), this, settingsDialog, true);
 			colourDialog.setVisible(true);
 		} else {
 			settingsDialog.setVisible(true);
-		}
+		} */
+		settingsDialog.setVisible(true);
 	}
 }

@@ -47,21 +47,21 @@ public class TCExportDialog extends LCExportDialog {
 		TCParameters params = getControl().getParams();
 		
 		if (params.validation == params.LEAVEONEOUT) {
-			sb.append("Validation: Leave-one-out cross-validation (by subset ID)");
-			sb.append("Number of subsets: "+String.valueOf(params.getTrainingSetInfo().subsetCounts));
+			sb.append("Validation: Leave-one-out cross-validation (by subset ID)\n");
+			sb.append("Number of subsets: "+String.valueOf(params.getTrainingSetInfo().subsetCounts)+"\n");
 		} else if (params.validation == params.KFOLD) {
-			sb.append("Validation: k-fold cross-validation");
-			sb.append("Number of k-folds: "+String.valueOf(params.kNum));
+			sb.append("Validation: k-fold cross-validation\n");
+			sb.append("Number of k-folds: "+String.valueOf(params.kNum)+"\n");
 		} else if (params.validation == params.TESTSUBSET) {
-			sb.append("Validation: Testing on a single subset or set of subsets");
-			sb.append("Test subset(s): "+String.valueOf(params.testSubset));
+			sb.append("Validation: Testing on a single subset or set of subsets\n");
+			sb.append("Test subset(s): "+String.valueOf(params.testSubset)+"\n");
 		} else if (params.validation == params.LABELLED) {
-			sb.append("Validation: Labelled testing set");
+			sb.append("Validation: Labelled testing set\n");
 		} else if (params.validation == params.UNLABELLED) {
-			sb.append("Validation: Unlabelled testing set");
+			sb.append("Validation: Unlabelled testing set\n");
 		}
-		sb.append("Training set: "+params.getTrainPath());
-		if (params.validation >= params.LABELLED) sb.append("Testing set: "+params.getTestPath());
+		sb.append("Training set: "+params.getTrainPath()+"\n");
+		if (params.validation >= params.LABELLED) sb.append("Testing set: "+params.getTestPath()+"\n");
 		
 		// Everything below here should be the same as in LC
 		if (params.selectKBest) {

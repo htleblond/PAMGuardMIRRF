@@ -267,7 +267,9 @@ public class LCExportDialog extends PamDialog {
 		for (int i = 0; i < matrix.length; i++) {
 			sb = new StringBuilder();
 			for (int j = 0; j < matrix[i].length; j++) {
-				sb.append(matrix[i][j].getText());
+				System.out.println(matrix[i][j].getText());
+				if (matrix[i][j].getText().equals("Precision")) sb.append("Prcsn.");
+				else sb.append(matrix[i][j].getText());
 				if (j < matrix[i].length-1) {
 					sb.append(",");
 				}

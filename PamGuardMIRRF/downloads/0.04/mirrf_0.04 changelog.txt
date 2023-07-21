@@ -1,5 +1,5 @@
 mirrf_0.04 CHANGELOG
-July 10th-18th, 2023
+July 10th-20th, 2023
 Holly LeBlond
 
 0.04 (July 10th, 2023)
@@ -22,3 +22,10 @@ Holly LeBlond
 - Fixed delete and edit buttons deleting/editing the wrong rows when the table is sorted by column value.
 - Fixed bug in the Training Set Builder where the feature list was accidentally cleared when a subset was edited.
 - Added dialog in Training Set Builder for selecting class labels when saving a training set (as opposed to automatically saving all of them).
+
+0.04c (additions and bug fixes, July 19th-20th, 2023)
+- Training Set Builder will now list unmatched features in the error message if a selected .mirrffe file's features don't match those in the table.
+- Fixed bug in Test Classifier crashed the Python interpreter when only trying to test one subset.
+- Tentatively fixed "best features" button in Live Classifier.
+- Re-enabled the components in the Feature Extractor's settings dialog in Viewer mode.
+- Re-enabled the full settings dialog for the Live Classifier in Viewer mode (although it still does not activate the Python interpreter).

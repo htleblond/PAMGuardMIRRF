@@ -782,7 +782,7 @@ public class FESettingsDialog extends PamDialog {
 		
 		actuallyGetParams();
 		
-		if (feControl.isViewer()) {
+	/*	if (feControl.isViewer()) {
 			this.getCancelButton().setVisible(false);
 			this.getDefaultButton().setVisible(false);
 			
@@ -846,7 +846,7 @@ public class FESettingsDialog extends PamDialog {
 			//this.miscPrintOutputCheck.setEnabled(false);
 			this.miscTempField.setEnabled(false);
 			this.miscTempButton.setEnabled(false);
-		}
+		} */
 	}
 	
 	/**
@@ -1127,23 +1127,20 @@ public class FESettingsDialog extends PamDialog {
 					return;
 				}
 				String[] firstSplit = new String[0];
-				if (importFromLoadedOutput || f.getName().endsWith(".mirrffe")) {
-					boolean featureLineFound = false;
-					while (sc.hasNextLine()) {
-						String nextLine = sc.nextLine();
-						if (nextLine.startsWith("cluster,uid,date,duration,lf,hf,")) {
-							featureLineFound = true;
-							firstSplit = nextLine.split(",");
-							break;
-						}
+				boolean featureLineFound = false;
+				while (sc.hasNextLine()) {
+					String nextLine = sc.nextLine();
+					if ((f.getName().endsWith(".mirrffe") && nextLine.startsWith("cluster,uid,date,duration,lf,hf,")) ||
+							f.getName().endsWith(".mirrfts") && nextLine.startsWith("cluster,uid,location,date,duration,lf,hf,label,")) {
+						featureLineFound = true;
+						firstSplit = nextLine.split(",");
+						break;
 					}
-					if (!featureLineFound) {
-						sc.close();
-						feControl.SimpleErrorDialog("Selected file does not contain any valid feature names.");
-						return;
-					}
-				} else {
-					firstSplit = sc.nextLine().split(",");
+				}
+				if (!featureLineFound) {
+					sc.close();
+					feControl.SimpleErrorDialog("Selected file does not contain any valid feature names.");
+					return;
 				}
 				sc.close();
 				int startIndex = 6;
