@@ -21,8 +21,8 @@ Under "Utilities" (Viewer-mode only):
 ## Installation
 1. Install Python 3 and ensure that pip works.
 2. Download the most recent MIRRF release.
-3. Run the .bat file in the downloaded folder. (Note to Python developers: Check the .bat file first in case it creates any conflicts!)
-4. Place the .jar file from the downloaded folder into your version of PAMGuard's "plugins" folder.
+3. Run the .bat file from the latest release. (Note to Python developers: Check the .bat file first in case it creates any conflicts!)
+4. Place the .jar file from the latest release into your version of PAMGuard's "plugins" folder.
 
 ## (More-than-likely-to-be-FA)Qs
 - **Does this actually work?** - Depending on the context, either "mostly" or "maybe". For our own orca-detection purposes, we're still developing a training set that can reliably differentiate killer whale detections from vessels and humpbacks. Our best test runs up to this point have managed to get accuracies between 85 and 90%, which means we're on to something, but clearly need to do better in order for it to be reliable for tracking whales. The methods are primarily based off of those used in the Orchive (https://arxiv.org/pdf/1307.0589.pdf), but with some major differences and a bunch of new experimental stuff thrown in. However, if you have your own WMD data with whatever species you want to be able to automatically tell apart, feel free to create your own training sets, and if not, the WMNT is at least pretty useful for easy annotation.
