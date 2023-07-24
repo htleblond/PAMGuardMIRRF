@@ -814,7 +814,7 @@
 	<dependency>
 	    <groupId>org.springframework</groupId>
 	    <artifactId>spring-core</artifactId>
-	    <version>5.2.3.RELEASE</version>
+	    <version>5.2.24.RELEASE</version>
 	</dependency>
  	
  	<!-- https://mvnrepository.com/artifact/com.1stleg/jnativehook -->
