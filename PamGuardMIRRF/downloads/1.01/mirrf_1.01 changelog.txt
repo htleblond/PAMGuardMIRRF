@@ -1,6 +1,10 @@
 mirrf_1.01 CHANGELOG
-July 20th, 2023
+July 20th-25th, 2023
 Holly LeBlond
 
 1.01a (July 20th, 2023)
 - First public release of MIRRF.
+
+1.01b (bug fixes, July 25th, 2023)
+- Fixed bug where imported .csv values in the WMNT weren't being marked as changes and thus weren't being committed.
+- Commas can no longer be entered into the table.

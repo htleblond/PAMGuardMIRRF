@@ -208,11 +208,11 @@ public class WMNTPanel {
 		ttable.getColumnModel().getColumn(7).setPreferredWidth(60);
 		
 		JTextField f20 = new JTextField();
-		f20.setDocument(new LimitedPlainDocument(20));
+		f20.setDocument(new CommaRemovingDocument(20));
 		ttable.getColumnModel().getColumn(6).setCellEditor(new DefaultCellEditor(f20));
 		ttable.getColumnModel().getColumn(7).setCellEditor(new DefaultCellEditor(f20));
 		JTextField f400 = new JTextField();
-		f400.setDocument(new LimitedPlainDocument(400));
+		f400.setDocument(new CommaRemovingDocument(400));
 		ttable.getColumnModel().getColumn(8).setCellEditor(new DefaultCellEditor(f400));
 
 		JScrollPane sp = new JScrollPane(ttable);
@@ -743,7 +743,7 @@ public class WMNTPanel {
 			}
 			int res = JOptionPane.showConfirmDialog(wmntControl.getGuiFrame(),
 					String.format("<html><body style='width: %1spx'>%1s", 300,
-					"This will match labelling data from .csv or .txt files that have been exported from the WMNT. "
+					"This will match labelling data from .wmnt, .csv or .txt files that have been exported from the WMNT. "
 					+ "Any entries found in the selected file will be matched to binary data entries currently loaded into the table "
 					+ "and will overwrite species, call type and comment data in the matched table entries. "
 					+ "It will have no effect on any entries in the table that aren't present in the selected file."
@@ -801,6 +801,7 @@ public class WMNTPanel {
 										}
 									}
 								}
+								fixChangeLog(i, getOriginalIndex(i));
 								if (!found) {
 									matched++;
 								}
@@ -1046,6 +1047,7 @@ public class WMNTPanel {
 	private void createBackup() {
 		if (ttable.getRowCount() > 0) {
 			if (ttable.getSelectedRowCount() > 0) {
+				// NOTE: getSelectedRows() does NOT actually cause any issues if the rows are re-arranged.
 				backupIndexes = ttable.getSelectedRows();
 				backupValues = new Object[backupIndexes.length][ttable.getModel().getColumnCount()];
 				for (int i = 0; i < backupIndexes.length; i++) {
@@ -1064,7 +1066,7 @@ public class WMNTPanel {
 	private void undo() {
 		if (backupIndexes != null && backupValues != null) {
 			int[] oldIndexes = backupIndexes.clone();
-			// TODO NOTE: THIS WILL NOT WORK CORRECTLY IF THE TABLE IS SORTED BY A COLUMN VALUE BEFORE PRESSING UNDO
+			// NOTE: This still works even if you sort by a column.
 			Object[][] oldValues = backupValues.clone();
 			oldIndexes = new int[oldIndexes.length];
 			for (int i = 0; i < oldIndexes.length; i++) {
@@ -1140,24 +1142,40 @@ public class WMNTPanel {
 	}
 	
 	/**
+	 * Extension of the LimitedPlainDocument below that prevents commas from being input,
+	 * in addition to keeping input strings below a certain length.
+	 */
+	protected class CommaRemovingDocument extends LimitedPlainDocument {
+		public CommaRemovingDocument(int maxLen) {
+			this.maxLen = maxLen; 
+		}
+		
+		@Override
+		public void insertString(int param, String str, javax.swing.text.AttributeSet attributeSet) 
+				 throws javax.swing.text.BadLocationException {
+			if (str == null) return;
+			super.insertString(param, str.replaceAll(",", ""), attributeSet);
+		}
+	}
+	
+	/**
 	 * Sets a limit to the number of characters allowed in a JTable cell.
 	 * Copied from: https://stackoverflow.com/questions/28779236/how-to-make-jtable-cell-character-length
 	 * Author page: https://stackoverflow.com/users/4617078/bigminimus
 	 */
-	class LimitedPlainDocument extends javax.swing.text.PlainDocument {
-		  private int maxLen = -1;  
-		  public LimitedPlainDocument() {}
-		  public LimitedPlainDocument(int maxLen) { this.maxLen = maxLen; }
-		  public void insertString(int param, String str, 
-		                           javax.swing.text.AttributeSet attributeSet) 
-		                      throws javax.swing.text.BadLocationException {
-		    if (str != null && maxLen > 0 && this.getLength() + str.length() > maxLen) {
-		      java.awt.Toolkit.getDefaultToolkit().beep();
-		      return;
-		    }
-		    super.insertString(param, str, attributeSet);
-		  }
-		}
+	private class LimitedPlainDocument extends javax.swing.text.PlainDocument {
+		 protected int maxLen = -1;  
+		 public LimitedPlainDocument() {}
+		 public LimitedPlainDocument(int maxLen) { this.maxLen = maxLen; }
+		 public void insertString(int param, String str, javax.swing.text.AttributeSet attributeSet) 
+				 throws javax.swing.text.BadLocationException {
+			 if (str != null && maxLen > 0 && this.getLength() + str.length() > maxLen) {
+				 //java.awt.Toolkit.getDefaultToolkit().beep();
+				 return;
+			 }
+			 super.insertString(param, str, attributeSet);
+		 }
+	}
 	
 	/**
 	 * Finds the path to the binary store.
