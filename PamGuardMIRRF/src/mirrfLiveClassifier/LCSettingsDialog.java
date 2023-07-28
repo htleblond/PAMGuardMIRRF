@@ -1332,7 +1332,8 @@ public class LCSettingsDialog extends PamDialog {
 		params.printInput = printInputCheck.isSelected();
 		params.printOutput = printOutputCheck.isSelected();
 		if (lcControl.isViewer()) {
-			if (updateSourcePanel.getSource() != null) params.updateProcessName = updateSourcePanel.getSourceName();
+			if (updateSourcePanel != null && updateSourcePanel.getSource() != null)
+				params.updateProcessName = updateSourcePanel.getSourceName();
 			else params.updateProcessName = "";
 			if (lcControl.getParams().updateProcessName.length() > 0) {
 				WMNTDataBlock db = (WMNTDataBlock) updateSourcePanel.getSource();
@@ -1403,16 +1404,18 @@ public class LCSettingsDialog extends PamDialog {
 		wdThread.start();
 		
 		String pyParams = params.outputPythonParamsToText();
-        if (loadedTrainingSet.featureList.size() > 0) {
+     /*   if (loadedTrainingSet.featureList.size() > 0) {
         	pyParams += "\""+loadedTrainingSet.featureList.get(0)+"\"";
 			for (int i = 1; i < loadedTrainingSet.featureList.size(); i++) {
 				pyParams += ",\""+loadedTrainingSet.featureList.get(i)+"\"";
 			}
 		}
         pyParams += "]";
-        pyParams += "]";
-        String initCommand = "tcm = LCPythonScript.TCModel(r\""+loadedTrainingSet.pathName+"\","+pyParams+",[],[],False)";
+        pyParams += "]"; */
+        //String initCommand = "tcm = LCPythonScript.TCModel(r\""+loadedTrainingSet.pathName+"\","+pyParams+",[],[],False)";
         lcControl.setModelFittingStatus(false);
+        lcControl.getThreadManager().addCommand("modelManager.clearModelList()");
+        String initCommand = "modelManager.addModel(LCPythonScript.LCModel(r\""+loadedTrainingSet.pathName+"\","+pyParams+",[],[],False))";
         lcControl.getThreadManager().addCommand(initCommand);
         
         while (!lcControl.isModelFittingFinished()) {
@@ -1425,6 +1428,7 @@ public class LCSettingsDialog extends PamDialog {
         }
         
         if (!lcControl.isTrainingSetLoaded()) {
+        	lcControl.getThreadManager().addCommand("modelManager.clearModelList()");
         	wdThread.halt();
         	lcControl.SimpleErrorDialog("Training model initialization failed. See console for details.", 250);
         	//lcControl.getParams().trainPath = "";

@@ -252,7 +252,7 @@ public class LCPanel extends PamBorderPanel {
 		}
 		wdThread = new LCWaitingDialogThread(control.getGuiFrame(), control, "Waiting for response from Python script...");
 		wdThread.start();
-		control.getThreadManager().pythonCommand("tcm.printBestFeatureOrder()", control.getParams().printInput);
+		control.getThreadManager().pythonCommand("modelManager.printBestFeatureOrder()", control.getParams().printInput);
 	}
 	
 	/**
@@ -632,6 +632,25 @@ public class LCPanel extends PamBorderPanel {
 	}
 	
 	/**
+	 * If desired, adds a row to a table if an error occurred while attempting to process a cluster.
+	 * @param id - The cluster's ID.
+	 * @param datetime - The cluster's date/time.
+	 * @param n - Number of detections in the cluster.
+	 */
+	public void addErrorToTable(String id, String datetime, int n) {
+		Object[] newRow = new Object[dtm.getColumnCount()];
+		newRow[0] = id;
+		newRow[1] = datetime.substring(1, datetime.length()-1);
+		newRow[2] = n;
+		newRow[3] = "ERROR";
+		newRow[4] = "(cluster present in training set)";
+		newRow[5] = "?";
+		newRow[6] = "?";
+		if (dtm.getColumnCount() > 7) newRow[7] = "?";
+		dtm.addRow(newRow);
+	}
+	
+	/**
 	 * Updates the confusion matrix in the upper right panel for when results are added to the table.
 	 */
 	public void updateConfMatrixLabels() {
@@ -845,7 +864,10 @@ public class LCPanel extends PamBorderPanel {
 				c.setForeground(Color.WHITE);
 			} else {
 				c.setForeground(Color.BLACK);
-				if (column == 3) {
+				if (table.getValueAt(row, 3).equals("ERROR")) {
+					c.setBackground(Color.WHITE);
+					c.setForeground(Color.RED);
+				} else if (column == 3) {
 					String strVal = (String) value;
 					Color curr = control.getParams().labelColours.get(value);
 					c.setBackground(curr);

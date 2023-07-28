@@ -536,10 +536,8 @@ public class TCSettingsDialog extends LCSettingsDialog {
 			else params.testSubset = testSubset;
 		} else if (labelledRB.isSelected()) {
 			params.validation = params.LABELLED;
-			//params.testPath = loadedTestingSet.pathName;
 		} else if (unlabelledRB.isSelected()) {
 			params.validation = params.UNLABELLED;
-			//params.testPath = loadedTestingSet.pathName;
 		}
 		return params;
 	}
@@ -552,17 +550,20 @@ public class TCSettingsDialog extends LCSettingsDialog {
 		}
 		getControl().setTrainingSetStatus(false);
 		TCParameters params = generateParameters();
-		//params.trainPath = trainSetField.getText();
         params.setTrainingSetInfo(loadedTrainingSet);
         if (labelledRB.isSelected() || unlabelledRB.isSelected()) {
-			//params.testPath = testSetField.getText();
 			params.setTestingSetInfo(loadedTestingSet);
 		}
         
 		// TODO Set GUI signal ?????
         getControl().setParams(params);
         getControl().getTabPanel().getPanel().createMatrices(params.labelOrder);
-    	//getControl().getSidePanel().getTCSidePanelPanel().startButton.setEnabled(true);
+        String pyParams = getControl().getParams().outputPythonParamsToText();
+        if (pyParams.length() > 0) {
+            getControl().getThreadManager().addCommand("txtParams = "+pyParams);
+        } else {
+        	getControl().getThreadManager().addCommand("txtParams = []");
+        }
     	if (wdThread != null) wdThread.halt();
     	return true;
 	}

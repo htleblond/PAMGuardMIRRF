@@ -20,7 +20,7 @@ public class TCParameters extends LCParameters {
 	public LCTrainingSetInfo loadedTestingSetInfo;
 	
 	public int validation;
-	public int kNum;
+	//public int kNum; (already in LCParameters)
 	public String testSubset;
 	
 	public TCParameters() {
@@ -29,7 +29,6 @@ public class TCParameters extends LCParameters {
 		loadedTestingSetInfo = new LCTrainingSetInfo("");
 		
 		validation = LEAVEONEOUT;
-		kNum = 10; // Must be int > 1, only used if validation == "kfold"
 		testSubset = "";
 	}
 	

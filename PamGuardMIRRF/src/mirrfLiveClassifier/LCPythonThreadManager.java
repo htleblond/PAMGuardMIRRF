@@ -63,7 +63,6 @@ public class LCPythonThreadManager{
 	protected void initializePython() throws Exception {
 		try {
 			commandList = new ArrayList<String>();
-			LCParameters lcParams = lcControl.getParams();
 			ProcessBuilder pb = new ProcessBuilder("python", "-i");
 			pr = pb.start();
 		    br = new BufferedReader(new InputStreamReader(pr.getInputStream()));
@@ -76,20 +75,6 @@ public class LCPythonThreadManager{
 	        pythonCommand("os.chdir(r\""+pathname+"\")", getControl().getParams().printInput);
 	        pythonCommand("os.getcwd()", getControl().getParams().printInput);
 	        pythonCommand("import numpy as np", getControl().getParams().printInput);
-	        String pyParams = lcControl.getParams().outputPythonParamsToText();
-	        if (lcParams.getFeatureList().size() > 0) {
-	        	pyParams += "\""+lcParams.getFeatureList().get(0)+"\"";
-				for (int i = 1; i < lcParams.getFeatureList().size(); i++) {
-					pyParams += ",\""+lcParams.getFeatureList().get(i)+"\"";
-				}
-			}
-	        pyParams += "]";
-	        pyParams += "]";
-	        if (pyParams.length() > 0) {
-	            pythonCommand("txtParams = "+pyParams, getControl().getParams().printInput);
-	        } else {
-	            pythonCommand("txtParams = []", getControl().getParams().printInput);
-	        }
 	        pythonCommand("import sys", getControl().getParams().printInput);
 	        pythonCommand("import gc", getControl().getParams().printInput);
 		} catch (Exception e) {
@@ -109,12 +94,25 @@ public class LCPythonThreadManager{
 				if (setActive()) {
 					initializePython();
 			        pythonCommand("import "+scriptClassName, getControl().getParams().printInput);
+			        String pyParams = getControl().getParams().outputPythonParamsToText();
+			     /*   if (getParameters().getFeatureList().size() > 0) {
+			        	pyParams += "\""+getParameters().getFeatureList().get(0)+"\"";
+						for (int i = 1; i < getParameters().getFeatureList().size(); i++) {
+							pyParams += ",\""+getParameters().getFeatureList().get(i)+"\"";
+						}
+					}
+			        pyParams += "]";
+			        pyParams += "]"; */
+			        if (pyParams.length() > 0) {
+			            pythonCommand("txtParams = "+pyParams, getControl().getParams().printInput);
+			        } else {
+			            pythonCommand("txtParams = []", getControl().getParams().printInput);
+			        }
+			        pythonCommand("modelManager = LCPythonScript.ModelManager()", getControl().getParams().printInput);
 			        
 			        while (active || commandList.size() > 0) {
-			        	if (commandList.size() > 0) {
-			        		pythonCommand(commandList.get(0), getControl().getParams().printInput);
-				            commandList.remove(0);
-			        	}
+			        	if (commandList.size() > 0)
+			        		pythonCommand(commandList.remove(0), getControl().getParams().printInput);
 			        	try {
 							TimeUnit.MILLISECONDS.sleep(50);
 						} catch (Exception e) {
@@ -183,13 +181,20 @@ public class LCPythonThreadManager{
 			lcControl.setTrainingSetStatus(false);
 			lcControl.setModelFittingStatus(true);
 		}
+		if (outpstr.equals("ERROR - ModelManager is empty.")) {
+			lcControl.SimpleErrorDialog("Whoops - no training models have been initialized yet.", 350);
+		}
+		if (outpstr.startsWith("ERROR - Input test entry found in all training sets: ")) {
+			String[] info = outpstr.replace("ERROR - Input test entry found in all training sets: ", "").split(", ");
+			lcControl.getTabPanel().getPanel().addErrorToTable(info[0], info[1], Integer.valueOf(info[2]));
+		}
 		if (outpstr.substring(0,6).equals("RESULT")) {
 			lcControl.getProcess().addResultsData(outpstr.substring(10));
 		}
 		if (outpstr.equals("RUNLAST")) {
 			finished = true;
 		}
-		if (outpstr.contains("BESTFEATUREORDER")) {
+		if (outpstr.startsWith("BESTFEATUREORDER")) {
 			if (getControl().getTabPanel().getPanel().getWaitingDialogThread() != null)
 				getControl().getTabPanel().getPanel().getWaitingDialogThread().halt();
 			LCBestFeaturesDialog dialog = new LCBestFeaturesDialog(lcControl.getGuiFrame(), lcControl, outpstr.substring(18));
@@ -213,7 +218,7 @@ public class LCPythonThreadManager{
 							if (outpstr != null) {
 								parseIPTOutput(outpstr, getControl().getParams().printOutput);
 								try {
-									TimeUnit.MILLISECONDS.sleep(50);
+									TimeUnit.MILLISECONDS.sleep(25);
 								} catch (Exception e) {
 									System.out.println("Sleep exception.");
 									e.printStackTrace();
@@ -257,12 +262,12 @@ public class LCPythonThreadManager{
 						while (ebr.ready() && printThreadsActive && (outpstr = ebr.readLine()) != null) {
 							if (outpstr != null) {
 								parseEPTOutput(outpstr);
-								try {
+							/*	try {
 									TimeUnit.MILLISECONDS.sleep(50);
 								} catch (Exception e) {
 									System.out.println("Sleep exception.");
 									e.printStackTrace();
-								}
+								} */
 							}
 						}
 					}
@@ -298,6 +303,10 @@ public class LCPythonThreadManager{
 	
 	protected LCControl getControl() {
 		return lcControl;
+	}
+	
+	protected LCParameters getParameters() {
+		return getControl().getParams();
 	}
 	
 	/**

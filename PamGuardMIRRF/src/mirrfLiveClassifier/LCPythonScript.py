@@ -17,7 +17,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.ensemble import ExtraTreesClassifier
 from sklearn.ensemble import HistGradientBoostingClassifier
 
-class TCModel():
+class LCModel():
     def __init__(self, trainFN: str, txtParams: list, excludeIDs: list, excludeFolds: list, doBestFeatures: bool):
         try:
             self.trainFN = trainFN
@@ -48,6 +48,8 @@ class TCModel():
             self.minClusterSize = txtParams[20] #int
             self.displayIgnored = txtParams[21] #boolean
             self.featureList = txtParams[22] #list
+            
+            self.containsClusters = {} # for testing
             
             self.modelList = []
             self.featureIndices = []
@@ -97,14 +99,24 @@ class TCModel():
                     trainList.pop(num)
                 else:
                     num += 1
-        clusterList.sort()
+        #clusterList.sort()
         X = []
         y = []
         for i in np.arange(len(trainList)):
             row = trainList[i]
+            testNum = self.kNum*clusterList.index(row[0])/len(clusterList)
+            #print(str(self.kNum))
+            #print(str(i)+": "+str(testNum)+" -> "+str(np.floor(testNum)))
             if row[0][:2] not in self.excludeIDs and int(np.floor(self.kNum*clusterList.index(row[0])/len(clusterList))) not in self.excludeFolds:
                 X.append(row[8:])
                 y.append(row[7])
+                if row[0] not in self.containsClusters:
+                    self.containsClusters[row[0]] = [row[3]]
+                else:
+                    dateList = self.containsClusters.get(row[0])
+                    dateList.append(row[3])
+                    self.containsClusters.update({row[0]: dateList})
+        #print("containsClusters: "+str(len(self.containsClusters)))
         if self.samplingLimits != "none":
             X, y = self.shrinkSet(X, y)
         return X, y
@@ -173,24 +185,15 @@ class TCModel():
             if not (len(testList) < self.minClusterSize and not self.displayIgnored):
                 try:
                     currModel = self.modelList[0]
-                    #nCounter = [0 for a in np.arange(len(self.labels))]
-                    #pCounter = [0 for a in np.arange(len(self.labels))]
-                    #confMatrix = [[0 for a in np.arange(len(self.labels))] for b in np.arange(len(self.labels))]
                     accMatrix = [[0 for a in np.arange(5)] for b in np.arange(len(self.labels))]
                     probaList = []
                     outp = []
                     for entry in testList:
-                        testEntry = entry[7:][0]
-                        #if self.validation != "unlabelled":
-                        #    testEntry = entry[8:]
-                        #print(self.featureIndices)
-                        #print(testEntry)
-                        #print(len(testEntry))
+                        #testEntry = entry[7:][0]
+                        testEntry = entry[7]
                         ua = currModel.predict_proba([[testEntry[num] for num in self.featureIndices[0]]])[0]
                         predictionArr = [ua[self.sortedLabels.index(label)] for label in self.labels]
                         subOutp = entry[:7]
-                        #if self.validation != "unlabelled":
-                        #    subOutp = entry[:8]
                         subOutp.append(predictionArr)
                         outp.append(subOutp)
                     outp = np.transpose(outp)
@@ -204,7 +207,15 @@ class TCModel():
                     traceback.print_exc()
             else:
                 print("Cluster ignored due to settings: "+str(testList[0][0]), flush=True)
-                
+
+    def checkIfInTrainingSet(self, testEntry):
+        if testEntry[0] in self.containsClusters:
+            dateList = self.containsClusters.get(testEntry[0])
+            #print("ciits: "+testEntry[0]+", "+str(dateList))
+            if testEntry[2] in dateList:
+                return True
+        return False
+
     def printBestFeatureOrder(self):
         X, y = self.createXy()
         skb = SelectKBest(f_classif, k=len(self.featureList)).fit(X,y)
@@ -217,6 +228,40 @@ class TCModel():
                 outp += ", "
         print(outp, flush=True)
 
+class ModelManager():
+    def __init__(self):
+        self.modelList = []
+        
+    def addModel(self, newModel: LCModel):
+        self.modelList.append(newModel)
+    
+    def clearModelList(self):
+        self.modelList = []
+    
+    def predictCluster(self, testList):
+        if len(self.modelList) == 0:
+            print("ERROR - ModelManager is empty.")
+            return
+        for i in np.arange(len(self.modelList)):
+            model = self.modelList[i]
+            modelIsInvalid = False
+            for testEntry in testList:
+                #print("checkIfInTrainingSet: "+str(model.checkIfInTrainingSet(testEntry)))
+                if model.checkIfInTrainingSet(testEntry):
+                    modelIsInvalid = True
+                    break
+            if modelIsInvalid:
+                continue
+            #print("model i: "+str(i))
+            model.predictCluster(testList)
+            return
+        print("ERROR - Input test entry found in all training sets: "+testList[0][0]+", "+testList[0][2]+", "+str(len(testList)))
+        
+    def printBestFeatureOrder(self):
+        if len(self.modelList) == 0:
+            print("ERROR - ModelManager is empty.")
+            return
+        self.modelList[0].printBestFeatureOrder()
+        
     def runLast(self):
         print("RUNLAST", flush=True)
-    

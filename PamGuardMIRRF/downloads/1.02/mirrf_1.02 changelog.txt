@@ -1,0 +1,10 @@
+mirrf_1.02 CHANGELOG
+July 28th, 2023
+Holly LeBlond
+
+1.02a (July 28th, 2023)
+- Major bug fix - k-fold clustering algorithm in classifiers:
+	- Fixed bug where Python was not receiving the correct k-fold value from the settings, resulting in Java sending test values to the wrong folds in Python.
+	- All k-fold clustering stuff is now performed in Python by keeping track of which clusters/dates are present in each training model.
+	- Dates/times are now sent to LCPythonScript.py as UTC date-strings as opposed to longs.
+- Added options prompt that appears after 90 seconds in case FEProcess gets caught in a loop in pamStop().

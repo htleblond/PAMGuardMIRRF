@@ -13,6 +13,7 @@ import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 
 import javax.sound.sampled.AudioFormat;
+import javax.swing.JOptionPane;
 
 import org.docx4j.org.apache.poi.poifs.storage.RawDataBlock;
 
@@ -176,17 +177,45 @@ public class FEProcess extends PamProcess {
 		//		String.valueOf(threadManager.clipsLeft() > 0)+
 		//		String.valueOf(threadManager.vectorsLeft() > 0)+
 		//		String.valueOf(feControl.getParams().miscPrintJavaChecked));
+		int currWaitlistSize = threadManager.getWaitlistSize();
+		int currClipsLeft = threadManager.clipsLeft();
+		int currVectorsLeft = threadManager.vectorsLeft();
 		while (threadManager.getWaitlistSize() > 0 || threadManager.clipsLeft() > 0 || threadManager.vectorsLeft() > 0) {
 			if (!(threadManager.getWaitlistSize() > 0 || threadManager.clipsLeft() > 0)) {
 				threadManager.resetActiveThread();
-				if (threadManager.vectorsLeft() > 0) {
-					waitNum++;
-				}
 			}
 			if (feControl.getParams().miscPrintJavaChecked) {
-				System.out.println("waitlistSize: "+String.valueOf(threadManager.getWaitlistSize())+
+				System.out.println("Waited "+String.valueOf(waitNum)+"/90 seconds: "+
+						"waitlistSize: "+String.valueOf(threadManager.getWaitlistSize())+
 						", clipsLeft: "+String.valueOf(threadManager.clipsLeft())+
 						", vectorsLeft: "+String.valueOf(threadManager.vectorsLeft()));
+			}
+			if (currWaitlistSize != threadManager.getWaitlistSize() ||
+					currClipsLeft != threadManager.clipsLeft() ||
+					currVectorsLeft != threadManager.vectorsLeft()) {
+				currWaitlistSize = threadManager.getWaitlistSize();
+				currClipsLeft = threadManager.clipsLeft();
+				currVectorsLeft = threadManager.vectorsLeft();
+				waitNum = 0;
+			} else waitNum++;
+			if (waitNum >= 90) { // Brings up warning dialog if caught in a loop for 90 seconds.
+				int res = JOptionPane.showOptionDialog(feControl.getGuiFrame(),
+						feControl.makeHTML("Python is not responding. What would you like to do?", 300),
+						feControl.getUnitName(),
+						JOptionPane.YES_NO_CANCEL_OPTION,
+						JOptionPane.WARNING_MESSAGE,
+						null, 
+						new Object[] {"Stop processing", "Clear queues", "Wait 90 more seconds"},
+						"Wait 90 more seconds");
+				if (res == JOptionPane.CANCEL_OPTION) {
+					waitNum = 0;
+				} else {
+					threadManager.resetWaitlists();
+					if (res == JOptionPane.YES_OPTION) {
+						feControl.getPamController().pamStop(); // TODO MAKE SURE THIS ACTUALLY WORKS !!!!!
+					}
+					break;
+				}
 			}
 			try {
 				//TimeUnit.MILLISECONDS.sleep(200);

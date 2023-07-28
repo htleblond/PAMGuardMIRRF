@@ -47,6 +47,7 @@ public class TCPythonThreadManager extends LCPythonThreadManager {
 	public boolean initializeTrainingSets() {
 		if (running) {
 			getControl().SimpleErrorDialog("This action cannot be performed while another process is active.", 250);
+			getLoadingBar().setString("Idle");
 			return false;
 		}
 		running = true;
@@ -59,15 +60,16 @@ public class TCPythonThreadManager extends LCPythonThreadManager {
 		getStartButton().setText("Stop");
 		getStartButton().setEnabled(true);
 		String pyParams = params.outputPythonParamsToText();
-        if (params.getFeatureList().size() > 0) {
+	/*	if (params.getFeatureList().size() > 0) {
         	pyParams += "\""+params.getFeatureList().get(0)+"\"";
 			for (int i = 1; i < params.getFeatureList().size(); i++) {
 				pyParams += ",\""+params.getFeatureList().get(i)+"\"";
 			}
 		}
         pyParams += "]";
-        pyParams += "]";
+        pyParams += "]"; */
         getLoadingBar().setValue(0);
+        addCommand("modelManager.clearModelList()");
 		if (params.validation == params.LEAVEONEOUT) {
 			ArrayList<String> idList = new ArrayList<String>();
 			Iterator<String> it = params.getTrainingSetInfo().subsetCounts.keySet().iterator();
@@ -75,8 +77,10 @@ public class TCPythonThreadManager extends LCPythonThreadManager {
 			idList.sort(Comparator.naturalOrder());
 			getLoadingBar().setString("Fitting classifier models 0/"+String.valueOf(idList.size())+" (0.0%)");
 			for (int i = 0; i < idList.size(); i++) {
-				String initCommand = "tcm"+idList.get(i)+" = LCPythonScript.TCModel(r\""+params.getTrainPath()+"\","
-						+pyParams+",[\""+idList.get(i)+"\"],[],False)";
+				//String initCommand = "tcm"+idList.get(i)+" = LCPythonScript.LCModel(r\""+params.getTrainPath()+"\","
+				//		+pyParams+",[\""+idList.get(i)+"\"],[],False)";
+				String initCommand = "modelManager.addModel(LCPythonScript.LCModel(r\""+params.getTrainPath()+"\","
+						+pyParams+",[\""+idList.get(i)+"\"],[],False))";
 				initializeModel(initCommand);
 				if (lastInitFailed || !running) {
 					endProcess("Stopped");
@@ -90,8 +94,10 @@ public class TCPythonThreadManager extends LCPythonThreadManager {
 		} else if (params.validation == params.KFOLD) {
 			getLoadingBar().setString("Fitting classifier models 0/"+String.valueOf(params.kNum)+" (0.0%)");
 			for (int i = 0; i < params.kNum; i++) {
-				String initCommand = "tcm"+String.valueOf(i)+" = LCPythonScript.TCModel(r\""+params.getTrainPath()+"\","
-						+pyParams+",[],[\""+String.valueOf(i)+"\"],False)";
+				//String initCommand = "tcm"+String.valueOf(i)+" = LCPythonScript.LCModel(r\""+params.getTrainPath()+"\","
+				//		+pyParams+",[],["+String.valueOf(i)+"],False)";
+				String initCommand = "modelManager.addModel(LCPythonScript.LCModel(r\""+params.getTrainPath()+"\","
+								+pyParams+",[],["+String.valueOf(i)+"],False))";
 				initializeModel(initCommand);
 				if (lastInitFailed || !running) {
 					endProcess("Stopped");
@@ -104,7 +110,8 @@ public class TCPythonThreadManager extends LCPythonThreadManager {
 			}
 		} else {
 			getLoadingBar().setString("Fitting classifier models 0/1 (0.0%)");
-			String initCommand = "tcm = LCPythonScript.TCModel(r\""+params.getTrainPath()+"\","+pyParams+",[";
+			//String initCommand = "tcm = LCPythonScript.LCModel(r\""+params.getTrainPath()+"\","+pyParams+",[";
+			String initCommand = "modelManager.addModel(LCPythonScript.LCModel(r\""+params.getTrainPath()+"\","+pyParams+",[";
 			if (params.validation == params.TESTSUBSET) {
 				//System.out.println(params.testSubset);
 				if (params.testSubset.length() == 1) {
@@ -119,7 +126,8 @@ public class TCPythonThreadManager extends LCPythonThreadManager {
 					}
 				} else initCommand += "\""+params.testSubset+"\"";
 			}
-			initCommand += "],[],False)";
+			//initCommand += "],[],False)";
+			initCommand += "],[],False))";
 			initializeModel(initCommand);
 			if (!lastInitFailed && running) {
 				getLoadingBar().setValue(100);
@@ -127,6 +135,7 @@ public class TCPythonThreadManager extends LCPythonThreadManager {
 			}
 		}
 		if (lastInitFailed || !running) {
+	        addCommand("modelManager.clearModelList()");
 			if (lastInitFailed) getControl().SimpleErrorDialog("Error occured while attempting to fit classifier models in Python. "
 					+ "See console for details.", 250);
 			//getLoadingBar().setString("Idle");
@@ -167,16 +176,16 @@ public class TCPythonThreadManager extends LCPythonThreadManager {
 		}
 		TCParameters params = getControl().getParams();
 		String pyParams = params.outputPythonParamsToText();
-        if (params.getFeatureList().size() > 0) {
+    /*    if (params.getFeatureList().size() > 0) {
         	pyParams += "\""+params.getFeatureList().get(0)+"\"";
 			for (int i = 1; i < params.getFeatureList().size(); i++) {
 				pyParams += ",\""+params.getFeatureList().get(i)+"\"";
 			}
 		}
         pyParams += "]";
-        pyParams += "]";
+        pyParams += "]"; */
         running = true;
-        String initCommand = "tcmBest = LCPythonScript.TCModel(r\""+params.getTrainPath()+"\","+pyParams+",[],[],True)";
+        String initCommand = "tcmBest = LCPythonScript.LCModel(r\""+params.getTrainPath()+"\","+pyParams+",[],[],True)";
 		initializeModel(initCommand);
 		if (lastInitFailed || !running) {
 			if (lastInitFailed) getControl().SimpleErrorDialog("Error occured while attempting to fit classifier models in Python. "
@@ -210,25 +219,31 @@ public class TCPythonThreadManager extends LCPythonThreadManager {
 		}
 		ArrayList<String> clusterList = new ArrayList<String>();
 		Scanner sc = null;
-		String[] nextLine = null;
+		String nextLine;
+		String[] nextSplit = null;
 		try {
 			sc = new Scanner(f);
-			if (sc.hasNextLine()) nextLine = sc.nextLine().split(",");
+			//if (sc.hasNextLine()) nextSplit = sc.nextLine().split(",");
+			if (sc.hasNextLine()) nextLine = sc.nextLine();
 			else {
 				getControl().SimpleErrorDialog("Set containing values to be tested is apparently now empty.", 250);
 				sc.close();
 				endProcess("Stopped (error)");
 				return;
 			}
-			while (sc.hasNextLine()) {
-				nextLine = sc.nextLine().split(",");
-				if (params.validation == params.TESTSUBSET) {
-					if (params.testSubset.length() == 1 && !nextLine[0].substring(0, 1).equals(params.testSubset)) continue;
-					if (params.testSubset.length() != 1 && !nextLine[0].substring(0, 2).equals(params.testSubset)) continue;
-				}
-				if (!clusterList.contains(nextLine[0])) clusterList.add(nextLine[0]);
+			if (nextLine.equals("EXTRACTOR PARAMS START")) {
+				while (sc.hasNextLine() && !sc.nextLine().equals("EXTRACTOR PARAMS END"));
+				if (sc.hasNextLine()) sc.nextLine();
 			}
-			clusterList.sort(Comparator.naturalOrder());
+			while (sc.hasNextLine()) {
+				nextSplit = sc.nextLine().split(",");
+				if (params.validation == params.TESTSUBSET) {
+					if (params.testSubset.length() == 1 && !nextSplit[0].substring(0, 1).equals(params.testSubset)) continue;
+					if (params.testSubset.length() != 1 && !nextSplit[0].substring(0, 2).equals(params.testSubset)) continue;
+				}
+				if (!clusterList.contains(nextSplit[0])) clusterList.add(nextSplit[0]);
+			}
+			//clusterList.sort(Comparator.naturalOrder());
 			sc.close();
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -247,14 +262,18 @@ public class TCPythonThreadManager extends LCPythonThreadManager {
 				clusterMap.put(clusterList.get(j), new ArrayList<TCDetection>());
 			try {
 				sc = new Scanner(f);
-				nextLine = sc.nextLine().split(","); // Skips first line.
+				nextLine = sc.nextLine();
+				if (nextLine.equals("EXTRACTOR PARAMS START")) {
+					while (sc.hasNextLine() && !sc.nextLine().equals("EXTRACTOR PARAMS END"));
+					if (sc.hasNextLine()) sc.nextLine();
+				}
 				while (sc.hasNextLine()) {
-					nextLine = sc.nextLine().split(",");
-					if (nextLine.length < params.getTrainingSetInfo().featureList.size() + 8 ||
-							!clusterMap.containsKey(nextLine[0])) continue;
+					nextSplit = sc.nextLine().split(",");
+					if (nextSplit.length < params.getTrainingSetInfo().featureList.size() + 8 ||
+							!clusterMap.containsKey(nextSplit[0])) continue;
 					try {
-						TCDetection newDetection = new TCDetection(nextLine);
-						clusterMap.get(nextLine[0]).add(newDetection);
+						TCDetection newDetection = new TCDetection(nextSplit);
+						clusterMap.get(nextSplit[0]).add(newDetection);
 					} catch (Exception e) {
 						e.printStackTrace();
 					}
@@ -269,16 +288,18 @@ public class TCPythonThreadManager extends LCPythonThreadManager {
 					return;
 				}
 				ArrayList<TCDetection> currList = clusterMap.get(clusterList.get(j));
-				String outp = "tcm";
+			/*	String outp = "tcm";
 				if (params.validation == params.LEAVEONEOUT) outp += clusterList.get(j).substring(0,2);
 				else if (params.validation == params.KFOLD)
 					outp += String.valueOf((int) Math.floor(params.kNum * (double) j / totalClusters));
-				outp += ".predictCluster([";
+				outp += ".predictCluster(["; */
+				String outp = "modelManager.predictCluster([";
 				for (int k = 0; k < currList.size(); k++) {
 					TCDetection curr = currList.get(k);
 					outp += "[\""+curr.clusterID+"\",";
 					outp += String.valueOf(curr.uid)+",";
-					outp += String.valueOf(getControl().convertDateStringToLong(curr.datetime))+",";
+					//outp += String.valueOf(getControl().convertDateStringToLong(curr.datetime))+",";
+					outp += "\""+String.valueOf(curr.datetime)+"\",";
 					outp += String.valueOf(curr.duration)+",";
 					outp += String.valueOf(curr.lf)+",";
 					outp += String.valueOf(curr.hf)+",";
@@ -327,7 +348,15 @@ public class TCPythonThreadManager extends LCPythonThreadManager {
 			lastInitFailed = true;
 			waitingOnModel = false;
 		}
-		if (outpstr.substring(0,6).equals("RESULT")) {
+		if (outpstr.equals("ERROR - ModelManager is empty.")) {
+			getControl().SimpleErrorDialog("Whoops - no training models have been initialized yet.", 350);
+			endProcess("Stopped"); // TODO Make sure this doesn't cause any problems.
+		}
+		if (outpstr.startsWith("ERROR - Input test entry found in all training sets: ")) {
+			String[] info = outpstr.replace("ERROR - Input test entry found in all training sets: ", "").split(", ");
+			getControl().getTabPanel().getPanel().addErrorToTable(info[0], info[1], Integer.valueOf(info[2]));
+		}
+		if (outpstr.startsWith("RESULT")) {
 			getControl().getProcess().addResultsData(outpstr.substring(10));
 			//System.out.println("Units: "+String.valueOf(getControl().getProcess().getOutputDataBlock(0).getUnitsCount()));
 			addOneToLoadingBar();
@@ -349,6 +378,11 @@ public class TCPythonThreadManager extends LCPythonThreadManager {
 			LCBestFeaturesDialog dialog = new LCBestFeaturesDialog(lcControl.getGuiFrame(), lcControl, outpstr.substring(18));
 			dialog.setVisible(true);
 		}
+	}
+	
+	@Override
+	protected void parseEPTOutput(String outpstr) {
+		System.out.println("TC EBR: "+outpstr);
 	}
 	
 	/**

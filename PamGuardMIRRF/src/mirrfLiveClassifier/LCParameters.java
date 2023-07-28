@@ -153,7 +153,14 @@ public class LCParameters extends MIRRFParameters {
 		outp += String.valueOf(minClusterSize)+",";
 		outp += WordUtils.capitalize(String.valueOf(displayIgnored))+",";
 		outp += "[";
-		// Thread manager and TCPanel.RunListener add the rest.
+		if (getFeatureList().size() > 0) {
+        	outp += "\""+getFeatureList().get(0)+"\"";
+			for (int i = 1; i < getFeatureList().size(); i++) {
+				outp += ",\""+getFeatureList().get(i)+"\"";
+			}
+		}
+        outp += "]";
+        outp += "]";
 		return outp;
 	}
 	

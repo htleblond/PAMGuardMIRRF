@@ -53,11 +53,13 @@ public class LCProcess extends PamProcess {
 			System.out.println("REACHED lcProcess.newData");
 		FEDataUnit vectorDataUnit = (FEDataUnit) arg;
 		FECallCluster cc = vectorDataUnit.getCluster();
-		String outp = "tcm.predictCluster([";
+		//String outp = "tcm.predictCluster([";
+		String outp = "modelManager.predictCluster([";
 		for (int i = 0; i < cc.getSize(); i++) {
 			outp += "["+cc.clusterID+",";
 			outp += String.valueOf(cc.uids[i])+",";
-			outp += String.valueOf(cc.datetimes[i])+",";
+			//outp += String.valueOf(cc.datetimes[i])+",";
+			outp += "\""+lcControl.convertLocalLongToUTC(cc.datetimes[i])+"\",";
 			outp += String.valueOf(cc.durations[i])+",";
 			outp += String.valueOf(cc.lfs[i])+",";
 			outp += String.valueOf(cc.hfs[i])+",";
@@ -87,7 +89,7 @@ public class LCProcess extends PamProcess {
 		try {
 			String[] tokens = inp.split(Pattern.quote("]|["));
 			String[] uids = tokens[1].split(Pattern.quote(" "));
-			String[] datetimes = tokens[2].split(Pattern.quote(" "));
+			String[] datetimes = tokens[2].substring(1, tokens[2].length()-1).split(Pattern.quote("' '"), -1);
 			String[] durations = tokens[3].split(Pattern.quote(" "));
 			String[] lfs = tokens[4].split(Pattern.quote(" "));
 			String[] hfs = tokens[5].split(Pattern.quote(" "));
@@ -98,7 +100,7 @@ public class LCProcess extends PamProcess {
 			cc.clusterID = tokens[0].substring(0, tokens[0].length()-1).split(Pattern.quote("' '"))[0];
 			for (int i = 0; i < cc.getSize(); i++) {
 				cc.uids[i] = Long.valueOf(uids[i]);
-				cc.datetimes[i] = Long.valueOf(datetimes[i]);
+				cc.datetimes[i] = lcControl.convertDateStringToLong(datetimes[i]);
 				cc.durations[i] = (int) Double.valueOf(durations[i]).doubleValue();
 				cc.lfs[i] = (int) Double.valueOf(lfs[i]).doubleValue();
 				cc.hfs[i] = (int) Double.valueOf(hfs[i]).doubleValue();
@@ -180,7 +182,8 @@ public class LCProcess extends PamProcess {
 			System.out.println("Sleep exception.");
 			e.printStackTrace();
 		}
-		lcControl.getThreadManager().pythonCommand("tcm.runLast()", lcControl.getParams().printInput);
+		//lcControl.getThreadManager().pythonCommand("tcm.runLast()", lcControl.getParams().printInput);
+		lcControl.getThreadManager().pythonCommand("modelManager.runLast()", lcControl.getParams().printInput);
 		while (!lcControl.getThreadManager().getFinished()) {
 			try {
 				if (lcControl.getParams().printInput)
