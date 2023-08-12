@@ -51,7 +51,7 @@ public abstract class MIRRFControlledUnit extends PamControlledUnit {
 		System.out.println("tempFolder: "+params.tempFolder);
 	}
 	
-	public String makeHTML(String inp, int width) {
+	public static String makeHTML(String inp, int width) {
 		return String.format("<html><body style='width: %1spx'>%1s", width, inp);
 	}
 	

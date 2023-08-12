@@ -97,6 +97,7 @@ class FEThread():
     def extractFeatures(self, fn: str, headerData):
         self.sr = librosa.core.get_samplerate(fn)
         y, sr = librosa.load(fn, sr=self.sr)
+        y_orig = y
         y_stft = librosa.stft(y, n_fft=self.audioSTFTLength, hop_length=self.audioHopSize, win_length=self.audioSTFTLength, \
                               window=self.getWindowName(self.audioWindowFunction))
         maxval = np.max(np.abs(y_stft))
@@ -107,7 +108,6 @@ class FEThread():
                         y_stft[i][j] *= 0
                     elif self.y_nr_avg[i] > 0 and np.abs(y_stft[i][j]) > 0:
                         y_stft[i][j] *= (np.abs(y_stft[i][j]) - self.y_nr_avg[i])/np.abs(y_stft[i][j])
-                        #y_stft[i][j] *= np.abs(self.y_nr_avg[i] - np.abs(y_stft[i][j]))
         if self.audioNormalizeChecked and np.max(np.abs(y_stft)) > 0:
             y_stft *= 1/np.max(np.abs(y_stft))
         y = librosa.istft(y_stft, hop_length=self.audioHopSize, win_length=self.audioSTFTLength, \
@@ -123,6 +123,13 @@ class FEThread():
                                   window=self.getWindowName(self.audioWindowFunction))
             if self.audioNormalizeChecked and np.max(np.abs(y_stft)) > 0:
                 y_stft *= 1/np.max(np.abs(y_stft))
+        
+        #TEST CODE - DELETE AFTERWARDS
+        #newFN = str(headerData.uid)
+        #sf.write("C:/Users/wtleb/Desktop/MIRRF export (delete)/cliptest/"+newFN+"_NR.wav", self.y_nr, self.sr, 'PCM_24')
+        #sf.write("C:/Users/wtleb/Desktop/MIRRF export (delete)/cliptest/"+newFN+"_Orig.wav", y_orig, self.sr, 'PCM_24')
+        #sf.write("C:/Users/wtleb/Desktop/MIRRF export (delete)/cliptest/"+newFN+"_New.wav", y, self.sr, 'PCM_24')
+        
         #y_mag = librosa.amplitude_to_db(np.abs(y_stft), ref=np.max)
         preCalcFeatures = []
         for feature in self.featureProcessList:

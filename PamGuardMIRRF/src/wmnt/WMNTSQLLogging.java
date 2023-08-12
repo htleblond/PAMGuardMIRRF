@@ -3,6 +3,7 @@ package wmnt;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.HeadlessException;
 import java.sql.*;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -20,11 +21,17 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.border.TitledBorder;
 
+import org.sqlite.SQLiteConnection;
+
 import PamController.PamController;
 import PamView.PamTable;
 import PamView.dialog.PamGridBagContraints;
 import generalDatabase.DBControl;
+import generalDatabase.DBControlUnit;
+import generalDatabase.DBProcess;
 import generalDatabase.DBSystem;
+import generalDatabase.EmptyTableDefinition;
+import generalDatabase.PamTableItem;
 
 /**
  * Used to read from and write to the 'whistle_and_moan_detector' (or otherwise re-named) table in the database.
@@ -32,186 +39,190 @@ import generalDatabase.DBSystem;
  */
 public class WMNTSQLLogging {
 	
-	private WMNTControl wmntControl;
-	private DBControl dbControl;
-	private DBSystem mySystem;
-	private boolean isMySQL;
-	private PamTable ttable;
+	protected WMNTControl wmntControl;
 	
-	private Statement stmt;
-	private ResultSet rs;
-	private ResultSet rsColumns;
-	private boolean loaded;
-	private Set<String> tableSet;
-	private Set<String> dbSet;
-	private List<String> tableList;
-	private List<String> dbList;
+	protected Set<String> tableSet;
+	protected Set<String> dbSet;
+	protected List<String> tableList;
+	protected List<String> dbList;
 	
-	private Object[][] originalTable;
-	private boolean[] tableChangeLog;
+	protected Object[][] originalTable;
+	protected boolean[] tableChangeLog;
 	
 	protected volatile WMNTSQLLoadingBarWindow loadingBarWindow;
 	protected volatile LoadingBarThread loadingBarThread;
 	
-	public WMNTSQLLogging(WMNTControl wmntControl, boolean overwrite) {
+	public WMNTSQLLogging(WMNTControl wmntControl) {
 		this.wmntControl = wmntControl;
-		ttable = wmntControl.getSidePanel().getWMNTPanel().ttable;
-		dbControl = (DBControl) PamController.getInstance().findControlledUnit(DBControl.getDbUnitType());
-		mySystem = dbControl.getDatabaseSystem();
-		System.out.println("DB Name: "+mySystem.getDatabaseName());
-		isMySQL = !mySystem.getDatabaseName().contains(".sqlite");
-		
+	}
+	
+	/**
+	 * Adds annotation columns to database table if they aren't already present and fills the table in WMNTPanel.
+	 * @param overwrite - Whether or not to overwrite the values currently in the WMNTPanel's table.
+	 * @return True if columns were created and the table was filled. Otherwise, false.
+	 */
+	public boolean createColumnsAndFillTable(boolean overwrite) {
+		Statement stmt = null;
+		ResultSet rsColumns = null;
 		try {
-			mySystem.getConnection().getConnection().setAutoCommit(true);
-		} catch (SQLException e) {
-			e.printStackTrace();
-			wmntControl.SimpleErrorDialog();
-		}		
-		
-		//Shoutout to this: https://stackoverflow.com/questions/5809239/query-a-mysql-db-using-java
-		
-		loaded = true;
-		try {
-			if (isMySQL) {
-				stmt = mySystem.getConnection().getConnection().createStatement();
+			getDBControl().getDbParameters().setUseAutoCommit(true);
+			if (isMySQL()) {
+				stmt = getDBSystem().getConnection().getConnection().createStatement();
 				rsColumns = stmt.executeQuery("SHOW COLUMNS FROM "+wmntControl.getParams().sqlTableName+";");
-			} else {
-				if (!mySystem.getConnection().getConnection().isClosed()) {
-					mySystem.getConnection().getConnection().close();
-				}
-				stmt = mySystem.getConnection().getConnection().createStatement();
-				rsColumns = stmt.executeQuery("PRAGMA table_info('"+wmntControl.getParams().sqlTableName+"');");
 			}
 		} catch (SQLException e) {
 			e.printStackTrace();
+			try {
+				if (rsColumns != null && !rsColumns.isClosed()) rsColumns.close();
+				if (stmt != null && !stmt.isClosed()) stmt.close();
+			} catch (SQLException e1) {
+				e1.printStackTrace();
+			}
 			wmntControl.getSidePanel().getWMNTPanel().checkButton.setEnabled(false);
-			wmntControl.getSidePanel().getWMNTPanel().commitButton.setEnabled(false);
+			wmntControl.getSidePanel().getWMNTPanel().updateButton.setEnabled(false);
 			JOptionPane.showMessageDialog(wmntControl.getGuiFrame(),
 				"Could not connect to database - see console for details.\nIf this problem persists, try restarting PamGuard.",
 			    "Database error",
 			    JOptionPane.ERROR_MESSAGE);
-			loaded = false;
+			return false;
 		}
 		
+		PamTable ttable = wmntControl.getSidePanel().getWMNTPanel().ttable;
+		tableSet = new HashSet<String>();
+		tableList = new ArrayList<String>();
+		for (int i = 0; i < ttable.getRowCount(); i++) {
+			String entry = ttable.getValueAt(i, 0).toString() + " - "
+					+ ttable.getValueAt(i, 1).toString().substring(0, 19);
+			tableSet.add(entry);
+			tableList.add(entry);
+		}
 		
-		if (loaded == true) {
-			
-			tableSet = new HashSet<String>();
-			tableList = new ArrayList<String>();
-			for (int i = 0; i < ttable.getRowCount(); i++) {
-				String entry = ttable.getValueAt(i, 0).toString() + " - "
-						+ ttable.getValueAt(i, 1).toString().substring(0, 19);
-				tableSet.add(entry);
-				tableList.add(entry);
-			}
-			
-			boolean boo1 = false;
-			boolean boo2 = false;
-			boolean boo3 = false;
+		if (isMySQL()) {
+			boolean createSpeciesColumn = false;
+			boolean createCallTypeColumn = false;
+			boolean createCommentColumn = false;
 			try {
 				while (rsColumns.next()) {
-					if (rsColumns.getString(1).equals("species")) {
-						boo1 = true;
-					} else if (rsColumns.getString(1).equals("callType")) {
-						boo2 = true;
-					} else if (rsColumns.getString(1).equals("comment")) {
-						boo3 = true;
-					}
+					if (rsColumns.getString(1).equals("species")) createSpeciesColumn = true;
+					else if (rsColumns.getString(1).equals("callType")) createCallTypeColumn = true;
+					else if (rsColumns.getString(1).equals("comment")) createCommentColumn = true;
 				}
-			} catch (SQLException e1) {
-				e1.printStackTrace();
-				wmntControl.SimpleErrorDialog();
-			}
-			
-			if (boo1 == false) {
-				try {
-					stmt.executeUpdate("ALTER TABLE "+wmntControl.getParams().sqlTableName+"\r\n" + 
-							"ADD COLUMN species CHAR(20);");
-				} catch(SQLException e) {
-					e.printStackTrace();
-					wmntControl.SimpleErrorDialog();
-				}
-			}
-			if (boo2 == false) {
-				try {
-					stmt.executeUpdate("ALTER TABLE "+wmntControl.getParams().sqlTableName+"\r\n" + 
-							"ADD COLUMN callType CHAR(20);");
-				} catch(SQLException e) {
-					e.printStackTrace();
-					wmntControl.SimpleErrorDialog();
-				}
-			}
-			if (boo3 == false) {
-				try {
-					stmt.executeUpdate("ALTER TABLE "+wmntControl.getParams().sqlTableName+"\r\n" + 
-							"ADD COLUMN comment NVARCHAR(400);");
-				} catch(SQLException e) {
-					e.printStackTrace();
-					wmntControl.SimpleErrorDialog();
-				}
-			}
-			
-			try {
-				rs = stmt.executeQuery("SELECT * FROM "+wmntControl.getParams().sqlTableName+";");
-				dbSet = new HashSet<String>();
-				dbList = new ArrayList<String>();
-				int rownum = -1;
-				while(rs.next()) {
-					String conv = convertDate(String.valueOf(rs.getTimestamp("UTC")).substring(0, 19),
-							rs.getShort("UTCMilliseconds"), false);
-					//System.out.println(conv);
-					String entry = String.valueOf(rs.getLong("UID")) + " - " + conv;
-					dbSet.add(entry);
-					dbList.add(entry);
-					rownum = findRow(String.valueOf(rs.getLong("UID")), conv);
-					WMNTAnnotationInfo ai = new WMNTAnnotationInfo();
-					if (rownum != -1 && overwrite == true) {
-						if (rs.getInt("startSample") > -1 && rs.getDouble("startSeconds") > -1 && rs.getInt("duration") > -1) {
-							int sr = (int)(rs.getInt("startSample") / rs.getDouble("startSeconds"));
-							int dur = (int)(1000 * (double)rs.getInt("duration") / sr);
-							ttable.setValueAt(dur, rownum, 4);
-						} else {
-							ttable.setValueAt(-1, rownum, 4);
-						}
-						if (rs.getDouble("amplitude") > -1) {
-							ttable.setValueAt((int)rs.getDouble("amplitude"), rownum, 5);
-						} else {
-							ttable.setValueAt(-1, rownum, 5);
-						}
-						if (rs.getString("species") != null) {
-							ttable.setValueAt(rs.getString("species"), rownum, 6);
-							ai.species = rs.getString("species");
-							if (wmntControl.getSidePanel().getWMNTPanel().speciesModel.getIndexOf(rs.getString("species")) == -1) {
-								wmntControl.getSidePanel().getWMNTPanel().speciesModel.addElement(rs.getString("species"));
-							}
-						} else {
-							ttable.setValueAt("", rownum, 6);
-						}
-						if (rs.getString("callType") != null) {
-							ttable.setValueAt(rs.getString("callType"), rownum, 7);
-							ai.callType = rs.getString("callType");
-							if (wmntControl.getSidePanel().getWMNTPanel().calltypeModel.getIndexOf(rs.getString("callType")) == -1) {
-								wmntControl.getSidePanel().getWMNTPanel().calltypeModel.addElement(rs.getString("callType"));
-							}
-						} else {
-							ttable.setValueAt("", rownum, 7);
-						}
-						if (rs.getString("comment") != null) {
-							ttable.setValueAt(rs.getString("comment"), rownum, 8);
-							ai.comment = rs.getString("comment");
-						} else {
-							ttable.setValueAt("", rownum, 8);
-						}
-					}
-				}
-				wmntControl.getSidePanel().getWMNTPanel().checkButton.setEnabled(true);
-				wmntControl.getSidePanel().getWMNTPanel().commitButton.setEnabled(true);
+				if (!createSpeciesColumn)
+					stmt.executeUpdate("ALTER TABLE "+wmntControl.getParams().sqlTableName+"\r\nADD COLUMN species CHAR(20);");
+				if (!createCallTypeColumn)
+					stmt.executeUpdate("ALTER TABLE "+wmntControl.getParams().sqlTableName+"\r\nADD COLUMN callType CHAR(20);");
+				if (!createCommentColumn)
+					stmt.executeUpdate("ALTER TABLE "+wmntControl.getParams().sqlTableName+"\r\nADD COLUMN comment NVARCHAR(400);");
+				rsColumns.close();
+				stmt.close();
 			} catch(SQLException e) {
 				e.printStackTrace();
-				wmntControl.SimpleErrorDialog();
+				try {
+					if (rsColumns != null && !rsColumns.isClosed()) rsColumns.close();
+					if (stmt != null && !stmt.isClosed()) stmt.close();
+				} catch (SQLException e1) {
+					e1.printStackTrace();
+				}
+				JOptionPane.showMessageDialog(wmntControl.getGuiFrame(),
+						"Could not create new columns - see console for details.",
+					    "Database error",
+					    JOptionPane.ERROR_MESSAGE);
+				return false;
 			}
+		} else {
+			int res = JOptionPane.showConfirmDialog(wmntControl.getGuiFrame(),
+				    "Due to locking issues in SQLite, all pre-existing database changes from other modules need to be committed\n"
+				    + "in order to create the annotation columns in the table.\n\n"
+				    + "Proceed?",
+				    "Creating columns",
+				    JOptionPane.OK_CANCEL_OPTION);
+			if (res == JOptionPane.CANCEL_OPTION) return false;
+			EmptyTableDefinition edt = new EmptyTableDefinition(wmntControl.getParams().sqlTableName);
+			if (!getDBProcess().checkColumn(edt, new PamTableItem("species", Types.CHAR, 20)) ||
+					!getDBProcess().checkColumn(edt, new PamTableItem("callType", Types.CHAR, 20)) ||
+					!getDBProcess().checkColumn(edt, new PamTableItem("comment", Types.VARCHAR, 400))) {
+				JOptionPane.showMessageDialog(wmntControl.getGuiFrame(),
+						"Could not create new columns - see console for details.",
+					    "Database error",
+					    JOptionPane.ERROR_MESSAGE);
+				return false;
+			}
+			getDBControl().commitChanges();
 		}
 		
+		ResultSet rs = null;
+		try {
+			stmt = getDBSystem().getConnection().getConnection().createStatement();
+			rs = stmt.executeQuery("SELECT * FROM "+wmntControl.getParams().sqlTableName+";");
+			dbSet = new HashSet<String>();
+			dbList = new ArrayList<String>();
+			int rownum = -1;
+			while(rs.next()) {
+				String datetime = convertDate(String.valueOf(rs.getTimestamp("UTC")).substring(0, 19),
+						rs.getShort("UTCMilliseconds"), false);
+				String entry = String.valueOf(rs.getLong("UID")) + " - " + datetime;
+				dbSet.add(entry);
+				dbList.add(entry);
+				rownum = findRow(String.valueOf(rs.getLong("UID")), datetime);
+				WMNTAnnotationInfo ai = new WMNTAnnotationInfo();
+				if (rownum != -1 && overwrite == true) {
+					if (rs.getInt("startSample") > -1 && rs.getDouble("startSeconds") > -1 && rs.getInt("duration") > -1) {
+						int sr = (int) (rs.getInt("startSample") / rs.getDouble("startSeconds"));
+						int dur = (int) (1000 * (double) rs.getInt("duration") / sr);
+						ttable.setValueAt(dur, rownum, 4);
+					} else {
+						ttable.setValueAt(-1, rownum, 4);
+					}
+					if (rs.getDouble("amplitude") > -1) {
+						ttable.setValueAt((int) rs.getDouble("amplitude"), rownum, 5);
+					} else {
+						ttable.setValueAt(-1, rownum, 5);
+					}
+					if (rs.getString("species") != null) {
+						ttable.setValueAt(rs.getString("species"), rownum, 6);
+						ai.species = rs.getString("species");
+						if (wmntControl.getSidePanel().getWMNTPanel().speciesModel.getIndexOf(rs.getString("species")) == -1) {
+							wmntControl.getSidePanel().getWMNTPanel().speciesModel.addElement(rs.getString("species"));
+						}
+					} else {
+						ttable.setValueAt("", rownum, 6);
+					}
+					if (rs.getString("callType") != null) {
+						ttable.setValueAt(rs.getString("callType"), rownum, 7);
+						ai.callType = rs.getString("callType");
+						if (wmntControl.getSidePanel().getWMNTPanel().calltypeModel.getIndexOf(rs.getString("callType")) == -1) {
+							wmntControl.getSidePanel().getWMNTPanel().calltypeModel.addElement(rs.getString("callType"));
+						}
+					} else {
+						ttable.setValueAt("", rownum, 7);
+					}
+					if (rs.getString("comment") != null) {
+						ttable.setValueAt(rs.getString("comment"), rownum, 8);
+						ai.comment = rs.getString("comment");
+					} else {
+						ttable.setValueAt("", rownum, 8);
+					}
+				}
+			}
+			rs.close();
+			stmt.close();
+			wmntControl.getSidePanel().getWMNTPanel().checkButton.setEnabled(true);
+			wmntControl.getSidePanel().getWMNTPanel().updateButton.setEnabled(true);
+		} catch(SQLException e) {
+			e.printStackTrace();
+			try {
+				if (rs != null && !rs.isClosed()) rs.close();
+				if (stmt != null && !stmt.isClosed()) stmt.close();
+			} catch (HeadlessException | SQLException e1) {
+				e1.printStackTrace();
+			}
+			JOptionPane.showMessageDialog(wmntControl.getGuiFrame(),
+					"Error encountered while attempting to fill table - see console for details.",
+				    "Database error",
+				    JOptionPane.ERROR_MESSAGE);
+			return false;
+		}
+		return true;
 	}
 
 	/**
@@ -219,6 +230,7 @@ public class WMNTSQLLogging {
 	 * Returns -1 if such row is not present.
 	 */
 	protected int findRow(String uid, String date) {
+		PamTable ttable = wmntControl.getSidePanel().getWMNTPanel().ttable;
 		for (int i = 0; i < ttable.getRowCount(); i++) {
 			if (ttable.getValueAt(i, 0).toString().equals(uid) &&
 					ttable.getValueAt(i, 1).toString().substring(0, 19).equals(date)) {
@@ -230,7 +242,7 @@ public class WMNTSQLLogging {
 	
 	/**
 	 * Fixes the rounding discrepancy for date/time between the binary files and database
-	 * and converts time zones.
+	 * and converts time zones. (Note that this is only a problem in MySQL, NOT SQLite.)
 	 * Unfortunately, the binary files appear to have the correct time, not the database.
 	 * @param inpdate - Date being converted (String).
 	 * @param mill - The milliseconds attached to the date (Short).
@@ -244,7 +256,7 @@ public class WMNTSQLLogging {
 		} else {
 			conv = wmntControl.convertBetweenTimeZones("UTC", wmntControl.getParams().databaseTZ, inpdate.substring(0, 19), false);
 		}
-		if (mill < 500) {
+		if (!isMySQL() || mill < 500) {
 			return conv;
 		}
 		SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -311,8 +323,7 @@ public class WMNTSQLLogging {
 		JOptionPane.showMessageDialog(wmntControl.getGuiFrame(),
 				mainPanel,
 				"Checking alignment",
-				JOptionPane.INFORMATION_MESSAGE /*,
-				new ImageIcon(ClassLoader.getSystemResource("Resources/pamguardIcon.png")).getImage() */);
+				JOptionPane.INFORMATION_MESSAGE);
 	}
 	
 	/**
@@ -327,22 +338,27 @@ public class WMNTSQLLogging {
 	}
 	
 	/**
-	 * Commits to the database.
-	 * @param outpTable
+	 * Executes update commands for any changes made in the WMNTPanel's table.
+	 * @param outpTable - The WMNTPanel's PamTable
+	 * @param origTable - The original contents of the PamTable
+	 * @param changeLog - Which rows in the PamTable have been changed
+	 * @param commitNow - If true, PAMGuard's database module commits the changes after the update commands have been executed
 	 */
-	public void commit(PamTable outpTable, Object[][] origTable, boolean[] changeLog) {
+	public void executeUpdates(PamTable outpTable, Object[][] origTable, boolean[] changeLog, boolean commitNow) {
 		int totalChanges = 0;
 		for (int i = 0; i < changeLog.length; i++) {
 			if (changeLog[i] == true) {
 				totalChanges++;
 			}
 		}
-		loadingBarWindow = new WMNTSQLLoadingBarWindow(wmntControl.getGuiFrame(), totalChanges);
+		loadingBarWindow = new WMNTSQLLoadingBarWindow(wmntControl, wmntControl.getGuiFrame(), totalChanges);
 		loadingBarThread = new LoadingBarThread();
 		loadingBarThread.start();
 		int y = 0;
 		int n = 0;
-		System.out.println("\nCOMMITTING TO DATABASE: "+mySystem.getDatabaseName());
+		DBControl dbControl = (DBControl) PamController.getInstance().findControlledUnit(DBControl.getDbUnitType());
+		DBSystem mySystem = dbControl.getDatabaseSystem();
+		System.out.println("\nUPDATING DATABASE: "+mySystem.getDatabaseName());
 		for (int i = 0; i < outpTable.getRowCount(); i++) {
 			if (changeLog[getOriginalIndex(i,outpTable,origTable)] == true) {
 				String outpSql = "UPDATE "+wmntControl.getParams().sqlTableName+" SET species = ";
@@ -362,11 +378,13 @@ public class WMNTSQLLogging {
 					outpSql = outpSql + "null WHERE UID = ";
 				}
 				outpSql = outpSql + outpTable.getValueAt(i, 0).toString() + " AND UTC = '";
-				String conv = convertDate(outpTable.getValueAt(i, 1).toString().substring(0, 19),
-						Short.valueOf(outpTable.getValueAt(i, 1).toString().substring(20, 23)), true);
-				outpSql = outpSql + conv + "';";
 				
-				boolean success = commitEntry(outpSql);
+				String datetime = convertDate(outpTable.getValueAt(i, 1).toString().substring(0, 19),
+						Short.valueOf(outpTable.getValueAt(i, 1).toString().substring(20, 23)), true);
+				if (!isMySQL()) datetime += "."+outpTable.getValueAt(i, 1).toString().substring(20, 23);
+				outpSql = outpSql + datetime + "';";
+				
+				boolean success = executeIndividualUpdate(outpSql);
 				if (success == true) {
 					y++;
 					System.out.println("Change "+(y+n)+" of "+totalChanges+": SUCCESS ("
@@ -382,30 +400,45 @@ public class WMNTSQLLogging {
 							+ outpTable.getValueAt(i, 0).toString()+", "+outpTable.getValueAt(i, 1).toString()+", "+outpTable.getValueAt(i, 6).toString()
 							+ ", "+outpTable.getValueAt(i, 7).toString()+", "+outpTable.getValueAt(i, 8).toString()+")");
 				}
-				loadingBarWindow.updateLoadingBar(success);
+				loadingBarWindow.updateLoadingBar(success, commitNow);
 			}
 		}
 		originalTable = origTable;
 		tableChangeLog = changeLog;
-	/*	JOptionPane.showMessageDialog(wmntControl.getGuiFrame(),
-			    "Write successes: " + String.valueOf(y) + "\nWrite failures: " + String.valueOf(n),
-			    "Database results",
-			    JOptionPane.PLAIN_MESSAGE); */
+		if (commitNow) {
+			System.out.println("COMMITTING CHANGES TO DATABASE: "+mySystem.getDatabaseName());
+			if (getDBControl().commitChanges()) {
+				System.out.println("COMMIT SUCCEEDED");
+				loadingBarWindow.finish(loadingBarWindow.COMMIT_SUCCEEDED);
+			} else {
+				System.out.println("COMMIT FAILED");
+				loadingBarWindow.finish(loadingBarWindow.COMMIT_FAILED);
+			}
+		}
 	}
 	
 	/**
-	 * Executes the SQL for commit().
+	 * Executes an individual UPDATE command.
 	 * @param sqlEntry - The SQL update statement. (String)
 	 * @return boolean - Whether or not the SQL succeeded or not.
 	 */
-	protected boolean commitEntry(String sqlEntry) {
+	protected boolean executeIndividualUpdate(String sqlEntry) {
+		Statement stmt = null;
 		try {
+			stmt = getDBControl().getConnection().getConnection().createStatement();
 			stmt.execute(sqlEntry);
 			if (stmt.getUpdateCount() < 1) {
+				stmt.close();
 				return false;
 			}
+			stmt.close();
 		} catch (SQLException e) {
 			e.printStackTrace();
+			try {
+				if (stmt != null && !stmt.isClosed()) stmt.close();
+			} catch (HeadlessException | SQLException e1) {
+				e1.printStackTrace();
+			}
 			return false;
 		}
 		return true;
@@ -429,5 +462,29 @@ public class WMNTSQLLogging {
 	
 	public boolean[] getChangeLog() {
 		return tableChangeLog;
+	}
+	
+	public boolean isMySQL() {
+		return !getDBSystem().getDatabaseName().contains(".sqlite");
+	}
+	
+	protected DBControl getDBControl() {
+		return (DBControl) PamController.getInstance().findControlledUnit(DBControl.getDbUnitType());
+	}
+	
+	protected DBControlUnit getDBControlUnit() {
+		return DBControlUnit.findDatabaseControl();
+	}
+	
+	protected DBProcess getDBProcess() {
+		DBControlUnit controlUnit = getDBControlUnit();
+		if (controlUnit == null) return null;
+		return controlUnit.getDbProcess();
+	}
+	
+	protected DBSystem getDBSystem() {
+		DBControlUnit controlUnit = getDBControlUnit();
+		if (controlUnit == null) return null;
+		return controlUnit.getDatabaseSystem();
 	}
 }

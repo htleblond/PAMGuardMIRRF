@@ -19,6 +19,7 @@ import javax.swing.filechooser.*;
 import java.util.*; //
 import java.text.*; //
 import java.io.PrintWriter;
+import java.sql.SQLException;
 
 import javax.swing.border.TitledBorder;
 
@@ -30,6 +31,7 @@ import PamView.dialog.PamTextField; //
 
 import binaryFileStorage.*;
 import fftManager.FFTDataBlock;
+import mirrf.MIRRFControlledUnit;
 import PamguardMVC.DataUnitBaseData;
 import PamguardMVC.PamDataBlock;
 import pamScrollSystem.*;
@@ -77,7 +79,7 @@ public class WMNTPanel {
 	protected PamButton searchButton;
 	protected PamButton connectButton;
 	protected PamButton checkButton;
-	protected PamButton commitButton;
+	protected PamButton updateButton;
 	protected PamButton scrollButton;
 	protected PamButton undoButton;
 	
@@ -111,7 +113,7 @@ public class WMNTPanel {
 		this.wmntControl = wmntControl;
 		currformat = 6;
 		this.crduMap = new HashMap<String, ConnectedRegionDataUnit>();
-		testLogger = null;
+		testLogger = new WMNTSQLLogging(wmntControl);
 		backupIndexes = null;
 		backupValues = null;
 		
@@ -145,11 +147,11 @@ public class WMNTPanel {
 		checkButton.addActionListener(checkListener);
 		checkButton.setEnabled(false);
 		dataPanel.add(checkButton);
-		commitButton = new PamButton("Commit to database");
-		CommitListener commitListener = new CommitListener();
-		commitButton.addActionListener(commitListener);
-		commitButton.setEnabled(false);
-		dataPanel.add(commitButton);
+		updateButton = new PamButton("Execute database updates");
+		UpdateListener updateListener = new UpdateListener();
+		updateButton.addActionListener(updateListener);
+		updateButton.setEnabled(false);
+		dataPanel.add(updateButton);
 		importButton = new PamButton("Import table");
 		ImportListener importListener = new ImportListener();
 		importButton.addActionListener(importListener);
@@ -480,19 +482,24 @@ public class WMNTPanel {
 				if (res != JOptionPane.CANCEL_OPTION) {
 					fileField.setText("Connecting to database...");
 					checkButton.setEnabled(false);
-					commitButton.setEnabled(false);
+					updateButton.setEnabled(false);
 					backupIndexes = null;
 					backupValues = null;
 					undoButton.setEnabled(false);
 					try {
-						if (res == JOptionPane.YES_OPTION) {
-							testLogger = new WMNTSQLLogging(wmntControl, true);
+						//testLogger.openConnection();
+						testLogger.createColumnsAndFillTable(res == JOptionPane.YES_OPTION);
+					/*	if (res == JOptionPane.YES_OPTION) {
+							//testLogger = new WMNTSQLLogging(wmntControl, true);
+							testLogger.createColumnsAndFillTable(true);
 						} else if (res == JOptionPane.NO_OPTION) {
-							testLogger = new WMNTSQLLogging(wmntControl, false);
-						}
+							//testLogger = new WMNTSQLLogging(wmntControl, false);
+							testLogger.createColumnsAndFillTable(false);
+						} */
 						updateFromFullTable();
+						//testLogger.closeConnection();
 					} catch (Exception e2) {
-						testLogger = null;
+						//testLogger.closeConnection();
 						e2.printStackTrace();
 						SimpleErrorDialog();
 					}
@@ -598,7 +605,7 @@ public class WMNTPanel {
 			}
 			//updateFromFullTable(); // Seems to make updating not work at all for some reason.
 			checkButton.setEnabled(false);
-			commitButton.setEnabled(false);
+			updateButton.setEnabled(false);
 			
 			if(!(fileField.getText().equals("Load error - see console."))) {
 				int res = JOptionPane.showConfirmDialog(wmntControl.getGuiFrame(),
@@ -607,10 +614,13 @@ public class WMNTPanel {
 					    JOptionPane.YES_NO_OPTION);
 				if (res == JOptionPane.YES_OPTION) {
 					try {
-						testLogger = new WMNTSQLLogging(wmntControl, true);
+						//testLogger = new WMNTSQLLogging(wmntControl, true);
+						//testLogger.openConnection();
+						testLogger.createColumnsAndFillTable(true);
 						updateFromFullTable();
+						//testLogger.closeConnection();
 					} catch (Exception e2) {
-						testLogger = null;
+						//testLogger.closeConnection();
 						e2.printStackTrace();
 						SimpleErrorDialog();
 					}
@@ -964,23 +974,26 @@ public class WMNTPanel {
 		}
 	}
 	
-	protected class CommitThread extends Thread {
-		protected CommitThread() {}
+	protected class UpdateThread extends Thread {
+		protected UpdateThread() {}
 		@Override
 		public void run() {
 			if (testLogger != null) {
 				int res = JOptionPane.showConfirmDialog(wmntControl.getGuiFrame(),
-					    "Are you sure?\n\n(This may freeze PamGuard for a few minutes.\n"
-					    + "Progress can be viewed in console.)",
-					    "Commit to database",
-					    JOptionPane.YES_NO_OPTION);
-				if (res == JOptionPane.YES_OPTION) {
-					fileField.setText("Committing to database...");
-					testLogger.commit(ttable, originalTable, tableChangeLog);
-					originalTable = testLogger.getOriginalTable();
-					tableChangeLog = testLogger.getChangeLog();
-					fileField.setText(defaultloc);
-				}
+					    MIRRFControlledUnit.makeHTML("Would you like to commit all changes now?\n"
+							    + "(This includes database changes made by other modules. If you press \"no\", the SQL update commands\n"
+							    + "will be executed, but won't be committed until you press \"File > Save Data\". If AutoCommit was\n"
+							    + "turned on at startup, the commit will happen automatically regardless.)", 350),
+					    wmntControl.getUnitName(),
+					    JOptionPane.YES_NO_CANCEL_OPTION);
+				if (res == JOptionPane.CANCEL_OPTION) return;
+				fileField.setText("Committing to database...");
+				//testLogger.openConnection();
+				testLogger.executeUpdates(ttable, originalTable, tableChangeLog, res == JOptionPane.YES_OPTION);
+				originalTable = testLogger.getOriginalTable();
+				tableChangeLog = testLogger.getChangeLog();
+				//testLogger.closeConnection();
+				fileField.setText(defaultloc);
 			} else {
 				wmntControl.SimpleErrorDialog("Error: SQL logging function was not created.");
 			}
@@ -990,10 +1003,10 @@ public class WMNTPanel {
 	/**
 	 * The listener for the 'Commit to database' button.
 	 */
-	class CommitListener implements ActionListener {
+	class UpdateListener implements ActionListener {
 		public void actionPerformed(ActionEvent e) {
-			CommitThread commitThread = new CommitThread();
-			commitThread.start();
+			UpdateThread updateThread = new UpdateThread();
+			updateThread.start();
 		}
 	}
 	

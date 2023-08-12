@@ -47,11 +47,13 @@ public class WMNTSettingsDialog extends PamDialog {
 	
 	protected WMNTControl wmntControl;
 	protected Window parentFrame;
+	protected boolean startup;
 	
-	public WMNTSettingsDialog(Window parentFrame, WMNTControl wmntControl) {
+	public WMNTSettingsDialog(Window parentFrame, WMNTControl wmntControl, boolean startup) {
 		super(parentFrame, wmntControl.getUnitName(), true);
 		this.wmntControl = wmntControl;
 		this.parentFrame = parentFrame;
+		this.startup = startup;
 		
 		JTabbedPane tabbedPane = new JTabbedPane();
 		
@@ -302,24 +304,28 @@ public class WMNTSettingsDialog extends PamDialog {
 		}
 		
 		if (!sqlTableField.getText().equals(wmntControl.getParams().sqlTableName)) {
-			int result = JOptionPane.showConfirmDialog(parentFrame,
-					"The SQL table name has been changed, therefore the database should be manually re-connected to."
-					+ "\n\nProceed with settings changes?",
-					wmntControl.getUnitName(),
-					JOptionPane.OK_CANCEL_OPTION);
-			if (result != JOptionPane.OK_OPTION) return false;
+			if (!startup) {
+				int result = JOptionPane.showConfirmDialog(parentFrame,
+						"The SQL table name has been changed, therefore the database should be manually re-connected to."
+						+ "\n\nProceed with settings changes?",
+						wmntControl.getUnitName(),
+						JOptionPane.OK_CANCEL_OPTION);
+				if (result != JOptionPane.OK_OPTION) return false;
+			}
 			wmntControl.getParams().sqlTableName = sqlTableField.getText();
 		}
 		
 		if (!tzPanel.getAudioTimeZone().equals(wmntControl.getParams().audioTZ) ||
 			!tzPanel.getBinaryTimeZone().equals(wmntControl.getParams().binaryTZ) ||
 			!tzPanel.getDatabaseTimeZone().equals(wmntControl.getParams().databaseTZ)) {
-			int result = JOptionPane.showConfirmDialog(parentFrame,
-					"Time zones have been changed, therefore the binary data should be manually re-loaded."
-					+ "\n\nProceed with settings changes?",
-					wmntControl.getUnitName(),
-					JOptionPane.OK_CANCEL_OPTION);
-			if (result != JOptionPane.OK_OPTION) return false;
+			if (!startup) {
+				int result = JOptionPane.showConfirmDialog(parentFrame,
+						"Time zones have been changed, therefore the binary data should be manually re-loaded."
+						+ "\n\nProceed with settings changes?",
+						wmntControl.getUnitName(),
+						JOptionPane.OK_CANCEL_OPTION);
+				if (result != JOptionPane.OK_OPTION) return false;
+			}
 			wmntControl.getParams().audioTZ = tzPanel.getAudioTimeZone();
 			wmntControl.getParams().binaryTZ = tzPanel.getBinaryTimeZone();
 			wmntControl.getParams().databaseTZ = tzPanel.getDatabaseTimeZone();

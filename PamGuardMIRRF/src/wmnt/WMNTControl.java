@@ -42,6 +42,8 @@ public class WMNTControl extends PamControlledUnit implements PamSettings {
 		
 		this.wmntProcess = new WMNTProcess(this, null);
 		this.addPamProcess(wmntProcess);
+		
+		this.settingsDialog(null, true);
 	}
 	
 	public WMNTProcess getProcess() {
@@ -126,7 +128,7 @@ public class WMNTControl extends PamControlledUnit implements PamSettings {
 
 		@Override
 		public void actionPerformed(ActionEvent arg0) {
-			settingsDialog(parentFrame);	
+			settingsDialog(parentFrame, false);	
 		}
 
 	}
@@ -135,8 +137,8 @@ public class WMNTControl extends PamControlledUnit implements PamSettings {
 	 * Opens the settings dialog.
 	 * @param parentFrame
 	 */
-	protected void settingsDialog(Frame parentFrame) {
-		WMNTSettingsDialog settingsDialog = new WMNTSettingsDialog(this.getPamView().getGuiFrame(), this);
+	protected void settingsDialog(Frame parentFrame, boolean startup) {
+		WMNTSettingsDialog settingsDialog = new WMNTSettingsDialog(parentFrame, this, startup);
 		settingsDialog.setVisible(true);
 	}
 

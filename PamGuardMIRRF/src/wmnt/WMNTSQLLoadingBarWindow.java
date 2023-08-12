@@ -5,10 +5,12 @@ import java.awt.GridBagLayout;
 import java.awt.Window;
 
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JTextField;
 import javax.swing.WindowConstants;
+import javax.swing.border.TitledBorder;
 
 import PamView.dialog.PamDialog;
 import PamView.dialog.PamGridBagContraints;
@@ -19,17 +21,25 @@ import PamView.dialog.PamGridBagContraints;
  */
 public class WMNTSQLLoadingBarWindow extends PamDialog {
 	
-	private int totalToUpdate;
-	private int totalCounted = 0;
-	private int successes = 0;
-	private int failures = 0;
-	private JLabel loadingMessage;
-	private JProgressBar loadingBar;
-	private JTextField successField;
-	private JTextField failureField;
+	public static final int NOTHING_TO_UPDATE = -1;
+	public static final int UPDATE_WITHOUT_COMMIT = 0;
+	public static final int COMMIT_SUCCEEDED = 1;
+	public static final int COMMIT_FAILED = 2;
+	
+	protected WMNTControl wmntControl;
+	
+	protected int totalToUpdate;
+	protected int totalCounted = 0;
+	protected int successes = 0;
+	protected int failures = 0;
+	protected JLabel loadingMessage;
+	protected JProgressBar loadingBar;
+	protected JTextField successField;
+	protected JTextField failureField;
 
-	public WMNTSQLLoadingBarWindow(Window parentFrame, int totalToUpdate) {
-		super(parentFrame, "Whistle and Moan Navigation Tool", false);
+	public WMNTSQLLoadingBarWindow(WMNTControl wmntControl, Window parentFrame, int totalToUpdate) {
+		super(parentFrame, wmntControl.getUnitName(), false);
+		this.wmntControl = wmntControl;
 		this.totalToUpdate = totalToUpdate;
 		
 		this.getOkButton().setEnabled(false);
@@ -37,6 +47,7 @@ public class WMNTSQLLoadingBarWindow extends PamDialog {
 		this.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
 		
 		JPanel mainPanel = new JPanel(new GridBagLayout());
+		mainPanel.setBorder(new TitledBorder(""));
 		GridBagConstraints b = new PamGridBagContraints();
 		b.anchor = b.NORTH;
 		b.fill = b.HORIZONTAL;
@@ -73,7 +84,7 @@ public class WMNTSQLLoadingBarWindow extends PamDialog {
 		setDialogComponent(mainPanel);
 		
 		if (totalToUpdate == 0) {
-			finish();
+			finish(NOTHING_TO_UPDATE);
 		}
 	}
 	
@@ -81,7 +92,7 @@ public class WMNTSQLLoadingBarWindow extends PamDialog {
 	 * Adds one to the loading bar and one to either the success or failure counter.
 	 * @param success - Whether or not the single commit was successful.
 	 */
-	public void updateLoadingBar(boolean success) {
+	public void updateLoadingBar(boolean success, boolean waitForCommit) {
 		totalCounted++;
 		loadingBar.setValue((int) Math.floor(100*(((double) totalCounted)/totalToUpdate)));
 		loadingBar.setString(String.valueOf(totalCounted)+"/"+String.valueOf(totalToUpdate)+" ("+
@@ -94,19 +105,29 @@ public class WMNTSQLLoadingBarWindow extends PamDialog {
 			failureField.setText(String.valueOf(failures));
 		}
 		if (totalCounted == totalToUpdate) {
-			finish();
+			if (waitForCommit) loadingMessage.setText("Committing changes..."); // finish(COMMIT_SUCCEEDED/FAILED) called in WMNTSQLLogging
+			else finish(UPDATE_WITHOUT_COMMIT);
 		}
 	}
 	
 	/**
 	 * For when all commits have finished.
 	 */
-	private void finish() {
-		loadingMessage.setText("Commit completed!");
+	public void finish(int status) {
+		if (status == NOTHING_TO_UPDATE) loadingMessage.setText("Nothing to update!");
+		else if (status == COMMIT_SUCCEEDED) loadingMessage.setText("Commit completed!");
+		else if (status == COMMIT_FAILED) {
+			loadingMessage.setText("Commit failed!");
+			JOptionPane.showMessageDialog(this,
+					"Commit failed - try \"File > Save Data\" instead.",
+					wmntControl.getUnitName(),
+					JOptionPane.ERROR_MESSAGE);
+		} else loadingMessage.setText("Updates executed!");
 		loadingBar.setValue(100);
 		loadingBar.setString(String.valueOf(totalCounted)+"/"+String.valueOf(totalToUpdate)+" (100.0%)");
 		this.getOkButton().setEnabled(true);
 		this.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+		if (status == COMMIT_FAILED) this.okButtonPressed();
 	}
 
 	@Override

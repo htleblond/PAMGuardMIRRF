@@ -64,7 +64,7 @@ public class WMNTPlugin implements PamPluginInterface {
 
 	@Override
 	public String getDefaultName() {
-		return "Whistle and Moan Navigation Tool";
+		return "MIRRF Whistle and Moan Navigation Tool";
 	}
 
 	@Override

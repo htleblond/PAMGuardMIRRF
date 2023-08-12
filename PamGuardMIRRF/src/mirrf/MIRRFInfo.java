@@ -1,8 +1,7 @@
 package mirrf;
 
 /**
- * Easy-access info for PamPlugin extensions, so I don't have to update the
- * same values every time.
+ * Easy-access info for PamPlugin extensions, so I don't have to update the same values every time.
  * @author Holly LeBlond
  */
 public abstract class MIRRFInfo {
@@ -16,15 +15,15 @@ public abstract class MIRRFInfo {
 	}
 	
 	public static String getVersion() {
-		return "0.04";
+		return "1.03a";
 	}
 	
 	public static String getPamVerDevelopedOn() {
-		return "2.02.09";
+		return "2.02.03";
 	}
 
 	public static String getPamVerTestedOn() {
-		return "2.02.09";
+		return "2.02.03";
 	}
 	
 }

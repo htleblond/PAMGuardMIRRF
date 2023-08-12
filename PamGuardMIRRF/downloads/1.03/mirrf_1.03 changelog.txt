@@ -1,0 +1,9 @@
+mirrf_1.03 CHANGELOG
+August 11th, 2023
+Holly LeBlond
+
+1.03a (August 11th, 2023)
+- SQLite compatibility added to the WMNT:
+	- Option added to execute table updates without having commit on the spot, allowing later commits via File > Save Data.
+	- (Bug fix) Statements and ResultsSets in WMNTSQLLogging now close, which they didn't do before.
+- WMNT's settings dialog now opens when adding the module, in order to select a WMD instance and change time zones easier.
