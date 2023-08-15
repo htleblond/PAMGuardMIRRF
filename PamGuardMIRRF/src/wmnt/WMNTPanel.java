@@ -99,7 +99,7 @@ public class WMNTPanel {
 	protected List dataDates;
 	
 	protected String defaultloc;
-	protected File[] files;
+	//protected File[] files;
 	
 	protected WMNTSQLLogging testLogger;
 	
@@ -570,27 +570,56 @@ public class WMNTPanel {
 				defaultloc = findBinaryStorePath();
 				fileField.setText("Loading data from binary files...");
 				File defFolder = new File(defaultloc);
-				FilenameFilter pgdfFilter = new FilenameFilter() {
+			/*	FilenameFilter pgdfFilter = new FilenameFilter() {
 					@Override
 					public boolean accept(File f, String name) {
 						return name.endsWith(".pgdf");
 					}
-				};
-				files = defFolder.listFiles(pgdfFilter);
+				}; */
+				
+				//files = defFolder.listFiles(pgdfFilter);
+				ArrayList<File> fileList = new ArrayList<File>();
+				ArrayList<File> dirQueue = new ArrayList<File>();
+				dirQueue.add(defFolder);
+				
+				while (dirQueue.size() > 0) {
+					File currDir = dirQueue.remove(0);
+					File[] files = currDir.listFiles();
+					for (int i = 0; i < files.length; i++) {
+						System.out.println(String.valueOf(files[i].isDirectory())+files[i].getPath());
+						if (files[i].isDirectory()) {
+							//if (checkBinaryStoreSubfolderOption()) dirQueue.add(files[i]);
+							dirQueue.add(files[i]); // Disabling it isn't even an option in Viewer Mode for some reason.
+						}
+						else if (files[i].getPath().endsWith(".pgdf")) fileList.add(files[i]);
+					}
+				}
+				
+				if (fileList.size() == 0) {
+				/*	if (checkBinaryStoreSubfolderOption())
+						wmntControl.SimpleErrorDialog("No Whistle and Moan Detector binary files were found in the specified "
+								+ "binary file folder.");
+					else
+						wmntControl.SimpleErrorDialog("No Whistle and Moan Detector binary files were found in the specified "
+								+ "binary file folder or any of its subfolders."); */
+					wmntControl.SimpleErrorDialog("No Whistle and Moan Detector binary files were found in the specified "
+							+ "binary file folder or any of its subfolders.");
+					return;
+				}
 				
 				clearTable();
 				
-				loadingBarWindow = new WMNTBinaryLoadingBarWindow(wmntControl.getGuiFrame(), files.length);
+				loadingBarWindow = new WMNTBinaryLoadingBarWindow(wmntControl.getGuiFrame(), fileList.size());
 				loadingBarThread = new LoadingBarThread();
 				loadingBarThread.start();
 				
 				dataDates = new List();
 				
-				for (int i = 0; i < files.length; i++) {
+				for (int i = 0; i < fileList.size(); i++) {
 					try {
-						PopulateTable(files[i], wmDetector);
+						PopulateTable(fileList.get(i), wmDetector);
 					} catch (Exception e2) {
-						System.out.println("Error while parsing "+files[i].getName()+".");
+						System.out.println("Error while parsing "+fileList.get(i).getName()+".");
 						e2.printStackTrace();
 					}
 					loadingBarWindow.addOneToLoadingBar();
@@ -614,13 +643,9 @@ public class WMNTPanel {
 					    JOptionPane.YES_NO_OPTION);
 				if (res == JOptionPane.YES_OPTION) {
 					try {
-						//testLogger = new WMNTSQLLogging(wmntControl, true);
-						//testLogger.openConnection();
 						testLogger.createColumnsAndFillTable(true);
 						updateFromFullTable();
-						//testLogger.closeConnection();
 					} catch (Exception e2) {
-						//testLogger.closeConnection();
 						e2.printStackTrace();
 						SimpleErrorDialog();
 					}
@@ -637,10 +662,10 @@ public class WMNTPanel {
 	 */
 	protected void PopulateTable(File inpfile, WhistleToneConnectProcess wmDetector) {
 		try {
-			reader = new WMNTBinaryReader(wmntControl, defaultloc + inpfile.getName(), wmDetector);
+			reader = new WMNTBinaryReader(wmntControl, inpfile.getPath(), wmDetector);
 		} catch (Exception e2){
 			fileField.setText("Load error - see console.");
-			System.out.println("Could not find file: " + inpfile.getName());
+			System.out.println("Could not find file: " + inpfile.getPath());
 			return;
 		}
 		if (reader.bh.getModuleType().equals("WhistlesMoans") && reader.bh.getStreamName().equals("Contours")) {
@@ -1209,6 +1234,14 @@ public class WMNTPanel {
 			storeLoc += File.separator;
 		}
 		return storeLoc;
+	}
+	
+	public boolean checkBinaryStoreSubfolderOption() {
+		BinaryStore binaryControl = BinaryStore.findBinaryStoreControl();
+		if (binaryControl == null) {
+			return false;
+		}
+		return binaryControl.getBinaryStoreSettings().datedSubFolders;
 	}
 	
 	/**

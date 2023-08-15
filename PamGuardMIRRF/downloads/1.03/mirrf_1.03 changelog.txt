@@ -1,5 +1,5 @@
 mirrf_1.03 CHANGELOG
-August 11th, 2023
+August 11th to 14th, 2023
 Holly LeBlond
 
 1.03a (August 11th, 2023)
@@ -7,3 +7,7 @@ Holly LeBlond
 	- Option added to execute table updates without having commit on the spot, allowing later commits via File > Save Data.
 	- (Bug fix) Statements and ResultsSets in WMNTSQLLogging now close, which they didn't do before.
 - WMNT's settings dialog now opens when adding the module, in order to select a WMD instance and change time zones easier.
+
+1.03b (August 14th, 2023)
+- WMNT now recursively looks for binary files in subfolders.
+- Added warning message to WMNT in case no binary files are found in the selected folder.
