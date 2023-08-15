@@ -582,20 +582,27 @@ public class WMNTPanel {
 				ArrayList<File> dirQueue = new ArrayList<File>();
 				dirQueue.add(defFolder);
 				
+				//loadingBarWindow = new WMNTBinaryLoadingBarWindow(wmntControl.getGuiFrame(), fileList.size());
+				loadingBarWindow = new WMNTBinaryLoadingBarWindow(wmntControl.getGuiFrame());
+				loadingBarThread = new LoadingBarThread();
+				loadingBarThread.start();
+				
 				while (dirQueue.size() > 0) {
 					File currDir = dirQueue.remove(0);
 					File[] files = currDir.listFiles();
 					for (int i = 0; i < files.length; i++) {
-						System.out.println(String.valueOf(files[i].isDirectory())+files[i].getPath());
 						if (files[i].isDirectory()) {
 							//if (checkBinaryStoreSubfolderOption()) dirQueue.add(files[i]);
 							dirQueue.add(files[i]); // Disabling it isn't even an option in Viewer Mode for some reason.
+						} else if (files[i].getPath().endsWith(".pgdf")) {
+							fileList.add(files[i]);
+							loadingBarWindow.addOneToTotalFileCount();
 						}
-						else if (files[i].getPath().endsWith(".pgdf")) fileList.add(files[i]);
 					}
 				}
 				
 				if (fileList.size() == 0) {
+					loadingBarWindow.setVisible(false);
 				/*	if (checkBinaryStoreSubfolderOption())
 						wmntControl.SimpleErrorDialog("No Whistle and Moan Detector binary files were found in the specified "
 								+ "binary file folder.");
@@ -609,9 +616,10 @@ public class WMNTPanel {
 				
 				clearTable();
 				
-				loadingBarWindow = new WMNTBinaryLoadingBarWindow(wmntControl.getGuiFrame(), fileList.size());
+				// moved
+			/*	loadingBarWindow = new WMNTBinaryLoadingBarWindow(wmntControl.getGuiFrame(), fileList.size());
 				loadingBarThread = new LoadingBarThread();
-				loadingBarThread.start();
+				loadingBarThread.start(); */
 				
 				dataDates = new List();
 				

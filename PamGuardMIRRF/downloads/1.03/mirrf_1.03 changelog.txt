@@ -1,5 +1,5 @@
 mirrf_1.03 CHANGELOG
-August 11th to 14th, 2023
+August 11th to 15th, 2023
 Holly LeBlond
 
 1.03a (August 11th, 2023)
@@ -11,3 +11,7 @@ Holly LeBlond
 1.03b (August 14th, 2023)
 - WMNT now recursively looks for binary files in subfolders.
 - Added warning message to WMNT in case no binary files are found in the selected folder.
+
+1.03c (August 15th, 2023)
+- Removed annoying print statement from WMNT's binary data loading function.
+- The WMNT's binary data loading dialog now appears while searching for files, and displays how many have been counted.
