@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Scanner;
 import java.util.TimeZone;
 
 import javax.sound.sampled.AudioInputStream;
@@ -24,6 +25,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.border.TitledBorder;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.PlainDocument;
@@ -44,12 +46,16 @@ public class TSBAudioTestBatchDialog extends PamDialog {
 	
 	protected TSBControl tsbControl;
 	protected Window parentFrame;
+	public boolean useLoaded;
 	
+	protected JTextField dataFileField;
+	protected JButton dataFieldButton;
 	protected JTextField audioFolderField;
 	protected JButton audioFolderButton;
 	protected JTextField outputFolderField;
 	protected JButton outputFolderButton;
 	protected JComboBox<String> tzBox;
+	protected JCheckBox dstCheck;
 	protected JComboBox<String> subsetBox;
 	protected JComboBox<String> priorityBox;
 	protected JTextField minimumField;
@@ -59,22 +65,29 @@ public class TSBAudioTestBatchDialog extends PamDialog {
 	//protected JTextField minimumClassField;
 	protected JCheckBox maximumClassCheck;
 	protected JTextField maximumClassField;
+	protected JCheckBox ignoreBlankCheck;
+	protected JCheckBox ignore2SGCheck;
+	protected JCheckBox ignoreFPCheck;
+	protected JCheckBox ignoreUnkCheck;
 	
-	protected ArrayList<File> folderList;
+	protected ArrayList<File> dataFileList;
+	protected ArrayList<File> audioFolderList;
 	//protected ArrayList<WavObject> wavList;
 	
 	protected volatile boolean interrupted;
 	
-	public TSBAudioTestBatchDialog(Window parentFrame, TSBControl tsbControl) {
+	public TSBAudioTestBatchDialog(Window parentFrame, TSBControl tsbControl, boolean useLoaded) {
 		super(parentFrame, tsbControl.getUnitName(), false);
 		this.tsbControl = tsbControl;
 		this.parentFrame = parentFrame;
+		this.useLoaded = useLoaded;
 		this.interrupted = false;
 		
 		this.getOkButton().setText("Generate");
 		this.getOkButton().removeActionListener(this.getOkButton().getActionListeners()[0]);
 		this.getOkButton().addActionListener(new GenerateButtonListener());
-		this.folderList = new ArrayList<File>();
+		this.dataFileList = new ArrayList<File>();
+		this.audioFolderList = new ArrayList<File>();
 
 		JPanel mainPanel = new JPanel(new GridBagLayout());
 		mainPanel.setBorder(new TitledBorder("Audio Test Batch Generator"));
@@ -86,6 +99,21 @@ public class TSBAudioTestBatchDialog extends PamDialog {
 		GridBagConstraints c = new PamGridBagContraints();
 		c.anchor = c.WEST;
 		c.fill = c.HORIZONTAL;
+		if (!useLoaded) {
+			p1.add(new JLabel("Data file(s):"), c);
+			c.gridy++;
+			c.gridx = 0;
+			dataFileField = new JTextField(30);
+			dataFileField.setEnabled(false);
+			dataFileField.setText("No files have been selected.");
+			p1.add(dataFileField, c);
+			c.gridx += c.gridwidth;
+			dataFieldButton = new JButton("Select");
+			dataFieldButton.addActionListener(new DataFileListener());
+			p1.add(dataFieldButton, c);
+			c.gridy++;
+			c.gridx = 0;
+		}
 		p1.add(new JLabel("Audio folder(s):"), c);
 		c.gridy++;
 		c.gridx = 0;
@@ -124,13 +152,21 @@ public class TSBAudioTestBatchDialog extends PamDialog {
 		p2.add(tzBox, c);
 		c.gridy++;
 		c.gridx = 0;
-		c.gridwidth = 1;
-		p2.add(new JLabel("Subset:"), c);
-		c.gridx += c.gridwidth;
-		c.gridwidth = 2;
-		subsetBox = new JComboBox<String>();
-		fillSubsetBox();
-		p2.add(subsetBox, c);
+		c.gridwidth = 3;
+		dstCheck = new JCheckBox();
+		dstCheck.setText("Adjust for Daylight Savings Time");
+		p2.add(dstCheck, c);
+		if (useLoaded) {
+			c.gridy++;
+			c.gridx = 0;
+			c.gridwidth = 1;
+			p2.add(new JLabel("Subset:"), c);
+			c.gridx += c.gridwidth;
+			c.gridwidth = 2;
+			subsetBox = new JComboBox<String>();
+			fillSubsetBox();
+			p2.add(subsetBox, c);
+		}
 		c.gridy++;
 		c.gridx = 0;
 		c.gridwidth = 1;
@@ -186,6 +222,26 @@ public class TSBAudioTestBatchDialog extends PamDialog {
 		maximumClassField.setDocument(JIntFilter());
 		maximumClassField.setText("10000");
 		p2.add(maximumClassField, c);
+		if (!useLoaded) {
+			c.gridy++;
+			c.gridx = 0;
+			c.gridwidth = 3;
+			ignoreBlankCheck = new JCheckBox("Ignore entries with no species label");
+			ignoreBlankCheck.setSelected(true);
+			p2.add(ignoreBlankCheck, c);
+			c.gridy++;
+			ignore2SGCheck = new JCheckBox("Ignore entries with '2-second glitch' label");
+			ignore2SGCheck.setSelected(true);
+			p2.add(ignore2SGCheck, c);
+			c.gridy++;
+			ignoreFPCheck = new JCheckBox("Ignore entries with 'False Positive' label");
+			ignoreFPCheck.setSelected(true);
+			p2.add(ignoreFPCheck, c);
+			c.gridy++;
+			ignoreUnkCheck = new JCheckBox("Ignore entries with 'Unk' or 'Unknown' labels");
+			ignoreUnkCheck.setSelected(true);
+			p2.add(ignoreUnkCheck, c);
+		}
 		mainPanel.add(p2, b);
 		
 		this.setDialogComponent(mainPanel);
@@ -214,10 +270,28 @@ public class TSBAudioTestBatchDialog extends PamDialog {
 		subsetBox.setSelectedIndex(0);
 	}
 	
+	protected class DataFileListener implements ActionListener {
+		public void actionPerformed(ActionEvent e) {
+			PamFileChooser fc = new PamFileChooser();
+			fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
+			fc.addChoosableFileFilter(new FileNameExtensionFilter("WMNT table export file (*.wmnt)","wmnt"));
+			//fc.addChoosableFileFilter(new FileNameExtensionFilter("MIRRF feature vector data file (*.mirrffe)","mirrffe"));
+			fc.addChoosableFileFilter(new FileNameExtensionFilter("MIRRF training set file (*.mirrfts)","mirrfts"));
+			fc.setMultiSelectionEnabled(true);
+			int returnVal = fc.showOpenDialog(parentFrame);
+			if (returnVal == fc.CANCEL_OPTION) return;
+			File[] files = fc.getSelectedFiles();
+			dataFileList.clear();
+			for (int i = 0; i < files.length; i++) dataFileList.add(files[i]);
+			if (dataFileList.size() == 0) dataFileField.setText("No files have been selected.");
+			else dataFileField.setText(String.valueOf(dataFileList.size())+" file(s) selected.");
+		}
+	}
+	
 	/**
 	 * Opens a file chooser when audioFolderButton is pressed.
 	 */
-	protected class AudioFolderListener implements ActionListener{
+	protected class AudioFolderListener implements ActionListener {
 		public void actionPerformed(ActionEvent e) {
 			PamFileChooser fc = new PamFileChooser();
 			fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
@@ -226,17 +300,17 @@ public class TSBAudioTestBatchDialog extends PamDialog {
 			if (returnVal == fc.CANCEL_OPTION) return;
 			//wavList.clear();
 			File[] folders = fc.getSelectedFiles();
-			folderList.clear();
-			for (int i = 0; i < folders.length; i++) folderList.add(folders[i]);
-			if (folderList.size() == 0) audioFolderField.setText("No folders have been selected.");
-			else audioFolderField.setText(String.valueOf(folderList.size())+" folder(s) selected.");
+			audioFolderList.clear();
+			for (int i = 0; i < folders.length; i++) audioFolderList.add(folders[i]);
+			if (audioFolderList.size() == 0) audioFolderField.setText("No folders have been selected.");
+			else audioFolderField.setText(String.valueOf(audioFolderList.size())+" folder(s) selected.");
 		}
 	}
 	
 	/**
 	 * Opens a file chooser when outputFolderButton is pressed.
 	 */
-	protected class OutputFolderListener implements ActionListener{
+	protected class OutputFolderListener implements ActionListener {
 		public void actionPerformed(ActionEvent e) {
 			PamFileChooser fc = new PamFileChooser();
 			fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
@@ -279,21 +353,25 @@ public class TSBAudioTestBatchDialog extends PamDialog {
 	 */
 	public class DetectionSetObject {
 		private WavObject wavObject;
+		private boolean useLoaded;
 		private ArrayList<TSBDetection> detectionList;
 		private int[] labelCounts;
 		private ArrayList<String> outputClassLabels;
 		
-		public DetectionSetObject(WavObject wavObject) {
+		public DetectionSetObject(WavObject wavObject, ArrayList<String> outputLabels, boolean useLoaded) {
 			this.wavObject = wavObject;
+			this.useLoaded = useLoaded;
 			this.detectionList = new ArrayList<TSBDetection>();
-			this.outputClassLabels = tsbControl.getOutputClassLabels();
+			this.outputClassLabels = outputLabels;
 			this.labelCounts = new int[outputClassLabels.size()];
 			for (int i = 0; i < outputClassLabels.size(); i++) labelCounts[i] = 0;
 		}
 		
 		public boolean addDetection(TSBDetection inp) {
-			if (!tsbControl.getClassMap().containsKey(inp.species)) return false;
-			labelCounts[outputClassLabels.indexOf(tsbControl.getClassMap().get(inp.species))]++;
+			if (useLoaded && !tsbControl.getClassMap().containsKey(inp.species)) return false;
+			int index = getSpeciesIndex(inp.species);
+			if (index < 0) return false;
+			labelCounts[index]++;
 			detectionList.add(inp);
 			return true;
 		}
@@ -306,8 +384,17 @@ public class TSBAudioTestBatchDialog extends PamDialog {
 			return detectionList.size();
 		}
 		
+		public int getSpeciesIndex(String species) {
+			int index = 0;
+			if (useLoaded) index = outputClassLabels.indexOf(tsbControl.getClassMap().get(species));
+			else index = outputClassLabels.indexOf(species);
+			return index;
+		}
+		
 		public int getSpeciesCount(String species) {
-			return labelCounts[outputClassLabels.indexOf(tsbControl.getClassMap().get(species))];
+			int index = getSpeciesIndex(species);
+			if (index < 0) return 0;
+			return labelCounts[index];
 		}
 		
 		public WavObject getWavObject() {
@@ -398,8 +485,12 @@ public class TSBAudioTestBatchDialog extends PamDialog {
 			tsbControl.SimpleErrorDialog("Invalid settings.", 250);
 			return false;
 		}
-		if (folderList.size() == 0) {
-			tsbControl.SimpleErrorDialog("No folders have been selected.", 250);
+		if (!useLoaded && dataFileList.size() == 0) {
+			tsbControl.SimpleErrorDialog("No data files have been selected.", 250);
+			return false;
+		}
+		if (audioFolderList.size() == 0) {
+			tsbControl.SimpleErrorDialog("No audio folders have been selected.", 250);
 			return false;
 		}
 		if (outputFolderField.getText().length() > 0) {
@@ -424,16 +515,17 @@ public class TSBAudioTestBatchDialog extends PamDialog {
 		ArrayList<WavObject> wavList = new ArrayList<WavObject>();
 		StandardFileDateSettings sfdSettings = new StandardFileDateSettings();
 		sfdSettings.setTimeZoneName((String) tzBox.getSelectedItem());
+		sfdSettings.setAdjustDaylightSaving(dstCheck.isSelected());
 		StandardFileDate sfd = new StandardFileDate(null);
 		sfd.setSettings(sfdSettings);
-		loadingBarWindow.startFolderCheck(folderList.size());
-		for (int i = 0; i < folderList.size(); i++) {
+		loadingBarWindow.startFolderCheck(audioFolderList.size());
+		for (int i = 0; i < audioFolderList.size(); i++) {
 			if (interrupted) return true;
-			//System.out.println("folderList loop: "+String.valueOf(i));
-			File[] files = folderList.get(i).listFiles();
+			//System.out.println("audioFolderList loop: "+String.valueOf(i));
+			File[] files = audioFolderList.get(i).listFiles();
 			for (int j = 0; j < files.length; j++) {
 				if (interrupted) return true;
-				System.out.println("folderList loop: "+String.valueOf(i)+", "+String.valueOf(j));
+				System.out.println("audioFolderList loop: "+String.valueOf(i)+", "+String.valueOf(j));
 				File f = files[j];
 				if (!f.getName().endsWith(".wav")) continue;
 				long start = sfd.getTimeFromFile(f);
@@ -450,7 +542,7 @@ public class TSBAudioTestBatchDialog extends PamDialog {
 				}
 				totalWavFilesInFolders++;
 			}
-			loadingBarWindow.updateFolderLoad(i+1, folderList.size());
+			loadingBarWindow.updateFolderLoad(i+1, audioFolderList.size());
 		}
 		if (interrupted) return true;
 		Collections.sort(wavList, Comparator.comparingLong(WavObject::getStart));
@@ -496,24 +588,65 @@ public class TSBAudioTestBatchDialog extends PamDialog {
 		
 		//loadingBarWindow.startFileCount(totalWavFilesInFolders, initialIgnoreCount, initialErrorCount);
 		ArrayList<TSBSubset> subOutpList = new ArrayList<TSBSubset>();
-		if (subsetBox.getSelectedItem().equals("All")) {
-			subOutpList = tsbControl.getSubsetList();
+		if (useLoaded) {
+			if (subsetBox.getSelectedItem().equals("All")) {
+				subOutpList = tsbControl.getSubsetList();
+			} else {
+				for (int i = 0; i < tsbControl.getSubsetList().size(); i++) {
+					TSBSubset curr = tsbControl.getSubsetList().get(i);
+					String selection = (String) subsetBox.getSelectedItem();
+					if ((selection.contains("All from") && selection.substring(selection.length()-1).equals(curr.id.substring(0, 1))) ||
+							selection.equals(curr.id)) {
+						subOutpList.add(curr);
+					}
+				}
+			}
 		} else {
-			for (int i = 0; i < tsbControl.getSubsetList().size(); i++) {
-				TSBSubset curr = tsbControl.getSubsetList().get(i);
-				String selection = (String) subsetBox.getSelectedItem();
-				if ((selection.contains("All from") && selection.substring(selection.length()-1).equals(curr.id.substring(0, 1))) ||
-						selection.equals(curr.id)) {
-					subOutpList.add(curr);
+			for (int i = 0; i < dataFileList.size(); i++) {
+				TSBSubset fileSubset = new TSBSubset();
+				File f = dataFileList.get(i);
+				Scanner sc = null;
+				try {
+					sc = new Scanner(f);
+					if (sc.hasNextLine()) sc.nextLine();
+					else {
+						sc.close();
+						continue;
+					}
+					while (sc.hasNextLine()) {
+						String[] nextSplit = sc.nextLine().split(",");
+						TSBDetection currRow = null;
+						try {
+							if (f.getName().endsWith(".wmnt")) 
+								currRow = new TSBDetection(tsbControl, 0, "", nextSplit, new String[0]);
+							else if (f.getName().endsWith(".mirrfts"))
+								currRow = new TSBDetection(tsbControl, nextSplit.length-8, nextSplit);
+							else continue;
+						} catch (AssertionError | Exception e2) {
+							continue;
+						}
+						if ((ignoreBlankCheck.isSelected() && currRow.species.equals("")) ||
+							(ignore2SGCheck.isSelected() && currRow.species.equals("2-second glitch")) ||
+							(ignoreFPCheck.isSelected() && currRow.species.equals("False positive")) ||
+							(ignoreUnkCheck.isSelected() && (currRow.species.equals("Unk") || currRow.species.equals("Unknown"))))
+							continue;
+						fileSubset.addEntry(currRow, true);
+					}
+					subOutpList.add(fileSubset);
+					sc.close();
+				} catch (Exception e) {
+					if (sc != null) sc.close();
 				}
 			}
 		}
 		if (interrupted) return true;
 		
+		ArrayList<String> dsoOutputLabels = new ArrayList<String>();
 		ArrayList<TSBDetection> detectionList = new ArrayList<TSBDetection>();
 		for (int i = 0; i < subOutpList.size(); i++) {
 			TSBSubset currSubset = subOutpList.get(i);
 			for (int j = 0; j < currSubset.validEntriesList.size(); j++) {
+				if (!dsoOutputLabels.contains(currSubset.classList.get(j))) dsoOutputLabels.add(currSubset.classList.get(j));
 				ArrayList<TSBDetection> currList = currSubset.validEntriesList.get(j);
 				for (int k = 0; k < currList.size(); k++) {
 					detectionList.add(currList.get(k));
@@ -526,12 +659,14 @@ public class TSBAudioTestBatchDialog extends PamDialog {
 		//System.out.println("wavList.size(): "+String.valueOf(wavList.size()));
 		//System.out.println("Initial initialIgnoreCount: "+String.valueOf(initialIgnoreCount));
 		ArrayList<DetectionSetObject> dsoList = new ArrayList<DetectionSetObject>();
-		DetectionSetObject currDSO = new DetectionSetObject(wavList.remove(0));
+		DetectionSetObject currDSO = new DetectionSetObject(wavList.remove(0), dsoOutputLabels, useLoaded);
 		while (detectionList.size() > 0) {
 			if (interrupted) return true;
 			WavObject currWav = currDSO.getWavObject();
 			TSBDetection currDetection = detectionList.get(0);
 			long dTime = currDetection.getDateTimeAsLong();
+			System.out.println(currDetection.datetime+" -> ["+tsbControl.convertLongToUTC(currWav.start)+", "+tsbControl.convertLongToUTC(currWav.end)+"] "+
+					String.valueOf(currWav.start <= dTime && dTime < currWav.end));
 			if (currWav.start <= dTime && dTime < currWav.end) {
 				currDSO.addDetection(currDetection);
 				detectionList.remove(0);
@@ -543,7 +678,7 @@ public class TSBAudioTestBatchDialog extends PamDialog {
 					currDSO = null;
 				} else initialIgnoreCount++;
 				if (wavList.size() == 0) break;
-				currDSO = new DetectionSetObject(wavList.remove(0));
+				currDSO = new DetectionSetObject(wavList.remove(0), dsoOutputLabels, useLoaded);
 			}
 		}
 		if (currDSO != null && currDSO.getSize() > 0) dsoList.add(currDSO);
@@ -568,9 +703,9 @@ public class TSBAudioTestBatchDialog extends PamDialog {
 		//System.out.println("Initial ignored: "+String.valueOf(initialIgnoreCount + initialErrorCount));
 		//System.out.println("dsoList.size(): "+String.valueOf(dsoList.size()));
 		//System.out.println("totalWavFilesInFolders: "+String.valueOf(totalWavFilesInFolders));
-		loadingBarWindow.startFileCount(totalWavFilesInFolders, initialIgnoreCount, initialErrorCount);
-		ArrayList<String> outpClasses = tsbControl.getOutputClassLabels();
-		int[] classCount = new int[outpClasses.size()];
+		loadingBarWindow.startFileCount(totalWavFilesInFolders, initialIgnoreCount, initialErrorCount, dsoOutputLabels);
+		//ArrayList<String> outpClasses = tsbControl.getOutputClassLabels();
+		int[] classCount = new int[dsoOutputLabels.size()];
 		for (int i = 0; i < classCount.length; i++) classCount[i] = 0;
 		int minPerFile = Integer.valueOf(minimumField.getText());
 		int maxPerFile = -1;
@@ -595,8 +730,8 @@ public class TSBAudioTestBatchDialog extends PamDialog {
 			}
 			if (maximumClassCheck.isSelected()) {
 				boolean skip = false;
-				for (int i = 0; i < outpClasses.size(); i++) {
-					if (classCount[i] + currDSO.getSpeciesCount(outpClasses.get(i)) > maxPerClass) skip = true;
+				for (int i = 0; i < dsoOutputLabels.size(); i++) {
+					if (classCount[i] + currDSO.getSpeciesCount(dsoOutputLabels.get(i)) > maxPerClass) skip = true;
 				}
 				if (skip) {
 					loadingBarWindow.addToCounter(loadingBarWindow.IGNORED, totalWavFilesInFolders, currDSO);
@@ -612,7 +747,7 @@ public class TSBAudioTestBatchDialog extends PamDialog {
 				loadingBarWindow.addToCounter(loadingBarWindow.ERROR, totalWavFilesInFolders, currDSO);
 				continue;
 			}
-			for (int i = 0; i < outpClasses.size(); i++) classCount[i] += currDSO.getSpeciesCount(outpClasses.get(i));
+			for (int i = 0; i < dsoOutputLabels.size(); i++) classCount[i] += currDSO.getSpeciesCount(dsoOutputLabels.get(i));
 			loadingBarWindow.addToCounter(loadingBarWindow.SAVED, totalWavFilesInFolders, currDSO);
 		}
 		loadingBarWindow.setToFinished();

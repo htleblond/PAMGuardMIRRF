@@ -52,7 +52,7 @@ public class WMNTSQLLoadingBarWindow extends PamDialog {
 		b.anchor = b.NORTH;
 		b.fill = b.HORIZONTAL;
 		b.gridwidth = 2;
-		loadingMessage = new JLabel("Committing to database...");
+		loadingMessage = new JLabel("Executing SQL updates...");
 		mainPanel.add(loadingMessage, b);
 		b.gridy++;
 		loadingBar = new JProgressBar();

@@ -27,6 +27,7 @@ public class TSBAudioTestBatchLoadingBarWindow extends PamDialog {
 	protected TSBControl tsbControl;
 	protected TSBAudioTestBatchDialog parentDialog;
 	protected ArrayList<String> outpClassLabels;
+	protected GridBagConstraints b;
 	
 	protected JPanel mainPanel;
 	protected JProgressBar loadingBar;
@@ -35,27 +36,31 @@ public class TSBAudioTestBatchLoadingBarWindow extends PamDialog {
 	protected JTextField errorField;
 	protected JTextField[] countFields;
 	
+	protected boolean fileCountStarted = false;
 	protected int totalCounted;
 	
 	public static final int SAVED = 0;
 	public static final int IGNORED = 1;
 	public static final int ERROR = 2;
+	
+	final int textFieldSize = 6;
 
 	public TSBAudioTestBatchLoadingBarWindow(TSBAudioTestBatchDialog parentDialog, TSBControl tsbControl) {
 		super(parentDialog, tsbControl.getUnitName(), false);
 		this.tsbControl = tsbControl;
 		this.parentDialog = parentDialog;
-		this.outpClassLabels = tsbControl.getOutputClassLabels();
+		//if (parentDialog.useLoaded) this.outpClassLabels = tsbControl.getOutputClassLabels();
+		//else this.outpClassLabels = new ArrayList<String>();
+		//this.outpClassLabels = outpClassLabels;
 		this.totalCounted = 0;
 		
 		this.getOkButton().setEnabled(false);
 		this.getCancelButton().removeActionListener(this.getCancelButton().getActionListeners()[0]);
 		this.getCancelButton().addActionListener(new NewCancelButtonPressed());
-		final int textFieldSize = 6;
 		
 		mainPanel = new JPanel(new GridBagLayout());
 		mainPanel.setBorder(new TitledBorder("Generating audio test batch"));
-		GridBagConstraints b = new PamGridBagContraints();
+		b = new PamGridBagContraints();
 		b.anchor = b.WEST;
 		b.fill = b.HORIZONTAL;
 		b.gridwidth = 2;
@@ -99,7 +104,7 @@ public class TSBAudioTestBatchLoadingBarWindow extends PamDialog {
 		b.gridx = 0;
 		b.anchor = b.WEST;
 		mainPanel.add(new JLabel("Label counts:"), b);
-		countFields = new JTextField[outpClassLabels.size()];
+	/*	countFields = new JTextField[outpClassLabels.size()];
 		for (int i = 0; i < outpClassLabels.size(); i++) {
 			b.gridy++;
 			b.gridx = 0;
@@ -111,7 +116,7 @@ public class TSBAudioTestBatchLoadingBarWindow extends PamDialog {
 			countFields[i].setEnabled(false);
 			countFields[i].setText("0");
 			mainPanel.add(countFields[i], b);
-		}
+		} */
 		
 		this.setDialogComponent(mainPanel);
 	}
@@ -151,13 +156,28 @@ public class TSBAudioTestBatchLoadingBarWindow extends PamDialog {
 	 * @param initialIgnoreCount - Number of files that have already been ignored.
 	 * @param initialErrorCount - Number of files that have already caused errors.
 	 */
-	public void startFileCount(int numberOfFiles, int initialIgnoreCount, int initialErrorCount) {
+	public void startFileCount(int numberOfFiles, int initialIgnoreCount, int initialErrorCount, ArrayList<String> outpClassLabels) {
+		this.outpClassLabels = outpClassLabels;
+		countFields = new JTextField[outpClassLabels.size()];
+		for (int i = 0; i < outpClassLabels.size(); i++) {
+			b.gridy++;
+			b.gridx = 0;
+			b.gridwidth = 1;
+			mainPanel.add(new JLabel(outpClassLabels.get(i)), b);
+			b.gridx++;
+			countFields[i] = new JTextField(textFieldSize);
+			countFields[i].setEnabled(false);
+			countFields[i].setText("0");
+			mainPanel.add(countFields[i], b);
+		}
+		this.setDialogComponent(mainPanel);
 		int initialCounted = initialIgnoreCount + initialErrorCount;
 		loadingBar.setValue((int) 100*initialCounted/numberOfFiles);
 		loadingBar.setString(getFileIterationString(initialCounted, numberOfFiles));
 		ignoredField.setText(String.valueOf(initialIgnoreCount));
 		errorField.setText(String.valueOf(initialErrorCount));
 		totalCounted = initialCounted;
+		this.fileCountStarted = true;
 	}
 	
 	/**
@@ -168,8 +188,10 @@ public class TSBAudioTestBatchLoadingBarWindow extends PamDialog {
 	 * <br>2 == ERROR
 	 * @param numberOfFiles - Total number of files to run through.
 	 * @param dso - The DetectionSetObject in question.
+	 * @throws AssertionError - If startFileCount hasn't been run yet.
 	 */
-	public void addToCounter(int counterID, int numberOfFiles, DetectionSetObject dso) {
+	public void addToCounter(int counterID, int numberOfFiles, DetectionSetObject dso) throws AssertionError {
+		assert fileCountStarted;
 		totalCounted += 1;
 		loadingBar.setValue((int) 100*totalCounted/numberOfFiles);
 		loadingBar.setString(getFileIterationString(totalCounted, numberOfFiles));
@@ -184,6 +206,10 @@ public class TSBAudioTestBatchLoadingBarWindow extends PamDialog {
 		} else if (counterID == ERROR) {
 			errorField.setText(String.valueOf(Integer.valueOf(errorField.getText()).intValue() + 1));
 		}
+	}
+	
+	public boolean hasFileCountStarted() {
+		return fileCountStarted;
 	}
 	
 	/**

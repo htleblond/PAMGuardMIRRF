@@ -66,7 +66,7 @@ public class WMNTBinaryLoadingBarWindow extends PamDialog {
 	 */
 	public void startReadingCount() {
 		if (totalToUpdate == 0) throw new ArithmeticException("totalToUpdate must be greater than zero.");
-		statusLabel = new JLabel("Reading binary files...");
+		statusLabel.setText("Reading binary files...");
 		readingStarted = true;
 		loadingBar.setString("0/"+String.valueOf(totalToUpdate)+" (0.0%)");
 	}

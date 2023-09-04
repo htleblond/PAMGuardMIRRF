@@ -2,6 +2,10 @@ package mirrfTrainingSetBuilder;
 
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -68,6 +72,16 @@ public class TSBControl extends PamControlledUnit implements PamSettings {
 		    e.printStackTrace();
 		}
 		return -1;
+	}
+	
+	/**
+	 * Converts a long to a string representing a date/time with the following format: yyyy-MM-dd HH:mm:ss+SSS
+	 */
+	public String convertLongToUTC(long inp) {
+		Date date = new Date(inp);
+		String date_format = "yyyy-MM-dd HH:mm:ss+SSS";
+		SimpleDateFormat currdateformat = new SimpleDateFormat(date_format);
+		return currdateformat.format(date);
 	}
 	
 	/**

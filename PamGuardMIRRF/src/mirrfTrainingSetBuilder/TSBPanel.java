@@ -171,20 +171,20 @@ public class TSBPanel extends PamBorderPanel {
 		b.fill = b.NONE;
 		b.anchor = b.SOUTHWEST;
 		memPanel.add(audioBatchButton, b);
-		JPanel bottomButtonsPanel = new JPanel(new GridLayout(1, 2, 5, 5));
+		JPanel bottomRightButtonsPanel = new JPanel(new GridLayout(1, 2, 5, 5));
 		loadButton = new JButton("Load set");
 		loadButton.addActionListener(new LoadButtonListener());
-		bottomButtonsPanel.add(loadButton);
+		bottomRightButtonsPanel.add(loadButton);
 		saveButton = new JButton("Save set");
 		saveButton.addActionListener(new SaveButtonListener());
 		saveButton.setEnabled(false);
-		bottomButtonsPanel.add(saveButton);
+		bottomRightButtonsPanel.add(saveButton);
 		//b.gridy++;
 		b.gridx = 1;
 		b.gridwidth = 1;
 		b.fill = b.NONE;
 		b.anchor = b.SOUTHEAST;
-		memPanel.add(bottomButtonsPanel, b);
+		memPanel.add(bottomRightButtonsPanel, b);
 		
 		//a.fill = a.BOTH;
 		mainPanel.add(memPanel);
@@ -317,11 +317,22 @@ public class TSBPanel extends PamBorderPanel {
 	
 	protected class AudioBatchButtonListener implements ActionListener {
 		public void actionPerformed(ActionEvent e) {
-			if (tsbControl.getSubsetList().size() == 0) {
-				tsbControl.SimpleErrorDialog("Training data must be loaded into the table first.", 250);
-				return;
+			JComboBox<String> box = new JComboBox<String>();
+			box.addItem("Use data from loaded training set");
+			box.addItem("Use data from external .wmnt or .mirrfts file");
+			int res = JOptionPane.showConfirmDialog(tsbControl.getGuiFrame(),
+					box,
+					"Creating new audio batch",
+					JOptionPane.OK_CANCEL_OPTION,
+					JOptionPane.QUESTION_MESSAGE);
+			if (res != JOptionPane.OK_OPTION) return;
+			if (box.getSelectedIndex() == 0) {
+				if (tsbControl.getSubsetList().size() == 0) {
+					tsbControl.SimpleErrorDialog("Training data must be loaded into the table first.", 250);
+					return;
+				}
 			}
-			TSBAudioTestBatchDialog dialog = new TSBAudioTestBatchDialog(tsbControl.getPamView().getGuiFrame(), tsbControl);
+			TSBAudioTestBatchDialog dialog = new TSBAudioTestBatchDialog(tsbControl.getPamView().getGuiFrame(), tsbControl, box.getSelectedIndex() == 0);
 			dialog.setVisible(true);
 		}
 	}

@@ -1,5 +1,5 @@
 mirrf_1.03 CHANGELOG
-August 11th to 15th, 2023
+August 11th to September 4th, 2023
 Holly LeBlond
 
 1.03a (August 11th, 2023)
@@ -15,3 +15,9 @@ Holly LeBlond
 1.03c (August 15th, 2023)
 - Removed annoying print statement from WMNT's binary data loading function.
 - The WMNT's binary data loading dialog now appears while searching for files, and displays how many have been counted.
+
+1.03d (September 4th, 2023)
+- Audio batch creator in Training Set Builder:
+	- Can now read data from external .wmnt or .mirrfts files.
+	- Can ignore certain labels like the Feature extractor can.
+	- Daylight Savings Time option added.

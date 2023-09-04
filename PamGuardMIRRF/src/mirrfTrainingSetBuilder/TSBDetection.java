@@ -39,7 +39,8 @@ public class TSBDetection {
 		for (int i = 0; i < vector.length; i++) this.featureVector[i] = Double.valueOf(vector[i]);
 	}
 	
-	public TSBDetection(TSBControl tsbControl, int expectedVectorSize, String[] tsData) throws AssertionError, Exception {
+	public TSBDetection(TSBControl tsbControl, int expectedVectorSize, String[] tsData)
+			throws AssertionError, Exception {
 		this.tsbControl = tsbControl;
 		assert tsData.length == 8 + expectedVectorSize;
 		this.clusterID = tsData[0];
