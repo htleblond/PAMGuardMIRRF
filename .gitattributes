@@ -1,3 +1,4 @@
 *.html linguist-detectable=false
 *.bat linguist-detectable=false
+*.css linguist-detectable=false
 *.java linguist-language=Java
