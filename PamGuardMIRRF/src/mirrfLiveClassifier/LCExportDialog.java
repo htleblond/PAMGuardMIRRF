@@ -456,6 +456,7 @@ public class LCExportDialog extends PamDialog {
 			Iterator<String> it = map.keySet().iterator();
 			while (it.hasNext()) unmatched.add(it.next());
 		}
+		//for (int i = 0; i < unmatched.size(); i++) System.out.println(unmatched.get(i)); // TODO REMOVE
 		if (unmatched.size() > 0) {
 			sb.append(message+"\n\n");
 			if (unmatched.contains("sr")) sb.append("Audio sampling rate: "+map.get("sr")+"\n");
@@ -492,6 +493,8 @@ public class LCExportDialog extends PamDialog {
 			if (unmatched.contains("audioNRScalar")) sb.append("Noise reduction scalar: "+map.get("audioNRScalar")+"\n");
 			sb.append("\n");
 		}
+		pw.write(sb.toString());
+		pw.flush();
 		return sb;
 	}
 	
@@ -629,9 +632,13 @@ public class LCExportDialog extends PamDialog {
 			}
 			HashMap<String, LCDataUnit> unitMap = db.retrieveDataUnitsByIDandDate(mapInput);
 			Iterator<String> it = unitMap.keySet().iterator();
+			ArrayList<String> idDateList = new ArrayList<String>();
+			while (it.hasNext()) idDateList.add(it.next());
+			idDateList.sort(Comparator.naturalOrder());
 			ArrayList<String> toWrite = new ArrayList<String>();
-			while (it.hasNext()) {
-				LCDataUnit du = unitMap.get(it.next());
+			//while (it.hasNext()) {
+			while (idDateList.size() > 0) {
+				LCDataUnit du = unitMap.get(idDateList.remove(0));
 				if (du == null) {
 					continue;
 				}

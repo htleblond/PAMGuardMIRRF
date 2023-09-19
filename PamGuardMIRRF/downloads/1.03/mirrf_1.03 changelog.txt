@@ -1,5 +1,5 @@
 mirrf_1.03 CHANGELOG
-August 11th to September 4th, 2023
+August 11th to September 19th, 2023
 Holly LeBlond
 
 1.03a (August 11th, 2023)
@@ -21,3 +21,13 @@ Holly LeBlond
 	- Can now read data from external .wmnt or .mirrfts files.
 	- Can ignore certain labels like the Feature extractor can.
 	- Daylight Savings Time option added.
+	
+1.03e (September 19th, 2023)
+- Feature Extractor taking data input from .wmnt files now ignores contours with a high frequency above the Nyquist frequency.
+- Classifier best-features dialog:
+	- Bug fix: F-values were previously calculated incorrectly when retrieving best-features scores in LCPythonScript.
+	- p-values now added to table in dialog.
+- "Ignored" classifier results are now no longer added to the confusion matrix and are instead added to the accuracy matrix if they exceed the minimum detection limit.
+- Classifier "full results" export:
+	- Bug fix: Feature Extractor settings previously did not get written.
+	- Individual entries are now sorted by ID string, as opposed to the current order in the table.

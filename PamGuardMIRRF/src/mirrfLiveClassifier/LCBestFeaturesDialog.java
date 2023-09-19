@@ -33,10 +33,10 @@ public class LCBestFeaturesDialog extends PamDialog {
 		
 		PamPanel mainPanel = new PamPanel(new FlowLayout());
 		
-		String[] columnNames = {"Feature name", "Score"};
+		String[] columnNames = {"Feature name", "F", "p"};
 		dtm = new DefaultTableModel(columnNames,0) {
-			Class[] types = {String.class, String.class};
-			boolean[] canEdit = {false, false};
+			Class[] types = {String.class, Double.class, Double.class};
+			boolean[] canEdit = {false, false, false};
 			
 			@Override
 			public Class getColumnClass(int index) {
@@ -67,7 +67,8 @@ public class LCBestFeaturesDialog extends PamDialog {
 		String[] tokens = pythonOutput.substring(1, pythonOutput.length()-1).split("\\), \\(");
 		for (int i = 0; i < tokens.length; i++) {
 			String[] subtokens = tokens[i].split(", ");
-			dtm.addRow(new Object[] {subtokens[0], String.format("%.3f", Double.valueOf(subtokens[1]))});
+			dtm.addRow(new Object[] {subtokens[0], Double.valueOf(String.format("%.1f", Double.valueOf(subtokens[1]))),
+					Double.valueOf(subtokens[2])});
 		}
 	}
 

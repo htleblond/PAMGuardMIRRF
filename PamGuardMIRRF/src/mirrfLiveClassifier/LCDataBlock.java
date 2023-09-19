@@ -38,14 +38,16 @@ public class LCDataBlock extends PamDataBlock<LCDataUnit> {
 	@Override
 	public void addPamData(LCDataUnit du, Long uid) {
 		LCCallCluster cc = du.getCluster();
-		if (lcControl.getParams().shouldIgnoreCluster(cc)) {
+	/*	if (lcControl.getParams().shouldIgnoreCluster(cc)) {
 			if (lcControl.getParams().displayIgnored) {
 				lcControl.getTabPanel().getPanel().addResultToTable(du);
 			}
 		} else {
 			super.addPamData(du, uid);
 			lcControl.getTabPanel().getPanel().addResultToTable(du);
-		}
+		} */
+		super.addPamData(du, uid);
+		lcControl.getTabPanel().getPanel().addResultToTable(du);
 	}
 	
 	@Override

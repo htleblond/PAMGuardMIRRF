@@ -220,10 +220,12 @@ class LCModel():
         X, y = self.createXy()
         skb = SelectKBest(f_classif, k=len(self.featureList)).fit(X,y)
         scores = skb.scores_
+        p_values = skb.pvalues_
         currIndices = skb.get_support(indices=True).tolist()
         outp = "BESTFEATUREORDER: "
         for i in np.arange(len(currIndices)):
-            outp += "("+self.featureList[currIndices[i]]+", "+str(scores[i]/len(X))+")"
+            #outp += "("+self.featureList[currIndices[i]]+", "+str(scores[i]/len(X))+")"
+            outp += "("+self.featureList[currIndices[i]]+", "+str(scores[i])+", "+str(p_values[i])+")"
             if (i < len(currIndices)-1):
                 outp += ", "
         print(outp, flush=True)

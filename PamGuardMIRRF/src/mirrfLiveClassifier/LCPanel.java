@@ -422,7 +422,7 @@ public class LCPanel extends PamBorderPanel {
 					}
 				} else if (i == labelOrder.length+1) {
 					if (j == 0) {
-						jLabelConfMatrix[i][j] = new JLabel("Precision");
+						jLabelConfMatrix[i][j] = new JLabel("Prcsn.");
 					} else {
 						jLabelConfMatrix[i][j] = new JLabel("-%");
 					}
@@ -569,7 +569,8 @@ public class LCPanel extends PamBorderPanel {
 		for (int i = 0; i < control.getParams().labelOrder.length; i++) {
 			labelList.add(control.getParams().labelOrder[i]);
 		}
-		if (descIndex >= descriptors.indexOf(control.getParams().worstLead) && cc.getSize() >= control.getParams().minClusterSize) {
+		//if (descIndex >= descriptors.indexOf(control.getParams().worstLead) && cc.getSize() >= control.getParams().minClusterSize) {
+		if (cc.getSize() >= control.getParams().minClusterSize) {
 			if (accuracyMatrix == null) {
 				createMatrices(control.getParams().labelOrder);
 			}
@@ -611,22 +612,25 @@ public class LCPanel extends PamBorderPanel {
 			uidToClusterMap.put(String.valueOf(cc.uids[i])+", "+control.convertLocalLongToUTC(cc.datetimes[i]),
 					cc.clusterID+", "+control.convertLocalLongToUTC(cc.getStartAndEnd()[0]));
 		}
-		dtm.addRow(newRow);
-		if (dtm.getColumnCount() >= 8) {
-			String actualSpecies = cc.getActualSpeciesString();
-			if (actualSpecies.endsWith(" *")) {
-				actualSpecies = actualSpecies.substring(0, actualSpecies.length()-2);
-			}
-			String predictedSpecies = cc.getPredictedSpeciesString();
-			if (labelList.contains(predictedSpecies)) {
-				if (labelList.indexOf(actualSpecies) != -1) {
-					confMatrix[labelList.indexOf(actualSpecies)][labelList.indexOf(predictedSpecies)]++;
-				} else if (actualSpecies.equals("Other")) {
-					confMatrix[confMatrix.length-2][labelList.indexOf(predictedSpecies)]++;
-				} else if (actualSpecies.equals("Unlabelled")) {
-					confMatrix[confMatrix.length-1][labelList.indexOf(predictedSpecies)]++;
+		if (!control.getParams().shouldIgnoreCluster(cc) || control.getParams().displayIgnored)
+			dtm.addRow(newRow);
+		if (!control.getParams().shouldIgnoreCluster(cc)) {
+			if (dtm.getColumnCount() >= 8) {
+				String actualSpecies = cc.getActualSpeciesString();
+				if (actualSpecies.endsWith(" *")) {
+					actualSpecies = actualSpecies.substring(0, actualSpecies.length()-2);
 				}
-				updateConfMatrixLabels();
+				String predictedSpecies = cc.getPredictedSpeciesString();
+				if (labelList.contains(predictedSpecies)) {
+					if (labelList.indexOf(actualSpecies) != -1) {
+						confMatrix[labelList.indexOf(actualSpecies)][labelList.indexOf(predictedSpecies)]++;
+					} else if (actualSpecies.equals("Other")) {
+						confMatrix[confMatrix.length-2][labelList.indexOf(predictedSpecies)]++;
+					} else if (actualSpecies.equals("Unlabelled")) {
+						confMatrix[confMatrix.length-1][labelList.indexOf(predictedSpecies)]++;
+					}
+					updateConfMatrixLabels();
+				}
 			}
 		}
 	}
