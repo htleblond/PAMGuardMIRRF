@@ -1,4 +1,4 @@
-package mirrfFeaturePlotter;
+package mirrfFeaturePlotterOld;
 
 import java.awt.Frame;
 import java.awt.event.ActionEvent;

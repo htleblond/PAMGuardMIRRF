@@ -1,4 +1,4 @@
-package mirrfFeaturePlotter;
+package mirrfFeaturePlotterOld;
 
 import PamModel.PamDependency;
 import PamModel.PamPluginInterface;

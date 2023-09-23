@@ -552,6 +552,12 @@ public class TSBSubsetDialog extends PamDialog {
 		}
 		Collections.sort(classList);
 		
+		HashMap<String, String[]> feMap = new HashMap<String, String[]>();
+		for (int i = 0; i < featuresEntriesList.size(); i++) {
+			String[] entry = featuresEntriesList.get(i);
+			feMap.put(entry[1]+", "+entry[2], entry);
+		}
+		
 		validEntriesList = new ArrayList<ArrayList<TSBDetection>>();
 		//boolean printFirst = true;
 		for (int i = 0; i < classList.size(); i++) {
@@ -573,7 +579,8 @@ public class TSBSubsetDialog extends PamDialog {
 					className = currWMNT[6];
 				}
 				if (className.equals(classList.get(i))) {
-					for (int k = 0; k < featuresEntriesList.size(); k++) {
+					// Rookie use of O(n^2) below - my bad!!!!
+				/*	for (int k = 0; k < featuresEntriesList.size(); k++) {
 						String[] currFE = featuresEntriesList.get(k);
 						if (currWMNT[0].equals(currFE[1]) && currWMNT[1].equals(currFE[2])) {
 							try {
@@ -585,6 +592,15 @@ public class TSBSubsetDialog extends PamDialog {
 							}
 							break;
 						}
+					} */
+					String[] currFE = feMap.get(currWMNT[0]+", "+currWMNT[1]);
+					if (currFE == null) continue;
+					try {
+						TSBDetection outp = new TSBDetection(tsbControl, featureList.size(),
+								currFE[0], currWMNT, Arrays.copyOfRange(currFE, 6, currFE.length));
+						currDetectionList.add(outp);
+					} catch (AssertionError | Exception e2) {
+						e2.printStackTrace();
 					}
 				}
 			}

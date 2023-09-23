@@ -31,3 +31,6 @@ Holly LeBlond
 - Classifier "full results" export:
 	- Bug fix: Feature Extractor settings previously did not get written.
 	- Individual entries are now sorted by ID string, as opposed to the current order in the table.
+	
+1.03f (September 22nd, 2023)
+- .mirrffe and .wmnt file merging in the Training Set Builder had an O(n^2) list search, which has been replaced with a hash map. (Rookie mistake, I know!)
