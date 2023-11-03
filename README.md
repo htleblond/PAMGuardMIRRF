@@ -19,6 +19,7 @@ Under "Utilities" (Viewer-mode only):
 - **Whistle and Moan Navigation Tool (WMNT)** - Tool for annotating WMD detections and for easier navigation of the spectrogram after processing.
 
 ## Installation
+(Skip steps 1 and 2 if you're ONLY using the WMNT.)
 1. Install Python 3 and ensure that pip works.
 2. Run the .bat file from the latest release. (Note to Python developers: Check the .bat file first in case it creates any conflicts!)
 3. Place the .jar file from the latest release into your version of PAMGuard's "plugins" folder.
