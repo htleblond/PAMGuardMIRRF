@@ -5,9 +5,12 @@ import numpy as np
 import librosa
 from librosa import display
 from librosa import core
+import parselmouth
 import soundfile as sf
 import matplotlib.pyplot as plt
+import scipy
 import scipy.signal as signal
+from scipy import fft
 import os
 import sys
 import IPython.display as ipd
@@ -187,50 +190,39 @@ class FEThread():
             return librosa.feature.spectral_rolloff(y=y, sr=self.sr, roll_percent=float(tokens[1])/100,\
                                                      n_fft=self.audioSTFTLength, hop_length=self.audioHopSize, \
                                                      window=self.getWindowName(self.audioWindowFunction))
-        elif tokens[0] == "yin":
-            yin = librosa.yin(y, fmin=int(tokens[1]), fmax=int(tokens[2]), sr=self.sr, \
-                               frame_length=2*self.audioSTFTLength, hop_length=self.audioHopSize, win_length=self.audioSTFTLength)
-            outp = []
-            for i in np.arange(len(yin)):
-                if yin[i] < self.sr/4:
-                    outp.append(yin[i])
-                else:
-                    outp.append(0.0)
-            #if len(outp) == 0:
-            #    return [0.0]
+        elif tokens[0] == "praat":
+            #yin = librosa.yin(y, fmin=int(tokens[1]), fmax=int(tokens[2]), sr=self.sr, \
+            #                   frame_length=2*self.audioSTFTLength, hop_length=self.audioHopSize, win_length=self.audioSTFTLength)
+            snd = parselmouth.Sound(y, sampling_frequency=self.sr)
+            praat = snd.to_pitch(time_step=self.audioHopSize/self.sr, pitch_floor=int(tokens[1]), pitch_ceiling=int(tokens[2]))
+            outp = [x[0] for x in praat.to_array()[0]]
             return outp
         elif tokens[0] == "harms":
-            yin_orig = librosa.yin(y, fmin=int(tokens[2]), fmax=int(tokens[3]), sr=self.sr, \
-                               frame_length=2*self.audioSTFTLength, hop_length=self.audioHopSize, win_length=self.audioSTFTLength)
-            yin = []
-            for i in np.arange(len(yin_orig)):
-                if yin_orig[i] < self.sr/4:
-                    yin.append(yin_orig[i])
-                else:
-                    yin.append(0.0)
-            #if len(yin) == 0:
-            #    yin = [0.0]
+            #yin_orig = librosa.yin(y, fmin=int(tokens[2]), fmax=int(tokens[3]), sr=self.sr, \
+            #                   frame_length=2*self.audioSTFTLength, hop_length=self.audioHopSize, win_length=self.audioSTFTLength)
+            snd = parselmouth.Sound(y, sampling_frequency=self.sr)
+            praat = snd.to_pitch(time_step=self.audioHopSize/self.sr, pitch_floor=int(tokens[2]), pitch_ceiling=int(tokens[3]))
+            praat = [x[0] for x in praat.to_array()[0]]
             nh = int(tokens[1])
-            harmonics_arr = [[] for x in np.arange(nh)]
-            y_amp_t = np.transpose(np.abs(y_stft))
-            for j in np.arange(len(y_amp_t)):
-                for k in np.arange(nh):
-                    if yin[j] > 0.0:
-                        floor = [int(np.floor((yin[j]*(k+1)-0.5)/((self.sr/2)/(self.audioSTFTLength/2)))), \
-                                 np.mod((yin[j]*(k+1)-0.5)/((self.sr/2)/(self.audioSTFTLength/2)),1)]
-                        ceiling = [int(np.ceil((yin[j]*(k+1)-0.5)/((self.sr/2)/(self.audioSTFTLength/2)))), \
-                                   1-np.mod((yin[j]*(k+1)-0.5)/((self.sr/2)/(self.audioSTFTLength/2)),1)]
-                        if yin[j] >= int(tokens[2]) and yin[j] <= int(tokens[3]):
-                            if ceiling[0] < self.audioSTFTLength/2:
-                                harmonics_arr[k].append(y_amp_t[j][floor[0]]*floor[1] + y_amp_t[j][int(ceiling[0])]*ceiling[1])
-                            else:
-                                harmonics_arr[k].append(0.0)
-            harmonics = []
-            if len(harmonics_arr[0]) > 0:
-                harmonics = [np.mean(x) for x in harmonics_arr]
-            else:
-                harmonics = [[0.0] for x in harmonics_arr]
-            return [harmonics, harmonics_arr, y_amp_t]
+            y_fft_arr = []
+            j = 0
+            while (j+1)*int(self.sr*self.audioHopSize/self.sr) <= len(y):
+                y_fft_arr.append(fft.fft(y[j*int(self.sr*self.audioHopSize/self.sr):(j+1)*int(self.sr*self.audioHopSize/self.sr)], n=self.sr)[:int(self.sr/2)])
+                j += 1
+            freqs_mags = []
+            fft_mag_outp = []
+            for i in np.arange(len(praat)):
+                if praat[i] == 0.0:
+                    continue
+                frame = []
+                for j in np.arange(nh)+1:
+                    if int(np.round(praat[i]*j)) < self.sr/2:
+                        frame.append([praat[i]*j, np.abs(y_fft_arr[i][int(np.round(praat[i]*j))])])
+                    else:
+                        frame.append([praat[i]*j, 0.0])
+                freqs_mags.append(frame)
+                fft_mag_outp.append(np.abs(y_fft_arr[i]))
+            return [freqs_mags, fft_mag_outp]
         elif tokens[0] == "zcr":
             return librosa.feature.zero_crossing_rate(y+0.0001)
         return []
@@ -270,58 +262,60 @@ class FEThread():
             return self.calculateUnit(self.calculateFreqSD1stDerivative(headerData.slice_data), tokens[len(tokens)-1])
         elif tokens[0] == "freqsdd2":
             return self.calculateUnit(self.calculateFreqSD2ndDerivative(headerData.slice_data), tokens[len(tokens)-1])
-        elif tokens[0] in ["rms","bandwidth","centroid","contrast","flatness","flux","specmag","rolloff","yin","zcr"]:
+        elif tokens[0] in ["rms","bandwidth","centroid","contrast","flatness","flux","specmag","rolloff","praat","zcr"]:
             return self.calculateUnit(featureArray, tokens[len(tokens)-1])
         elif tokens[0] in ["mfcc","poly"]:
             if tokens[2] == "all":
                 return self.calculateUnit(featureArray, tokens[len(tokens)-1])
             else:
                 return self.calculateUnit(featureArray[int(tokens[2])-1], tokens[len(tokens)-1])
-        elif tokens[0] == "harmmags":
-            if np.max(featureArray[0]) == 0:
-                return 1.0
-            outp = np.sum([x/np.max(featureArray[0]) for x in featureArray[0]])
-            if np.isnan(outp):
+        #elif tokens[0] == "harmmags":
+            #if np.max(featureArray[0]) == 0:
+            #    return 1.0
+            #outp = np.sum([x/np.max(featureArray[0]) for x in featureArray[0]])
+            #if np.isnan(outp):
+            #    return 0.0
+            #return outp
+        elif tokens[0] == "thd":
+            # Kudos: https://www.analog.com/media/en/training-seminars/design-handbooks/Practical-Analog-Design-Techniques/Section8.pdf
+            if len(featureArray[0]) == 0 or len(featureArray[0][0]) < 2:
                 return 0.0
-            return outp
-        elif tokens[0] == "hbr":
-            if np.sum(featureArray[2]) == 0:
+            thd = []
+            for i in np.arange(len(featureArray[0])):
+                frame = featureArray[0][i]
+                thd.append(np.sqrt(np.sum([np.power(frame[x][1], 2) for x in np.arange(len(frame)-1)+1]))/frame[0][1])
+            return self.calculateUnit(thd, tokens[len(tokens)-1])
+        elif tokens[0] == "hbr": # harmonic-mean divided by frame-median FFT magnitude
+            if len(featureArray[0]) == 0:
                 return 0.0
-            outp = np.sum(featureArray[1])/np.sum(featureArray[2])
-            if np.isnan(outp):
-                return 0.0
-            return outp
-        elif tokens[0] in ["hcentrmean","hcentrstd"]:
-            if not np.max(featureArray[0]) > 0:
-                if tokens[0] == "hcentrmean":
-                    return 1.0
-                elif tokens[0] == "hcentrstd":
-                    return 0.0
-            harmonics_1000 = []
-            try:
-                harmonics_1000 = [1000*x/np.max(featureArray[0]) for x in featureArray[0]]
-            except Exception:
-                pass
-            harmonics_histo = []
-            if len(harmonics_1000) > 0:
-                for j in np.arange(int(tokens[1])):
+            ratios = []
+            for i in np.arange(len(featureArray[0])):
+                frame_t = np.transpose(featureArray[0][i])
+                ratios.append(np.mean(frame_t[1])/np.median(featureArray[1][i]))
+            return self.calculateUnit(ratios, tokens[len(tokens)-1])
+        #elif tokens[0] in ["hcentrmean","hcentrstd"]:
+        elif tokens[0] == "hcentroid":
+            if len(featureArray[0]) == 0:
+                return self.calculateUnit([1.0], tokens[len(tokens)-1])
+            centroids = []
+            for i in np.arange(len(featureArray[0])):
+                frame_t = np.transpose(featureArray[0][i])
+                harmonics_1000 = [1000*x/np.max(frame_t[1]) for x in frame_t[1]]
+                harmonics_histo = []
+                for j in np.arange(len(harmonics_1000)):
                     for k in np.arange(int(harmonics_1000[j])):
-                        harmonics_histo.append(j)
-            else:
-                if tokens[0] == "hcentrmean":
-                    return 1.0
-                elif tokens[0] == "hcentrstd":
-                    return 0.0
-            if tokens[0] == "hcentrmean":
-                if len(harmonics_histo) > 0:
-                    return np.mean(harmonics_histo)+1
+                        harmonics_histo.append(j+1)
+                if tokens[len(tokens)-2] == "mean":
+                    centroids.append(np.mean(harmonics_histo))
+                elif tokens[len(tokens)-2] == "median":
+                    centroids.append(np.median(harmonics_histo))
+                elif tokens[len(tokens)-2] == "std":
+                    centroids.append(np.std(harmonics_histo))
+                elif tokens[len(tokens)-2] == "mode":
+                    centroids.append(np.array(harmonics_1000).argmax()+1)
                 else:
-                    return 1.0
-            elif tokens[0] == "hcentrstd":
-                if len(harmonics_histo) > 0:
-                    return np.std(harmonics_histo)
-                else:
-                    return 0.0
+                    return feature
+            return self.calculateUnit(centroids, tokens[len(tokens)-1])
         return feature
      
     # Extracts the mean, median, standard deviation, maximum or minimum from pre-calculated data.
@@ -355,12 +349,14 @@ class FEThread():
                 curr = tokens[0]
             elif tokens[0] in ["mfcc","poly","flatness","rolloff"]:
                 curr = tokens[0]+"_"+tokens[1]
-            elif tokens[0] in ["bandwidth","specmag","yin"]:
+            elif tokens[0] in ["bandwidth","specmag","praat"]:
                 curr = tokens[0]+"_"+tokens[1]+"_"+tokens[2]
             elif tokens[0] in ["contrast"]:
                 curr = tokens[0]+"_"+tokens[1]+"_"+tokens[2]+"_"+tokens[3]
-            elif tokens[0] in ["harmmags","hbr","hcentrmean","hcentrstd"]:
+            elif tokens[0] in ["thd","hbr"]:
                 curr = "harms_"+tokens[1]+"_"+tokens[2]+"_"+tokens[3]
+            elif tokens[0] in ["hcentroid"]:
+                curr = "harms_"+tokens[1]+"_"+tokens[2]+"_"+tokens[3]+"_"+tokens[4]
                 
             if len(curr) == 0:
                 outpIndexes.append(-1)
@@ -409,7 +405,7 @@ class HeaderData:
 def loadAudio(fn: str, sr: int):
     warnings.simplefilter(action='ignore', category=FutureWarning)
     try:
-        y, newsr = librosa.load(fn, sr)
+        y, newsr = librosa.load(fn, sr=sr)
         return y
     except (Exception, RuntimeError, FileNotFoundError) as e:
         print("loadAudio exception")

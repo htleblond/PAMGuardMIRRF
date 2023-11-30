@@ -1197,7 +1197,7 @@ public class FESettingsDialog extends PamDialog {
 					}
 				}
 			} else if (tokens.length == 4) {
-				ArrayList<String> fourfers = new ArrayList<String>(Arrays.asList("mfcc","poly","bandwidth","specmag","yin"));
+				ArrayList<String> fourfers = new ArrayList<String>(Arrays.asList("mfcc","poly","bandwidth","specmag","praat"));
 				if (fourfers.contains(tokens[0]) && calcs.contains(tokens[3])) {
 					if (tokens[0].equals("mfcc") || tokens[0].equals("poly")) {
 						try {
@@ -1224,7 +1224,7 @@ public class FESettingsDialog extends PamDialog {
 						} catch (Exception e2) {
 							// do nothing
 						}
-					} else if (tokens[0].equals("specmag") || tokens[0].equals("yin")) {
+					} else if (tokens[0].equals("specmag") || tokens[0].equals("praat")) {
 						try {
 							int min = Integer.valueOf(tokens[1]);
 							int max = Integer.valueOf(tokens[2]);
@@ -1238,7 +1238,7 @@ public class FESettingsDialog extends PamDialog {
 					}
 				}
 			} else if (tokens.length == 5) {
-				ArrayList<String> fivers = new ArrayList<String>(Arrays.asList("contrast","harmmags","hbr","hcentrmean","hcentrstd"));
+				ArrayList<String> fivers = new ArrayList<String>(Arrays.asList("contrast","thd","hbr"));
 				if (fivers.contains(tokens[0])) {
 					if (tokens[0].equals("contrast")) {
 						try {
@@ -1256,7 +1256,25 @@ public class FESettingsDialog extends PamDialog {
 							int harmonics = Integer.valueOf(tokens[1]);
 							int min = Integer.valueOf(tokens[2]);
 							int max = Integer.valueOf(tokens[3]);
-							if (harmonics > 0 && min < max && (tokens[4].equals("ny") || tokens[4].equals("nn"))) {
+							if (harmonics > 0 && min < max && calcs.contains(tokens[4])) {
+								validFeatures.add(inp.get(i));
+								continue;
+							}
+						} catch (Exception e2) {
+							// do nothing
+						}
+					}
+				}
+			} else if (tokens.length == 6) {
+				ArrayList<String> sixers = new ArrayList<String>(Arrays.asList("hcentroid"));
+				if (sixers.contains(tokens[0])) {
+					if (tokens[0].equals("hcentroid")) {
+						try {
+							int nh = Integer.valueOf(tokens[1]);
+							int min = Integer.valueOf(tokens[2]);
+							int max = Integer.valueOf(tokens[3]);
+							ArrayList<String> fcalcs = new ArrayList<String>(Arrays.asList("mean","median","std","mode"));
+							if (nh > 0 && min < max && fcalcs.contains(tokens[4]) && calcs.contains(tokens[5])) {
 								validFeatures.add(inp.get(i));
 								continue;
 							}
@@ -1314,6 +1332,10 @@ public class FESettingsDialog extends PamDialog {
 		outp.put("freqsdslope", "Frequency, start-to-end slope (slice data)");
 		outp.put("mfcc","Mel-frequency cepstral coefficients");
 		outp.put("poly","Polynomial features");
+		outp.put("praat","Praat fundamental frequency");
+		outp.put("thd","Total harmonic distortion");
+		outp.put("hbr","Harmonics-to-background ratio");
+		outp.put("hcentroid","Harmonic centroid");
 		outp.put("rms","Root mean square");
 		outp.put("bandwidth","Spectral bandwidth");
 		outp.put("centroid","Spectral centroid");
@@ -1322,11 +1344,11 @@ public class FESettingsDialog extends PamDialog {
 		outp.put("flux","Spectral flux (onset strength)");
 		outp.put("specmag","Spectral magnitude");
 		outp.put("rolloff","Spectral rolloff");
-		outp.put("yin","YIN fundamental frequency");
-		outp.put("harmmags","Sum of harmonic magnitudes");
-		outp.put("hbr","Harmonics-to-background ratio");
-		outp.put("hcentrmean","Harmonic centroid mean");
-		outp.put("hcentrstd","Harmonic centroid standard deviation");
+		//outp.put("yin","YIN fundamental frequency");
+		//outp.put("harmmags","Sum of harmonic magnitudes");
+		//outp.put("hbr","Harmonics-to-background ratio");
+		//outp.put("hcentrmean","Harmonic centroid mean");
+		//outp.put("hcentrstd","Harmonic centroid standard deviation");
 		outp.put("zcr","Zero-crossing rate");
 		return outp;
 	}

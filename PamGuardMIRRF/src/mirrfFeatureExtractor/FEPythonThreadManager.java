@@ -573,6 +573,27 @@ public class FEPythonThreadManager {
 		}
 	}
 	
+	protected void signalPythonError(String outpstr) {
+		String uid = outpstr.substring(outpstr.indexOf("Error: Could not process ")+25);
+		boolean breakLoop = false;
+		for (int i = 0; i < ccList.size(); i++) {
+			for (int j = 0; j < ccList.get(i).size(); j++) {
+				if (ccList.get(i).get(j).uid.equals(uid)) {
+					ccList.get(i).remove(j);
+					breakLoop = true;
+					break;
+				}
+			}
+			if (breakLoop) {
+				break;
+			}
+		}
+		if (breakLoop) {
+			boolean subd = feControl.subtractOneFromPendingCounter();
+			feControl.addOneToCounter(FEPanel.FAILURE, uid);
+		}
+	}
+	
 	/**
 	 * Passes non-error Python output back to Java.
 	 */
@@ -589,23 +610,7 @@ public class FEPythonThreadManager {
 								System.out.println("FE IBR: "+outpstr);
 							boolean boo = processPythonOutput(outpstr);
 							if (outpstr.contains("Error: Could not process ")) {
-								//pythonResultsWaitQueue--;
-								String uid = outpstr.substring(25);
-								boolean breakLoop = false;
-								for (int i = 0; i < ccList.size(); i++) {
-									for (int j = 0; j < ccList.get(i).size(); j++) {
-										if (ccList.get(i).get(j).uid.equals(uid)) {
-											ccList.get(i).remove(j);
-											breakLoop = true;
-											break;
-										}
-									}
-									if (breakLoop) {
-										break;
-									}
-								}
-								boolean subd = feControl.subtractOneFromPendingCounter();
-								feControl.addOneToCounter(FEPanel.FAILURE, uid);
+								signalPythonError(outpstr);
 							}
 						}
 					}
@@ -641,10 +646,13 @@ public class FEPythonThreadManager {
 								break;
 							}
 							String[] tokens = outpstr.split(" ");
-							if (tokens.length > 0) {
+						/*	if (tokens.length > 0) {
 								if (tokens[0].equals(">>>")) {
 									break;
 								}
+							} */
+							if (outpstr.contains("Error: Could not process ")) {
+								signalPythonError(outpstr);
 							}
 						}
 					}

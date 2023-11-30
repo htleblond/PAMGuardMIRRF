@@ -62,6 +62,8 @@ public class FEFeatureDialog extends PamDialog {
 	protected JPanel p_fslope_hd;
 	protected JPanel p_mfcc;
 	protected JPanel p_poly;
+	protected JPanel p_praat;
+	protected JPanel p_harmonics;
 	protected JPanel p_rms;
 	protected JPanel p_bandwidth;
 	protected JPanel p_centroid;
@@ -70,8 +72,7 @@ public class FEFeatureDialog extends PamDialog {
 	protected JPanel p_flux;
 	protected JPanel p_specmag;
 	protected JPanel p_rolloff;
-	protected JPanel p_yin;
-	protected JPanel p_harmonics;
+	//protected JPanel p_yin;
 	protected JPanel p_zcr;
 	
 	protected JButton addButton;
@@ -80,6 +81,7 @@ public class FEFeatureDialog extends PamDialog {
 	
 	protected JComboBox<String> freq_sd_options_box;
 	protected JLabel freq_sd_text;
+	protected JLabel freq_sd_output_text;
 	protected JComboBox<String> freq_sd_box;
 	
 	protected JComboBox<String> mfcc_box;
@@ -89,6 +91,21 @@ public class FEFeatureDialog extends PamDialog {
 	protected JComboBox<String> poly_box;
 	protected JTextField poly_order_field;
 	protected JComboBox<String> poly_selector_box;
+	
+	protected JComboBox<String> praat_box;
+	protected JTextField praat_min_field;
+	protected JTextField praat_max_field;
+	
+	protected JComboBox<String> harmonics_box_1;
+	protected JLabel harmonics_text;
+	protected JComboBox<String> harmonics_box_2;
+	protected JLabel harmonics_frame_output_text;
+	protected JComboBox<String> harmonics_box_3; 
+	protected JTextField harmonics_n_field;
+	protected JTextField harmonics_buffer_field;
+	protected JTextField harmonics_min_field;
+	protected JTextField harmonics_max_field;
+	//protected JCheckBox harmonics_normalize_check;
 	
 	protected JComboBox<String> rms_box;
 	
@@ -117,17 +134,6 @@ public class FEFeatureDialog extends PamDialog {
 	
 	protected JComboBox<String> rolloff_box;
 	protected JTextField rolloff_threshold_field;
-	
-	protected JComboBox<String> yin_box;
-	protected JTextField yin_min_field;
-	protected JTextField yin_max_field;
-	
-	protected JComboBox<String> harmonics_box;
-	protected JTextField harmonics_n_field;
-	protected JTextField harmonics_buffer_field;
-	protected JTextField harmonics_min_field;
-	protected JTextField harmonics_max_field;
-	protected JCheckBox harmonics_normalize_check;
 	
 	protected JComboBox<String> zcr_box;
 	
@@ -158,15 +164,16 @@ public class FEFeatureDialog extends PamDialog {
 		c.fill = GridBagConstraints.BOTH;
 		c.anchor = GridBagConstraints.WEST;
 		String[] featureNames = new String[] {"Amplitude","Duration","Frequency (header data)","Frequency range (header data)",
-				"Frequency slope (header data)","Frequency (slice data)","Mel-frequency cepstral coefficients","Polynomial features","Root mean square",
+				"Frequency slope (header data)","Frequency (slice data)","Mel-frequency cepstral coefficients","Polynomial features",
+				"Praat fundamental frequency","Praat-tracked harmonics","Root mean square",
 				"Spectral bandwidth","Spectral centroid","Spectral contrast","Spectral flatness","Spectral flux (onset strength)",
-				"Spectral magnitude","Spectral rolloff","YIN fundamental frequency","YIN harmonics","Zero-crossing rate"};
+				"Spectral magnitude","Spectral rolloff","Zero-crossing rate"};
 		dlmodel = new DefaultListModel<String>();
 		for (int i = 0; i < featureNames.length; i++) {
 			dlmodel.addElement(featureNames[i]);
 		}
 		flist = new JList<String>(dlmodel);
-		flist.setSize(200, 300);
+		flist.setSize(200, 360);
 		flist.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		flist.setLayoutOrientation(JList.VERTICAL);
 		JScrollPane sp = new JScrollPane(flist);
@@ -217,9 +224,12 @@ public class FEFeatureDialog extends PamDialog {
 		freq_sd_options_box = makeOutputBox(new String[] {"Frequencies","1st derivative","2nd derivative","Elbow angle","Start-to-end slope"});
 		freq_sd_options_box.addActionListener(new FreqSDOptionsBoxListener());
 		freq_sd_text = new JLabel(getFreqSDText());
+		freq_sd_output_text = new JLabel("Output:");
+		freq_sd_output_text.setVisible(freq_sd_options_box.getSelectedIndex() < 3);
 		freq_sd_box = makeOutputBox();
+		freq_sd_box.setVisible(freq_sd_options_box.getSelectedIndex() < 3);
 		p_freq_sd = constructFeaturePanel(makeHTML("Calculations performed on contour slice data frequencies."),
-				new Object[][] {{freq_sd_options_box},{freq_sd_text},{"Output:", freq_sd_box}},
+				new Object[][] {{freq_sd_options_box},{freq_sd_text},{freq_sd_output_text, freq_sd_box}},
 				false);
 		p_cards.add(p_freq_sd,featureNames[nameIndex++]);
 		
@@ -267,6 +277,120 @@ public class FEFeatureDialog extends PamDialog {
 				new Object[][] {{"Output:",poly_box},{"Order:",poly_order_field},{"Selected coefficient:",poly_selector_box}},
 				true);
 		p_cards.add(p_poly,featureNames[nameIndex++]);
+		
+		praat_box = makeOutputBox();
+		praat_box.setSelectedIndex(1);
+		praat_min_field = new JTextField(5);
+		praat_max_field = new JTextField(5);
+		praat_min_field.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				textIntUpdate(praat_min_field, 0);
+				if (Integer.valueOf(praat_min_field.getText()) >= Integer.valueOf(praat_max_field.getText())) {
+					praat_min_field.setText(Integer.toString(Integer.valueOf(praat_max_field.getText())-1));
+				}
+			}
+		});
+		praat_min_field.addFocusListener(new FocusAdapter() {
+		    public void focusLost(FocusEvent e) {
+		    	textIntUpdate(praat_min_field, 0);
+				if (Integer.valueOf(praat_min_field.getText()) >= Integer.valueOf(praat_max_field.getText())) {
+					praat_min_field.setText(Integer.toString(Integer.valueOf(praat_max_field.getText())-1));
+				}
+		    }
+		});
+		praat_max_field.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				textIntUpdate(praat_max_field, 1);
+				if (Integer.valueOf(praat_min_field.getText()) >= Integer.valueOf(praat_max_field.getText())) {
+					praat_max_field.setText(Integer.toString(Integer.valueOf(praat_min_field.getText())+1));
+				}
+			}
+		});
+		praat_max_field.addFocusListener(new FocusAdapter() {
+		    public void focusLost(FocusEvent e) {
+		    	textIntUpdate(praat_max_field, 1);
+				if (Integer.valueOf(praat_min_field.getText()) >= Integer.valueOf(praat_max_field.getText())) {
+					praat_max_field.setText(Integer.toString(Integer.valueOf(praat_min_field.getText())+1));
+				}
+		    }
+		});
+		praat_min_field.setDocument(JIntFilter());
+		praat_max_field.setDocument(JIntFilter());
+		praat_min_field.setText("50");
+		praat_max_field.setText("10000");
+		p_praat = constructFeaturePanel(makeHTML("Estimates fundamental frequency of each frame using the Praat pitch detection algorithm via the Parselmouth library. "
+				+ "Not always individually accurate, but potentially useful as a feature anyway."),
+				new Object[][] {{"Output:", praat_box},{"Minimum frequency (Hz):"},{"", praat_min_field},{"Maximum frequency (Hz)"},
+				{"", praat_max_field}},
+				false);
+		p_cards.add(p_praat,featureNames[nameIndex++]);
+		
+		harmonics_box_1 = makeOutputBox(new String[] {"Total harmonic distortion","Harmonics-to-background ratio","Harmonic centroid"});
+		harmonics_box_1.addActionListener(new HarmonicsOptionsBoxListener());
+		harmonics_text = new JLabel(getHarmonicsText());
+		harmonics_box_2 = makeOutputBox();
+		harmonics_frame_output_text = new JLabel("Calculation on each frame:");
+		harmonics_frame_output_text.setVisible(harmonics_box_1.getSelectedIndex() == 2);
+		harmonics_box_3 = makeOutputBox(new String[] {"Mean","Median","Mode","Standard deviation"});
+		harmonics_box_3.setVisible(harmonics_box_1.getSelectedIndex() == 2);
+		harmonics_n_field = new JTextField(5);
+		harmonics_n_field.setDocument(JIntFilter());
+		harmonics_n_field.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				textIntUpdate(harmonics_n_field, 1);
+			}
+		});
+		harmonics_n_field.addFocusListener(new FocusAdapter() {
+		    public void focusLost(FocusEvent e) {
+		    	textIntUpdate(harmonics_n_field, 1);
+		    }
+		});
+		harmonics_n_field.setText("12");
+		harmonics_min_field = new JTextField(5);
+		harmonics_max_field = new JTextField(5);
+		harmonics_min_field.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				textIntUpdate(harmonics_min_field, 0);
+				if (Integer.valueOf(harmonics_min_field.getText()) >= Integer.valueOf(harmonics_max_field.getText())) {
+					harmonics_min_field.setText(Integer.toString(Integer.valueOf(harmonics_max_field.getText())-1));
+				}
+			}
+		});
+		harmonics_min_field.addFocusListener(new FocusAdapter() {
+		    public void focusLost(FocusEvent e) {
+		    	textIntUpdate(harmonics_min_field, 0);
+				if (Integer.valueOf(harmonics_min_field.getText()) >= Integer.valueOf(harmonics_max_field.getText())) {
+					harmonics_min_field.setText(Integer.toString(Integer.valueOf(harmonics_max_field.getText())-1));
+				}
+		    }
+		});
+		harmonics_max_field.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				textIntUpdate(harmonics_max_field, 1);
+				if (Integer.valueOf(harmonics_min_field.getText()) >= Integer.valueOf(harmonics_max_field.getText())) {
+					harmonics_max_field.setText(Integer.toString(Integer.valueOf(harmonics_min_field.getText())+1));
+				}
+			}
+		});
+		harmonics_max_field.addFocusListener(new FocusAdapter() {
+		    public void focusLost(FocusEvent e) {
+		    	textIntUpdate(harmonics_max_field, 1);
+				if (Integer.valueOf(harmonics_min_field.getText()) >= Integer.valueOf(harmonics_max_field.getText())) {
+					harmonics_max_field.setText(Integer.toString(Integer.valueOf(harmonics_min_field.getText())+1));
+				}
+		    }
+		});
+		harmonics_min_field.setDocument(JIntFilter());
+		harmonics_max_field.setDocument(JIntFilter());
+		harmonics_min_field.setText("50");
+		harmonics_max_field.setText("10000");
+		//harmonics_normalize_check = new JCheckBox();
+		//harmonics_normalize_check.setText("Normalize");
+		p_harmonics = constructFeaturePanel(makeHTML("Calculates various harmonics-related features using the Praat pitch detection algorithm."),
+				new Object[][] {{harmonics_box_1},{harmonics_text},{"Overall output:"},{"", harmonics_box_2},{harmonics_frame_output_text},{"",harmonics_box_3},{"Number of harmonics:"},
+				{"",harmonics_n_field},{"Minimum frequency (Hz):"},{"",harmonics_min_field},{"Maximum frequency (Hz):"},{"",harmonics_max_field}},
+				false);
+		p_cards.add(p_harmonics,featureNames[nameIndex++]);
 		
 		rms_box = makeOutputBox();
 		p_rms = constructFeaturePanel(makeHTML("Calculates root mean square (RMS) values directly from the audio of the clip."),
@@ -447,114 +571,6 @@ public class FEFeatureDialog extends PamDialog {
 				false);
 		p_cards.add(p_rolloff,featureNames[nameIndex++]);
 		
-		yin_box = makeOutputBox();
-		yin_box.setSelectedIndex(1);
-		yin_min_field = new JTextField(5);
-		yin_max_field = new JTextField(5);
-		yin_min_field.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				textIntUpdate(yin_min_field, 0);
-				if (Integer.valueOf(yin_min_field.getText()) >= Integer.valueOf(yin_max_field.getText())) {
-					yin_min_field.setText(Integer.toString(Integer.valueOf(yin_max_field.getText())-1));
-				}
-			}
-		});
-		yin_min_field.addFocusListener(new FocusAdapter() {
-		    public void focusLost(FocusEvent e) {
-		    	textIntUpdate(yin_min_field, 0);
-				if (Integer.valueOf(yin_min_field.getText()) >= Integer.valueOf(yin_max_field.getText())) {
-					yin_min_field.setText(Integer.toString(Integer.valueOf(yin_max_field.getText())-1));
-				}
-		    }
-		});
-		yin_max_field.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				textIntUpdate(yin_max_field, 1);
-				if (Integer.valueOf(yin_min_field.getText()) >= Integer.valueOf(yin_max_field.getText())) {
-					yin_max_field.setText(Integer.toString(Integer.valueOf(yin_min_field.getText())+1));
-				}
-			}
-		});
-		yin_max_field.addFocusListener(new FocusAdapter() {
-		    public void focusLost(FocusEvent e) {
-		    	textIntUpdate(yin_max_field, 1);
-				if (Integer.valueOf(yin_min_field.getText()) >= Integer.valueOf(yin_max_field.getText())) {
-					yin_max_field.setText(Integer.toString(Integer.valueOf(yin_min_field.getText())+1));
-				}
-		    }
-		});
-		yin_min_field.setDocument(JIntFilter());
-		yin_max_field.setDocument(JIntFilter());
-		yin_min_field.setText("50");
-		yin_max_field.setText("10000");
-		p_yin = constructFeaturePanel(makeHTML("Estimates fundamental frequency of each frame using the YIN pitch detection algorithm. "
-				+ "Not always individually accurate, but certainly useful as a feature. Median recommended over mean."),
-				new Object[][] {{"Output:", yin_box},{"Minimum frequency (Hz):"},{"", yin_min_field},{"Maximum frequency (Hz)"},
-				{"", yin_max_field}},
-				false);
-		p_cards.add(p_yin,featureNames[nameIndex++]);
-		
-		harmonics_box = makeOutputBox(new String[] {"Sum of harmonic magnitudes","Harmonics-to-background ratio","Harmonic centroid mean",
-				"Harmonic centroid standard deviation"});
-		harmonics_n_field = new JTextField(5);
-		harmonics_n_field.setDocument(JIntFilter());
-		harmonics_n_field.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				textIntUpdate(harmonics_n_field, 1);
-			}
-		});
-		harmonics_n_field.addFocusListener(new FocusAdapter() {
-		    public void focusLost(FocusEvent e) {
-		    	textIntUpdate(harmonics_n_field, 1);
-		    }
-		});
-		harmonics_n_field.setText("12");
-		harmonics_min_field = new JTextField(5);
-		harmonics_max_field = new JTextField(5);
-		harmonics_min_field.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				textIntUpdate(harmonics_min_field, 0);
-				if (Integer.valueOf(harmonics_min_field.getText()) >= Integer.valueOf(harmonics_max_field.getText())) {
-					harmonics_min_field.setText(Integer.toString(Integer.valueOf(harmonics_max_field.getText())-1));
-				}
-			}
-		});
-		harmonics_min_field.addFocusListener(new FocusAdapter() {
-		    public void focusLost(FocusEvent e) {
-		    	textIntUpdate(harmonics_min_field, 0);
-				if (Integer.valueOf(harmonics_min_field.getText()) >= Integer.valueOf(harmonics_max_field.getText())) {
-					harmonics_min_field.setText(Integer.toString(Integer.valueOf(harmonics_max_field.getText())-1));
-				}
-		    }
-		});
-		harmonics_max_field.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				textIntUpdate(harmonics_max_field, 1);
-				if (Integer.valueOf(harmonics_min_field.getText()) >= Integer.valueOf(harmonics_max_field.getText())) {
-					harmonics_max_field.setText(Integer.toString(Integer.valueOf(harmonics_min_field.getText())+1));
-				}
-			}
-		});
-		harmonics_max_field.addFocusListener(new FocusAdapter() {
-		    public void focusLost(FocusEvent e) {
-		    	textIntUpdate(harmonics_max_field, 1);
-				if (Integer.valueOf(harmonics_min_field.getText()) >= Integer.valueOf(harmonics_max_field.getText())) {
-					harmonics_max_field.setText(Integer.toString(Integer.valueOf(harmonics_min_field.getText())+1));
-				}
-		    }
-		});
-		harmonics_min_field.setDocument(JIntFilter());
-		harmonics_max_field.setDocument(JIntFilter());
-		harmonics_min_field.setText("50");
-		harmonics_max_field.setText("10000");
-		harmonics_normalize_check = new JCheckBox();
-		harmonics_normalize_check.setText("Normalize");
-		p_harmonics = constructFeaturePanel(makeHTML("Calculates various harmonics-related features using the YIN pitch detection algorithm."),
-				new Object[][] {{"Output:"},{"", harmonics_box},{"Number of harmonics:"},{"",harmonics_n_field},{"Minimum frequency (Hz):"},
-				{"",harmonics_min_field},{"Maximum frequency (Hz):"},{"",harmonics_max_field},{harmonics_normalize_check}},
-				false);
-		p_cards.add(p_harmonics,featureNames[nameIndex++]);
-		
 		zcr_box = makeOutputBox();
 		p_zcr = constructFeaturePanel(makeHTML("Calculates how often the x-axis is crossed in an audio time series."),
 				new Object[][] {{"Output:", zcr_box}},
@@ -605,7 +621,27 @@ public class FEFeatureDialog extends PamDialog {
 		@Override
 		public void actionPerformed(ActionEvent e) {
 			freq_sd_text.setText(getFreqSDText());
-			freq_sd_box.setEnabled(freq_sd_options_box.getSelectedIndex() < 3);
+			freq_sd_output_text.setVisible(freq_sd_options_box.getSelectedIndex() < 3);
+			freq_sd_box.setVisible(freq_sd_options_box.getSelectedIndex() < 3);
+		}
+	}
+	
+	public String getHarmonicsText() {
+		switch (harmonics_box_1.getSelectedIndex()) {
+		case 0:
+			return makeHTML("A measurement of harmonic distortion.");
+		case 1:
+			return makeHTML("The mean magnitude of the bins corresponding to found harmonics divided by the median magnitude of the whole FFT frame.");
+		}
+		return makeHTML("The \"centroid\" in terms of harmonic strength, by harmonic number.");
+	}
+	
+	protected class HarmonicsOptionsBoxListener implements ActionListener {
+		@Override
+		public void actionPerformed(ActionEvent e) {
+			harmonics_text.setText(getHarmonicsText());
+			harmonics_frame_output_text.setVisible(harmonics_box_1.getSelectedIndex() == 2);
+			harmonics_box_3.setVisible(harmonics_box_1.getSelectedIndex() == 2);
 		}
 	}
 	
@@ -628,10 +664,19 @@ public class FEFeatureDialog extends PamDialog {
 				} else if (selection.equals("Frequency (slice data)")) {
 					outp = "freqsd";
 					int num = freq_sd_options_box.getSelectedIndex();
-					if (num == 1) outp += "d1";
-					else if (num == 2) outp += "d2";
-					else if (num == 3) outp += "elbow";
-					else if (num == 4) outp += "slope";
+					if (num == 1) {
+						selection = "Frequency, 1st derivative (slice data)";
+						outp += "d1";
+					} else if (num == 2) {
+						selection = "Frequency, 2nd derivative (slice data)";
+						outp += "d2";
+					} else if (num == 3) {
+						selection = "Frequency, elbow angle (slice data)";
+						outp += "elbow";
+					} else if (num == 4) {
+						selection = "Frequency, start-to-end slope (slice data)";
+						outp += "slope";
+					}
 					if (num < 3) outp += "_"+outpAbbr((String) freq_sd_box.getSelectedItem());
 				} else if (selection.equals("Mel-frequency cepstral coefficients")) {
 					outp = "mfcc_";
@@ -643,6 +688,26 @@ public class FEFeatureDialog extends PamDialog {
 					outp += poly_order_field.getText() + "_";
 					outp += (String) poly_selector_box.getSelectedItem() + "_";
 					outp += outpAbbr((String) poly_box.getSelectedItem());
+				} else if (selection.equals("Praat fundamental frequency")) {
+					outp = "praat_";
+					outp += praat_min_field.getText() + "_";
+					outp += praat_max_field.getText() + "_";
+					outp += outpAbbr((String) praat_box.getSelectedItem());
+				} else if (selection.equals("Praat-tracked harmonics")) {
+					if (harmonics_box_1.getSelectedIndex() == 0) {
+						outp = "thd_";
+					} else if (harmonics_box_1.getSelectedIndex() == 1) {
+						outp = "hbr_";
+					} else {
+						outp = "hcentroid_";
+					}
+					selection = (String) harmonics_box_1.getSelectedItem();
+					outp += harmonics_n_field.getText() + "_";
+					outp += harmonics_min_field.getText() + "_";
+					outp += harmonics_max_field.getText() + "_";
+					if (harmonics_box_1.getSelectedIndex() == 2)
+						outp += outpAbbr((String) harmonics_box_3.getSelectedItem())+"_";
+					outp += outpAbbr((String) harmonics_box_2.getSelectedItem());
 				} else if (selection.equals("Root mean square")) {
 					outp = "rms_";
 					outp += outpAbbr((String) rms_box.getSelectedItem());
@@ -692,30 +757,6 @@ public class FEFeatureDialog extends PamDialog {
 					outp = "rolloff_";
 					outp += rolloff_threshold_field.getText() + "_";
 					outp += outpAbbr((String) rolloff_box.getSelectedItem());
-				} else if (selection.equals("YIN fundamental frequency")) {
-					outp = "yin_";
-					outp += yin_min_field.getText() + "_";
-					outp += yin_max_field.getText() + "_";
-					outp += outpAbbr((String) yin_box.getSelectedItem());
-				} else if (selection.equals("YIN harmonics")) {
-					if (harmonics_box.getSelectedIndex() == 0) {
-						outp = "harmmags_";
-					} else if (harmonics_box.getSelectedIndex() == 1) {
-						outp = "hbr_";
-					} else if (harmonics_box.getSelectedIndex() == 2) {
-						outp = "hcentrmean_";
-					} else {
-						outp = "hcentrstd_";
-					}
-					selection = (String) harmonics_box.getSelectedItem();
-					outp += harmonics_n_field.getText() + "_";
-					outp += harmonics_min_field.getText() + "_";
-					outp += harmonics_max_field.getText() + "_";
-					if (harmonics_normalize_check.isSelected()) {
-						outp += "ny";
-					} else {
-						outp += "nn";
-					}
 				} else if (selection.equals("Zero-crossing rate")) {
 					outp = "zcr_";
 					outp += outpAbbr((String) zcr_box.getSelectedItem());
@@ -743,6 +784,8 @@ public class FEFeatureDialog extends PamDialog {
 			return "max";
 		} else if (inp == "Range") {
 			return "rng";
+		} else if (inp == "Mode") { // Only an option for harmonic centroid.
+			return "mode";
 		}
 		return "";
 	}
@@ -813,6 +856,7 @@ public class FEFeatureDialog extends PamDialog {
 					if (comps[i][0] instanceof String) {
 						outp.add(new JLabel((String)comps[i][0], SwingConstants.LEFT), c);
 					} else if (comps[i][0] instanceof Component) {
+						//System.out.println("Adding component: "+comps[i][0].toString());
 						outp.add((Component)comps[i][0], c);
 					}
 				}

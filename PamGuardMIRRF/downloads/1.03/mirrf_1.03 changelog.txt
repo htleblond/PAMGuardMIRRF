@@ -34,3 +34,16 @@ Holly LeBlond
 	
 1.03f (September 22nd, 2023)
 - .mirrffe and .wmnt file merging in the Training Set Builder had an O(n^2) list search, which has been replaced with a hash map. (Rookie mistake, I know!)
+
+1.03g (November 30th, 2023)
+- NOTE: Parselmouth Python library needs to be installed. This can be done either via install.bat or "pip install --upgrade --user praat-parselmouth" in the command prompt.
+- YIN pitch tracking algorithm in Feature Extractor replaced by Praat algorithm via the Parselmouth Python library.
+- Harmonics-related features heavily revamped:
+	- As mentioned above, harmonics are now tracked by the Praat algorithm instead of the YIN algorithm.
+	- Magnitudes are now retrieved from an FFT array with an FFT length matching the sampling rate, as the previous STFT method was imprecise.
+	- "Sum of harmonic magnitudes" removed as a feature, as it didn't really make sense to begin with.
+	- Total harmonic distortion (THD) added as a feature. (https://en.wikipedia.org/wiki/Total_harmonic_distortion)
+	- "Harmonics-to-background ratio" now calculated by taking the mean magnitude of the bins corresponding to the found harmonics and dividing it by the median magnitude of the whole FFT frame.
+	- Added options for which value is calculated in each "harmonic centroid" frame (including mode), in addition to the calculated output value of the whole array.
+	- "Normalization" removed as an option, as it was never actually implemented into the Python script.
+- Improved the Feature Extractor's ability to recognize exceptions in its Python script. 
