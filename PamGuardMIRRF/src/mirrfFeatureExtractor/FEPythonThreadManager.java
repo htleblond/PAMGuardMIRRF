@@ -394,11 +394,7 @@ public class FEPythonThreadManager {
 	 * Processes output from the InputPrintThread.
 	 */
 	protected boolean processPythonOutput(String inp) {
-		String subinp = "";
-		if (inp.length() >= 5) {
-			subinp = inp.substring(0, 5);
-		}
-		if (subinp.equals("outp:")) {
+		if (inp.startsWith("outp:")) {
 			//System.out.println(inp);
 			FEParameters params = feControl.getParams();
 			
@@ -440,50 +436,61 @@ public class FEPythonThreadManager {
 			}
 			pythonOutpList.get(slot).add(tokens);
 			// The blankfile/matchesfeatures checks are pretty much already taken care of in FESettingsDialog now.
-			if (params.outputCSVChecked) {
-				File f = new File(params.outputCSVName);
-				f.setWritable(true, false);
-				
-				String outp = "";
-				outp += tokens[0].substring(1, tokens[0].length()-1);
-				outp += ","+tokens[1];
-				SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss+SSS");
-				df.setTimeZone(TimeZone.getTimeZone("UTC"));
-				Date date  = new Date(Long.valueOf(tokens[2]));
-				outp += ","+df.format(date);
-				for (int i = 3; i < tokens.length; i++) {
-					if (tokens[i].length() > 0) {
-						if (tokens[i].charAt(0) == '\'') {
-							System.out.println("ERROR: "+tokens[1]+" -> Could not process \""+tokens[i]+"\".");
+			if (params.outputDataOption > 0) {
+				try {
+					File f = new File(params.outputDataName);
+					f.setWritable(true, false);
+					
+					String outp = "";
+					outp += tokens[0].substring(1, tokens[0].length()-1); // 0 - cluster
+					outp += ","+tokens[1]; // 1 - uid
+					int index = 2;
+					if (params.outputDataOption == params.OUTPUT_MIRRFTS) {
+						String location = tokens[index++]; // 2 (.mirrfts) - location
+						outp += ","+location.substring(1, location.length()-1);
+					}
+					SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss+SSS");
+					df.setTimeZone(TimeZone.getTimeZone("UTC"));
+					Date date  = new Date(Long.valueOf(tokens[index++])); // 2 (.mirrfe), 3 (.mirrfts) - date
+					outp += ","+df.format(date);
+					outp += ","+tokens[index++]; // 3 (.mirrffe), 4 (.mirrfts) - duration
+					outp += ","+tokens[index++]; // 4 (.mirrffe), 5 (.mirrfts) - lf
+					outp += ","+tokens[index++]; // 5 (.mirrffe), 6 (.mirrfts) - hf
+					if (params.outputDataOption == params.OUTPUT_MIRRFTS) {
+						String label = tokens[index++]; // 7 (.mirrfts) - label
+						outp += ","+label.substring(1, label.length()-1);
+					}
+					for (int i = index; i < tokens.length; i++) {
+						if (tokens[i].length() == 0) {
+							System.out.println("ERROR: "+tokens[1]+" -> "+params.featureList[i-index][1]+" has no value.");
 							return false;
 						} else if (tokens[i].equals("nan")) {
-							System.out.println("ERROR: "+tokens[1]+" -> "+params.featureList[i-3][1]+" = NaN.");
+							System.out.println("ERROR: "+tokens[1]+" -> "+params.featureList[i-index][1]+" = NaN.");
 							return false;
 						}
 						String[] num_tokens = tokens[i].split("e");
-						if (num_tokens.length == 1) {
-							outp += ","+tokens[i];
-						} else if (num_tokens.length == 2) {
+						if (num_tokens.length == 1) outp += ","+tokens[i];
+						else if (num_tokens.length == 2)
 							outp += ","+String.valueOf(Double.valueOf(num_tokens[0])*Math.pow(10, Integer.valueOf(num_tokens[1])));
-						} else {
+						else {
 							System.out.println("ERROR: "+tokens[1]+" -> "+params.featureList[i-3][1]+" has a non-sequitur value.");
 							return false;
 						}
-					} else {
-						System.out.println("ERROR: "+tokens[1]+" -> "+params.featureList[i-3][1]+" has no value.");
+					}
+					outp += "\n";
+					try {
+						PrintWriter pw = new PrintWriter(new FileOutputStream(f, true));
+						StringBuilder sb = new StringBuilder();
+						sb.append(outp);
+						pw.write(sb.toString());
+						pw.flush();
+						pw.close();
+					} catch (Exception e2) {
+						System.out.println("ERROR: "+tokens[1]+" -> Could not write row to output file.");
 						return false;
 					}
-				}
-				outp += "\n";
-				try {
-					PrintWriter pw = new PrintWriter(new FileOutputStream(f, true));
-					StringBuilder sb = new StringBuilder();
-					sb.append(outp);
-					pw.write(sb.toString());
-					pw.flush();
-					pw.close();
-				} catch (Exception e2) {
-					System.out.println("ERROR: "+tokens[1]+" -> Could not write row to .csv file.");
+				} catch (Exception e3) {
+					System.out.println("ERROR: "+tokens[1]+" -> Python output not formatted correctly.");
 					return false;
 				}
 			}
@@ -505,23 +512,40 @@ public class FEPythonThreadManager {
 				continue;
 			}
 			FECallCluster cc = new FECallCluster(currList.size(), feControl.getParams().featureList.length);
-			cc.clusterID = currList.get(0)[0];
-			for (int j = 0; j < currList.size(); j++) {
-				cc.uids[j] = Long.valueOf(currList.get(j)[1]);
-				cc.datetimes[j] = Long.valueOf(currList.get(j)[2]);
-				cc.durations[j] = (int) Double.valueOf(currList.get(j)[3]).doubleValue();
-				cc.lfs[j] = (int) Double.valueOf(currList.get(j)[4]).doubleValue();
-				cc.hfs[j] = (int) Double.valueOf(currList.get(j)[5]).doubleValue();
-				for (int k = 6; k < currList.get(j).length; k++) {
-					cc.featureVector[j][k-6] = Double.valueOf(currList.get(j)[k]);
+			try {
+				cc.clusterID = currList.get(0)[0];
+				for (int j = 0; j < currList.size(); j++) {
+					cc.uids[j] = Long.valueOf(currList.get(j)[1]);
+					int index = 2;
+					if (feControl.getParams().inputFileIsMIRRFTS()) {
+						String location = currList.get(j)[index++];
+						cc.locations[j] = location.substring(1, location.length()-1);
+					}
+					cc.datetimes[j] = Long.valueOf(currList.get(j)[index++]);
+					cc.durations[j] = (int) Double.valueOf(currList.get(j)[index++]).doubleValue();
+					cc.lfs[j] = (int) Double.valueOf(currList.get(j)[index++]).doubleValue();
+					cc.hfs[j] = (int) Double.valueOf(currList.get(j)[index++]).doubleValue();
+					if (feControl.getParams().inputFileIsMIRRFTS()) {
+						String label = currList.get(j)[index++];
+						cc.labels[j] = label.substring(1, label.length()-1);
+					}
+					for (int k = index; k < currList.get(j).length; k++) {
+						cc.featureVector[j][k-index] = Double.valueOf(currList.get(j)[k]);
+					}
 				}
-			}
-			if (cc.uids.length > 0) {
-				FEDataUnit du = new FEDataUnit(feControl, cc);
-				feControl.feProcess.addVectorData(du);
-				for (int j = 0; j < cc.uids.length; j++) {
+				if (cc.uids.length > 0) {
+					FEDataUnit du = new FEDataUnit(feControl, cc);
+					feControl.feProcess.addVectorData(du);
+					for (int j = 0; j < cc.uids.length; j++) {
+						feControl.subtractOneFromPendingCounter();
+						feControl.addOneToCounter(FEPanel.SUCCESS, String.valueOf(cc.uids[j]));
+					}
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
+				for (int j = 0; j < currList.size(); j++) {
 					feControl.subtractOneFromPendingCounter();
-					feControl.addOneToCounter(FEPanel.SUCCESS, String.valueOf(cc.uids[j]));
+					feControl.addOneToCounter(FEPanel.FAILURE, currList.get(j)[1]);
 				}
 			}
 			pythonOutpList.get(i).clear();

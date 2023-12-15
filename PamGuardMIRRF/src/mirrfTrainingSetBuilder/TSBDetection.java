@@ -1,5 +1,7 @@
 package mirrfTrainingSetBuilder;
 
+import mirrf.MIRRFControlledUnit;
+
 /**
  * Simple data object for storing individual data entries for output.
  * @author Holly LeBlond
@@ -26,7 +28,7 @@ public class TSBDetection {
 		assert vector.length == expectedVectorSize;
 		this.clusterID = clusterID;
 		this.uid = Long.valueOf(wmntData[0]);
-		assert tsbControl.convertDateStringToLong(wmntData[1]) != -1;
+		assert MIRRFControlledUnit.convertDateStringToLong(wmntData[1]) != -1;
 		this.datetime = wmntData[1];
 		this.lf = Double.valueOf(wmntData[2]).intValue();
 		this.hf = Double.valueOf(wmntData[3]).intValue();
@@ -45,7 +47,7 @@ public class TSBDetection {
 		assert tsData.length == 8 + expectedVectorSize;
 		this.clusterID = tsData[0];
 		this.uid = Long.valueOf(tsData[1]);
-		assert tsbControl.convertDateStringToLong(tsData[3]) != -1;
+		assert MIRRFControlledUnit.convertDateStringToLong(tsData[3]) != -1;
 		this.datetime = tsData[3];
 		this.lf = Double.valueOf(tsData[5]).intValue();
 		this.hf = Double.valueOf(tsData[6]).intValue();
@@ -56,7 +58,11 @@ public class TSBDetection {
 	}
 	
 	public long getDateTimeAsLong() {
-		return tsbControl.convertDateStringToLong(datetime);
+		return MIRRFControlledUnit.convertDateStringToLong(datetime);
+	}
+	
+	public long getEndTimeAsLong() {
+		return getDateTimeAsLong() + this.duration;
 	}
 	
 }

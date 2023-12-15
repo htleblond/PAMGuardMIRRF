@@ -16,30 +16,28 @@ public class FESliceDataUnit extends PamDataUnit {
 	public long[] sliceStartSamples;
 	public double[] sliceFreqs;
 	
-	public FESliceDataUnit() {
+	public FESliceDataUnit(FEInputDataObject inp, long startSample, long sampleDuration) {
 		super(0, 0, -1, -1);
-	}
-	
-	public void setSliceData(String[] inputCSVEntry) {
-		ArrayList<String[]> splitList = new ArrayList<String[]>();
-		for (int i = 9; i < inputCSVEntry.length; i++) {
-			try {
-				String[] split = inputCSVEntry[i].split(">");
-				Long.valueOf(split[0]);
-				Double.valueOf(split[1]);
-				splitList.add(split);
-			} catch (Exception e) {
-				continue;
-			}
-		}
-		splitList.sort(Comparator.comparingLong(a -> Long.valueOf(a[0])));
+		
+		this.setUID(inp.uid);
+		long longtime = FEControl.convertDateStringToLong(inp.datetime);
+		this.setTimeMilliseconds(longtime);
+		this.setFrequency(new double[] {Double.valueOf(inp.lf), Double.valueOf(inp.hf)});
+		this.setDurationInMilliseconds(Double.valueOf(inp.duration));
+		this.setMeasuredAmplitude(inp.amplitude);
+		this.setStartSample(startSample);
+		this.setSampleDuration(sampleDuration);
+		
+		ArrayList<double[]> splitList = new ArrayList<double[]>();
+		for (int i = 0; i < inp.slicedata.length; i++)
+			splitList.add(inp.slicedata[i]);
+		splitList.sort(Comparator.comparingLong(a -> (long) a[0]));
 		int arrSize = splitList.size();
-		//if (arrSize > 5) arrSize = 5; // FOR TESTING, REMOVE IF IT'S NOT THE PROBLEM
 		sliceStartSamples = new long[arrSize];
 		sliceFreqs = new double[arrSize];
 		for (int i = 0; i < arrSize; i++) {
-			sliceStartSamples[i] = Long.valueOf(splitList.get(i)[0]);
-			sliceFreqs[i] = Double.valueOf(splitList.get(i)[1]);
+			sliceStartSamples[i] = (long) splitList.get(i)[0];
+			sliceFreqs[i] = splitList.get(i)[1];
 		}
 	}
 	

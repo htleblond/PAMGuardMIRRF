@@ -196,7 +196,9 @@ class LCModel():
                         subOutp = entry[:7]
                         subOutp.append(predictionArr)
                         outp.append(subOutp)
-                    outp = np.transpose(outp)
+                    #print("outp: "+str(outp))
+                    #outp = np.transpose(outp)
+                    outp = [[outp[j][i] for j in np.arange(len(outp))] for i in np.arange(len(outp[0]))] # No idea why np.transpose doesn't work.
                     outpStr = str(outp[0])
                     for row in outp[1:]:
                         outpStr += "|" + str(row)

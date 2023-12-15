@@ -67,10 +67,11 @@ class FEThread():
         #thread.start()
     
     # Loads a clip for processing.
-    def addClip(self, fn:str, uid, datelong, amplitude, duration, freqhd_min, freqhd_max, slice_data):
+    def addClip(self, fn:str, uid, datelong, amplitude, duration, freqhd_min, freqhd_max, slice_data, \
+                pe_cluster_id="", pe_location="", pe_label="", pe_header_features={}): # "pe" stands for "pre-existing", implying it came from a pre-existing .mirrfts file
         #print("Reached addClip().")
         self.clipList.append(fn)
-        headerData = HeaderData(uid, datelong, amplitude, duration, freqhd_min, freqhd_max, slice_data)
+        headerData = HeaderData(uid, datelong, amplitude, duration, freqhd_min, freqhd_max, slice_data, pe_cluster_id, pe_location, pe_label, pe_header_features)
         thread = threading.Thread(target=self.threadFunc, args=(fn,headerData,))
         #thread = multiprocessing.Process(target=self.threadFunc, args=(fn,headerData,))
         thread.start()
@@ -137,9 +138,13 @@ class FEThread():
         preCalcFeatures = []
         for feature in self.featureProcessList:
             preCalcFeatures.append(self.preCalculateFeature(feature, y, y_stft))
-        #idTokens = self.y_nr_name.split("_")
-        idTokens = self.clipList[0].split("_")
-        outp = [idTokens[1]+"-"+idTokens[2], headerData.uid, headerData.datelong, headerData.duration, headerData.freqhd_min, headerData.freqhd_max]
+        outp = []
+        if headerData.from_mirrfts:
+            outp = [headerData.pe_cluster_id, headerData.uid, headerData.pe_location, headerData.datelong, headerData.duration, \
+                    headerData.freqhd_min, headerData.freqhd_max, headerData.pe_label]
+        if not headerData.from_mirrfts:
+            idTokens = self.clipList[0].split("_")
+            outp = [idTokens[1]+"-"+idTokens[2], headerData.uid, headerData.datelong, headerData.duration, headerData.freqhd_min, headerData.freqhd_max]
         for i in np.arange(len(self.features)):
             if self.featureProcessIndexes[i] == -1:
                 outp.append(self.extractIndividualFeature(self.features[i], [], headerData))
@@ -232,6 +237,10 @@ class FEThread():
         tokens = feature.split("_")
         header_features = ["amplitude","duration","freqhd_min","freqhd_max"]
         if feature == "amplitude":
+            if headerData.from_mirrfts:
+                if "amplitude" in headerData.pe_header_features:
+                    return headerData.pe_header_features["amplitude"]
+                return np.nan
             return headerData.amplitude
         elif feature == "duration":
             return headerData.duration
@@ -244,6 +253,10 @@ class FEThread():
         elif feature == "fslopehd":
             return (headerData.freqhd_max - headerData.freqhd_min) / (headerData.duration / 1000)
         elif feature == "freqsdelbow":
+            if headerData.from_mirrfts and feature in headerData.pe_header_features:
+                return headerData.pe_header_features[feature]
+            if headerData.slice_data[0] == -1 or (headerData.from_mirrfts and not feature in headerData.pe_header_features):
+                return np.nan
             deriv2abs = np.abs(self.calculateFreqSD2ndDerivative(headerData.slice_data))
             elbow = headerData.slice_data[np.argmax(deriv2abs)+1]
             start = (1000 * (headerData.slice_data[0][0] - elbow[0]) / self.sr, headerData.slice_data[0][1] - elbow[1])
@@ -254,7 +267,12 @@ class FEThread():
             if mag == 0 or np.abs(dot/mag) > 1:
                 return 180.0
             return 180.0 * np.arccos(dot/mag) / np.pi
-        elif feature == "freqsdslope":
+        elif feature == "freqsdslope" or tokens[0] in ["freqsd","freqsdd1","freqsdd2"]:
+            if headerData.from_mirrfts and feature in headerData.pe_header_features:
+                return headerData.pe_header_features[feature]
+            if headerData.slice_data[0] == -1 or (headerData.from_mirrfts and not feature in headerData.pe_header_features):
+                return np.nan
+        if feature == "freqsdslope":
             return (headerData.slice_data[len(headerData.slice_data)-1][1] - headerData.slice_data[0][1]) / (headerData.duration / 1000)
         elif tokens[0] == "freqsd":
             return self.calculateUnit([x[1] for x in headerData.slice_data], tokens[len(tokens)-1])
@@ -284,6 +302,7 @@ class FEThread():
             for i in np.arange(len(featureArray[0])):
                 frame = featureArray[0][i]
                 thd.append(np.sqrt(np.sum([np.power(frame[x][1], 2) for x in np.arange(len(frame)-1)+1]))/frame[0][1])
+            thd = [x for x in thd if str(x) != 'nan']
             return self.calculateUnit(thd, tokens[len(tokens)-1])
         elif tokens[0] == "hbr": # harmonic-mean divided by frame-median FFT magnitude
             if len(featureArray[0]) == 0:
@@ -292,6 +311,7 @@ class FEThread():
             for i in np.arange(len(featureArray[0])):
                 frame_t = np.transpose(featureArray[0][i])
                 ratios.append(np.mean(frame_t[1])/np.median(featureArray[1][i]))
+            ratios = [x for x in ratios if str(x) != 'nan']
             return self.calculateUnit(ratios, tokens[len(tokens)-1])
         #elif tokens[0] in ["hcentrmean","hcentrstd"]:
         elif tokens[0] == "hcentroid":
@@ -301,6 +321,9 @@ class FEThread():
             for i in np.arange(len(featureArray[0])):
                 frame_t = np.transpose(featureArray[0][i])
                 harmonics_1000 = [1000*x/np.max(frame_t[1]) for x in frame_t[1]]
+                harmonics_1000 = [x for x in harmonics_1000 if str(x) != 'nan']
+                if len(harmonics_1000) == 0:
+                    harmonics_1000 = [1.0]
                 harmonics_histo = []
                 for j in np.arange(len(harmonics_1000)):
                     for k in np.arange(int(harmonics_1000[j])):
@@ -393,7 +416,7 @@ class FEThread():
         return [deriv[i+1] - deriv[i] for i in np.arange(len(deriv)-1)]
 
 class HeaderData:
-    def __init__(self, uid, datelong, amplitude, duration, freqhd_min, freqhd_max, slice_data):
+    def __init__(self, uid, datelong, amplitude, duration, freqhd_min, freqhd_max, slice_data, pe_cluster_id, pe_location, pe_label, pe_header_features):
         self.uid = uid
         self.datelong = datelong
         self.amplitude = amplitude
@@ -401,6 +424,11 @@ class HeaderData:
         self.freqhd_min = freqhd_min
         self.freqhd_max = freqhd_max
         self.slice_data = slice_data
+        self.pe_cluster_id = pe_cluster_id
+        self.pe_location = pe_location
+        self.pe_label = pe_label
+        self.pe_header_features = pe_header_features
+        self.from_mirrfts = len(pe_cluster_id) > 0
 
 def loadAudio(fn: str, sr: int):
     warnings.simplefilter(action='ignore', category=FutureWarning)

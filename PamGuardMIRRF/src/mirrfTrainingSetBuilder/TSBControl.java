@@ -1,5 +1,6 @@
 package mirrfTrainingSetBuilder;
 
+import java.io.File;
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
@@ -10,6 +11,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Scanner;
 
 import javax.swing.JOptionPane;
 
@@ -26,6 +28,13 @@ public class TSBControl extends PamControlledUnit implements PamSettings {
 	
 	public static final String UNITTYPE = "MIRRFTSB";
 	
+	public static final int OVERLAP_SKIP_BOTH = 0;
+	public static final int OVERLAP_KEEP_BOTH = 1;
+	
+	public static final int MULTILABEL_KEEP_MOST = 0;
+	public static final int MULTILABEL_KEEP_ALL = 1;
+	public static final int MULTILABEL_SKIP_CLUSTER = 2;
+	
 	protected TSBTabPanel tsbTabPanel;
 	protected ArrayList<String> fullClassList;
 	protected ArrayList<String> umbrellaClassList;
@@ -34,6 +43,8 @@ public class TSBControl extends PamControlledUnit implements PamSettings {
 	protected ArrayList<String> featureList;
 	protected HashMap<String, String> feParamsMap;
 	public boolean includeCallType;
+	public int overlapOption = OVERLAP_SKIP_BOTH;
+	public int multilabelOption = MULTILABEL_KEEP_MOST;
 
 	public TSBControl(String unitName) {
 		super(UNITTYPE, "MIRRF Training Set Builder");
@@ -59,10 +70,12 @@ public class TSBControl extends PamControlledUnit implements PamSettings {
 			JOptionPane.ERROR_MESSAGE);
 	}
 	
+	
+	// Moved to MIRRFControlledUnit as static function.
 	/**
 	 * Converts date/time strings formatted as yyyy-MM-dd HH:mm:ss+SSS back to longs.
 	 */
-	public long convertDateStringToLong(String inp) {
+/*	public long convertDateStringToLong(String inp) {
 		// Kudos: https://stackoverflow.com/questions/12473550/how-to-convert-a-string-date-to-long-millseconds
 		SimpleDateFormat f = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss+SSS");
 		try {
@@ -72,7 +85,7 @@ public class TSBControl extends PamControlledUnit implements PamSettings {
 		    e.printStackTrace();
 		}
 		return -1;
-	}
+	} */
 	
 	/**
 	 * Converts a long to a string representing a date/time with the following format: yyyy-MM-dd HH:mm:ss+SSS

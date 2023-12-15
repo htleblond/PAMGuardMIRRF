@@ -12,21 +12,27 @@ import org.apache.commons.text.WordUtils;
 //@SuppressWarnings("serial")
 public class FEParameters extends MIRRFParameters {
 	
+	public static final int OUTPUT_NONE = 0;
+	public static final int OUTPUT_MIRRFFE = 1;
+	public static final int OUTPUT_MIRRFTS = 2;
+	
 	public int sr;
 	
 	public boolean inputFromCSV;
 	public String inputProcessName;
-	public String inputCSVName;
-	public ArrayList<String[]> inputCSVEntries;
-	public ArrayList<Integer> inputCSVIndexes;
-	public int inputCSVExpectedFileSize;
+	public String inputFileName;
+	//public ArrayList<String[]> inputCSVEntries;
+	public ArrayList<FEInputDataObject> inputDataEntries;
+	public ArrayList<Integer> inputDataIndexes;
+	public int inputDataExpectedFileSize;
 	public boolean inputIgnoreBlanks;
 	public boolean inputIgnore2SecondGlitch;
 	public boolean inputIgnoreFalsePositives;
 	public boolean inputIgnoreUnk;
 	
-	public boolean outputCSVChecked;
-	public String outputCSVName;
+	//public boolean outputDataChecked;
+	public int outputDataOption;
+	public String outputDataName;
 	
 	public String audioSourceProcessName;
 	public boolean audioAutoClipLength;
@@ -75,17 +81,19 @@ public class FEParameters extends MIRRFParameters {
 		
 		this.inputFromCSV = false;
 		this.inputProcessName = "";
-		this.inputCSVName = "";
-		this.inputCSVEntries = new ArrayList<String[]>();
-		this.inputCSVIndexes = new ArrayList<Integer>();
-		this.inputCSVExpectedFileSize = 10;
+		this.inputFileName = "";
+		//this.inputCSVEntries = new ArrayList<String[]>();
+		this.inputDataEntries = new ArrayList<FEInputDataObject>();
+		this.inputDataIndexes = new ArrayList<Integer>();
+		this.inputDataExpectedFileSize = 10;
 		this.inputIgnoreBlanks = true;
 		this.inputIgnore2SecondGlitch = true;
 		this.inputIgnoreFalsePositives = true;
 		this.inputIgnoreUnk = true;
 		
-		this.outputCSVChecked = false;
-		this.outputCSVName = "";
+		//this.outputDataChecked = false;
+		this.outputDataOption = OUTPUT_NONE;
+		this.outputDataName = "";
 		
 		this.audioSourceProcessName = "";
 		this.audioAutoClipLength = true;
@@ -136,6 +144,10 @@ public class FEParameters extends MIRRFParameters {
 			if (i < featureList.length-1) outp += ",";
 		}
 		return outp;
+	}
+	
+	public boolean inputFileIsMIRRFTS() {
+		return this.inputFromCSV && this.inputFileName.endsWith(".mirrfts");
 	}
 	
 	public HashMap<String, String> outputParamsToHashMap() {

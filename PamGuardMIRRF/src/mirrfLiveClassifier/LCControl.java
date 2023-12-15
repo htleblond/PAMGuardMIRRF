@@ -107,21 +107,6 @@ public class LCControl extends MIRRFControlledUnit implements PamSettings {
 		DateTimeFormatter dtformat = DateTimeFormatter.ofPattern(date_format);
 		return dtformat.format(utcDateTime);
 	}
-	
-	/**
-	 * Turns a date/time string formatted like yyyy-MM-dd HH:mm:ss+SSS back to a long.
-	 */
-	public long convertDateStringToLong(String inp) {
-		// Kudos: https://stackoverflow.com/questions/12473550/how-to-convert-a-string-date-to-long-millseconds
-		SimpleDateFormat f = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss+SSS");
-		try {
-		    Date d = f.parse(inp);
-		    return d.getTime();
-		} catch (Exception e) {
-		    e.printStackTrace();
-		}
-		return -1;
-	}
 		
 	@Override
 	public LCTabPanel getTabPanel() {

@@ -670,34 +670,54 @@ public class TSBPanel extends PamBorderPanel {
 							break;
 						}
 					}
-					if (currSubset != null) {
-						ArrayList<String[]> splitList = new ArrayList<String[]>();
-						for (int j = 0; j < currSubset.selectionArray.length; j++) {
-							if (tsbControl.getFullClassList().contains(currSubset.classList.get(currSubset.selectionArray[j]))) {
-								for (int k = 0; k < currSubset.validEntriesList.get(currSubset.selectionArray[j]).size(); k++) {
-									TSBDetection currDetection = currSubset.validEntriesList.get(currSubset.selectionArray[j]).get(k);
-									String[] nextLine = new String[8+outputFeatureIndices.length];
-									nextLine[0] = currID+"-"+currDetection.clusterID;
-									nextLine[1] = String.valueOf(currDetection.uid);
-									nextLine[2] = currSubset.location;
-									nextLine[3] = currDetection.datetime;
-									nextLine[4] = String.valueOf(currDetection.duration);
-									nextLine[5] = String.valueOf(currDetection.lf);
-									nextLine[6] = String.valueOf(currDetection.hf);
-									nextLine[7] = tsbControl.getClassMap().get(currSubset.classList.get(currSubset.selectionArray[j]));
-									if (!outputLabelList.contains(nextLine[7])) continue;
-									for (int l = 0; l < outputFeatureIndices.length; l++) {
-										nextLine[l+8] = String.valueOf(currDetection.featureVector[outputFeatureIndices[l]]);
-									}
-									splitList.add(nextLine);
-								}
+					if (currSubset == null) continue;
+					HashMap<String, TSBClusterDetectionList> clusterMap = currSubset.createTSBClusterHashMap();
+					ArrayList<String> idList = new ArrayList<String>();
+					Iterator<String> it = clusterMap.keySet().iterator();
+					while (it.hasNext()) idList.add(it.next());
+					Collections.sort(idList);
+					for (int j = 0; j < idList.size(); j++) {
+						//System.out.println(idList.get(j)+" -> "+String.valueOf(clusterMap.get(idList.get(j)).size()));
+						TSBClusterDetectionList currCluster = clusterMap.get(idList.get(j));
+						if (currCluster.size() == 0) continue;
+						if (tsbControl.multilabelOption == tsbControl.MULTILABEL_SKIP_CLUSTER && currCluster.containsMultipleSpecies()) {
+							System.out.println("Skipped cluster "+idList.get(j)+" due to multilabel settings.");
+							continue;
+						}
+						if (tsbControl.overlapOption == tsbControl.OVERLAP_SKIP_BOTH)
+							currCluster = currCluster.removeOverlaps(currID);
+						ArrayList<String> outpClasses = new ArrayList<String>();
+						for (int k = 0; k < currSubset.selectionArray.length; k++)
+							outpClasses.add(currSubset.classList.get(currSubset.selectionArray[k]));
+						for (int k = 0; k < currCluster.size(); k++) {
+							if (!outpClasses.contains(currCluster.get(k).species)) {
+								currCluster.remove(k);
+								k--;
 							}
+						}
+						if (tsbControl.overlapOption == tsbControl.MULTILABEL_KEEP_MOST)
+							currCluster = currCluster.removeLessOccuringSpecies(currID);
+						ArrayList<String[]> splitList = new ArrayList<String[]>();
+						for (int k = 0; k < currCluster.size(); k++) {
+							TSBDetection currDetection = currCluster.get(k);
+							if (!tsbControl.getFullClassList().contains(currDetection.species)) continue;
+							String[] nextLine = new String[8+outputFeatureIndices.length];
+							nextLine[0] = currID+"-"+currDetection.clusterID;
+							nextLine[1] = String.valueOf(currDetection.uid);
+							nextLine[2] = currSubset.location;
+							nextLine[3] = currDetection.datetime;
+							nextLine[4] = String.valueOf(currDetection.duration);
+							nextLine[5] = String.valueOf(currDetection.lf);
+							nextLine[6] = String.valueOf(currDetection.hf);
+							nextLine[7] = tsbControl.getClassMap().get(currDetection.species);
+							for (int l = 0; l < outputFeatureIndices.length; l++) {
+								nextLine[l+8] = String.valueOf(currDetection.featureVector[outputFeatureIndices[l]]);
+							}
+							splitList.add(nextLine);
 						}
 						splitList.sort(Comparator.comparing(a -> Long.valueOf(a[1])));
 						splitList.sort(Comparator.comparing(a -> a[0]));
-						for (int j = 0; j < splitList.size(); j++) {
-							outpList.add(splitList.get(j));
-						}
+						for (int k = 0; k < splitList.size(); k++) outpList.add(splitList.get(k));
 					}
 				}
 				try {

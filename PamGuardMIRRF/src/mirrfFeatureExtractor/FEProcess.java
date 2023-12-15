@@ -3,9 +3,11 @@ package mirrfFeatureExtractor;
 import java.io.File;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
@@ -18,6 +20,7 @@ import javax.swing.JOptionPane;
 import org.docx4j.org.apache.poi.poifs.storage.RawDataBlock;
 
 import Acquisition.AcquisitionControl;
+import Acquisition.filedate.StandardFileDate;
 import warnings.PamWarning;
 import clipgenerator.localisation.ClipDelays;
 import fftManager.FFTDataBlock;
@@ -224,10 +227,8 @@ public class FEProcess extends PamProcess {
 				e.printStackTrace();
 			}
 		}
-		//feControl.getThreadManager().pythonCommand("currThread.runLast()");
 		File tempFolder = new File(feControl.getParams().tempFolder);
 		File[] filesToDelete = tempFolder.listFiles();
-		//System.out.println("filesToDelete.length: "+String.valueOf(filesToDelete.length));
 		for (int i = 0; i < filesToDelete.length; i++) {
 			if (filesToDelete[i].getName().substring(filesToDelete[i].getName().length()-4).equals(".wav")) {
 				filesToDelete[i].delete();
@@ -258,32 +259,31 @@ public class FEProcess extends PamProcess {
 		csvClipList = new ArrayList<ClipRequest>();
 		
 		long start = ac.getDaqProcess().getDaqStatusDataBlock().getLastUnit().getTimeMilliseconds();
-		long end = start + 1000*60*feControl.getParams().inputCSVExpectedFileSize;
+		long end = start + 1000*60*feControl.getParams().inputDataExpectedFileSize;
 		
 		SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss+SSS");
 		df.setTimeZone(TimeZone.getTimeZone("UTC"));
-		ArrayList<String[]> csvEntries = feControl.getParams().inputCSVEntries;
-		for (int i = 0; i < csvEntries.size(); i++) {
-			String[] curr = csvEntries.get(i);
+		ArrayList<FEInputDataObject> entries = feControl.getParams().inputDataEntries;
+		for (int i = 0; i < entries.size(); i++) {
+			FEInputDataObject curr = entries.get(i);
 			long currTime;
 			try {
-				currTime = df.parse(curr[1]).getTime();
+				currTime = df.parse(curr.datetime).getTime();
 			} catch (ParseException e) {
 				e.printStackTrace();
 				continue;
 			}
 			if (!(start <= currTime && currTime < end)) continue;
 			try {
-				FESliceDataUnit newDU = new FESliceDataUnit();
-				newDU.setUID(Long.valueOf(curr[0]));
-				newDU.setTimeMilliseconds(currTime);
-				newDU.setFrequency(new double[] {Double.valueOf(curr[2]), Double.valueOf(curr[3])});
-				newDU.setDurationInMilliseconds(Double.valueOf(curr[4]));
-				newDU.setMeasuredAmplitude(Double.valueOf(curr[5]));
-				newDU.setStartSample((long) (feControl.getParams().sr*(currTime - start))/1000);
-				newDU.setSampleDuration((long) (feControl.getParams().sr*(newDU.getDurationInMilliseconds()))/1000);
-				newDU.setSliceData(curr);
-				csvClipList.add(new ClipRequest(clipBlockProcesses[0], newDU));
+				if (feControl.getParams().inputFileIsMIRRFTS()) {
+					FETrainingDataUnit newDU = new FETrainingDataUnit(curr, (long) (feControl.getParams().sr*(currTime - start))/1000,
+							(long) (feControl.getParams().sr*(curr.duration))/1000);
+					csvClipList.add(new ClipRequest(clipBlockProcesses[0], newDU));
+				} else { // input file is .wmnt
+					FESliceDataUnit newDU = new FESliceDataUnit(curr, (long) (feControl.getParams().sr*(currTime - start))/1000,
+							(long) (feControl.getParams().sr*(curr.duration))/1000);
+					csvClipList.add(new ClipRequest(clipBlockProcesses[0], newDU));
+				}
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
@@ -370,8 +370,8 @@ public class FEProcess extends PamProcess {
 				(params.miscIgnoreHighFreqChecked && dataUnit.getFrequency()[1] > params.miscIgnoreHighFreq) ||
 				(params.miscIgnoreShortDurChecked && dataUnit.getDurationInMilliseconds() < params.miscIgnoreShortDur) ||
 				(params.miscIgnoreLongDurChecked && dataUnit.getDurationInMilliseconds() > params.miscIgnoreLongDur) ||
-				(params.miscIgnoreQuietAmpChecked && dataUnit.getAmplitudeDB() < params.miscIgnoreQuietAmp) ||
-				(params.miscIgnoreLoudAmpChecked && dataUnit.getAmplitudeDB() > params.miscIgnoreLoudAmp) ||
+				(!params.inputFileIsMIRRFTS() && params.miscIgnoreQuietAmpChecked && dataUnit.getAmplitudeDB() < params.miscIgnoreQuietAmp) ||
+				(!params.inputFileIsMIRRFTS() && params.miscIgnoreLoudAmpChecked && dataUnit.getAmplitudeDB() > params.miscIgnoreLoudAmp) ||
 				(params.sr < 2*dataUnit.getFrequency()[1])) {
 					return 4;
 			}
@@ -446,9 +446,15 @@ public class FEProcess extends PamProcess {
 			prevDU = dataUnit;
 			if (countUp) clusterCountID++;
 			
+			String clusterID = createClusterID(dataUnit.getUID(), clusterCountID, false);
 			long[] sliceStartSamples;
 			double[] sliceFreqs;
-			if (params.inputFromCSV) {
+			if (params.inputFromCSV && params.inputFileIsMIRRFTS()) {
+				FETrainingDataUnit tdu = (FETrainingDataUnit) dataUnit;
+				sliceStartSamples = new long[] {-1,-1};
+				sliceFreqs = new double[] {-1,-1};
+				clusterID = tdu.clusterID;
+			} else if (params.inputFromCSV && !params.inputFileIsMIRRFTS()) {
 				FESliceDataUnit sdu = (FESliceDataUnit) dataUnit;
 				sliceStartSamples = sdu.sliceStartSamples;
 				sliceFreqs = sdu.sliceFreqs;
@@ -467,10 +473,7 @@ public class FEProcess extends PamProcess {
 					sliceFreqs[i] = fftDB.getSampleRate() * sdList.get(i).getPeakInfo()[0][2] / fftDB.getFftLength();
 				}
 			}
-			
-			String clusterID = createClusterID(dataUnit.getUID(), clusterCountID, false);
-			//String[] extras = new String[8];
-			String[] extras = new String[7];
+			String[] extras = new String[8];
 			extras[0] = "uid="+String.valueOf(dataUnit.getUID());
 			extras[1] = "datelong="+String.valueOf(dataUnit.getTimeMilliseconds());
 			extras[2] = "amplitude="+String.valueOf(dataUnit.getAmplitudeDB());
@@ -484,6 +487,22 @@ public class FEProcess extends PamProcess {
 			for (int i = 1; i < sliceFreqs.length; i++)
 				extras[6] += "),("+String.valueOf(sliceStartSamples[i])+","+String.valueOf(sliceFreqs[i]);
 			extras[6] += ")]";
+			extras[7] = "";
+			if (params.inputFromCSV && params.inputFileIsMIRRFTS()) {
+				FETrainingDataUnit tdu = (FETrainingDataUnit) dataUnit;
+				extras[7] += "pe_cluster_id=\""+clusterID+"\"";
+				extras[7] += ",pe_location=\""+tdu.location+"\"";
+				extras[7] += ",pe_label=\""+tdu.label+"\"";
+				extras[7] += ",pe_header_features={";
+				Iterator<String> it = tdu.problematicFeatures.keySet().iterator();
+				while (it.hasNext()) {
+					String key = it.next();
+					extras[7] += "\""+key+"\": "+String.valueOf(tdu.problematicFeatures.get(key));
+					if (it.hasNext()) extras[7] += ",";
+				}
+				extras[7] += "}";
+					
+			}
 			feControl.getThreadManager().sendContourClipToThread(clusterID, String.valueOf(dataUnit.getUID()), nrPath, clipPath, extras);
 			
 			return 0; // no error. 
@@ -586,7 +605,11 @@ public class FEProcess extends PamProcess {
 				
 				if (rawDataBlock.getLastUnit() == null) continue;
 				
-				long currTime = rawDataBlock.getLastUnit().getEndTimeInMilliseconds();
+				long currTime = rawDataBlock.getLastUnit().getEndTimeInMilliseconds(); // NOTE THAT THIS IS IN LOCAL TIME FOR SOME REASON !!!
+				AcquisitionControl daq = (AcquisitionControl) feControl.getPamController().findControlledUnit("Data Acquisition");
+				StandardFileDate sfd = (StandardFileDate) daq.getFileDate();
+				ZonedDateTime zdt = ZonedDateTime.now();
+				currTime = feControl.convertBetweenTimeZones(currTime, ZonedDateTime.now().getZone().getId(), sfd.getSettings().getTimeZoneName());
 				
 				if (feControl.getParams().inputFromCSV) {
 					while (csvClipList.size() > 0) {
@@ -657,6 +680,9 @@ public class FEProcess extends PamProcess {
 		return ans;
 	}
 	
+	/**
+	 * @author Doug Gillespie
+	 */
 	@Override
 	public long getRequiredDataHistory(PamObservable o, Object arg) {
 		long minH = 0;

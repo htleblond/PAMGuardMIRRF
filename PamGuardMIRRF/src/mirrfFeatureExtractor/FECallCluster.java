@@ -14,10 +14,12 @@ public class FECallCluster implements Serializable, Cloneable {
 	
 	public String clusterID;
 	public long[] uids;
+	public String[] locations; // only used with .mirrfts as input
 	public long[] datetimes;
 	public int[] durations;
 	public int[] lfs;
 	public int[] hfs;
+	public String[] labels; // only used with .mirrfts as input
 	public double[][] featureVector;
 	
 	/**
@@ -33,10 +35,12 @@ public class FECallCluster implements Serializable, Cloneable {
 	public FECallCluster(int size, int vectorSize) {
 		this.clusterID = "";
 		this.uids = new long[size];
+		this.locations = new String[size];
 		this.datetimes = new long[size];
 		this.durations = new int[size];
 		this.lfs = new int[size];
 		this.hfs = new int[size];
+		this.labels = new String[size];
 		this.featureVector = new double[size][vectorSize];
 	}
 	

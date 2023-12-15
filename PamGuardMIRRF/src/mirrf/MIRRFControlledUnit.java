@@ -1,6 +1,13 @@
 package mirrf;
 
 import java.io.File;
+import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Date;
 
 import javax.swing.JOptionPane;
 
@@ -49,6 +56,55 @@ public abstract class MIRRFControlledUnit extends PamControlledUnit {
 			} while (params.tempFolder.length() == 0 || params.tempKey < 0);
 		}
 		System.out.println("tempFolder: "+params.tempFolder);
+	}
+	
+	/**
+	 * Converts date/time strings formatted as yyyy-MM-dd HH:mm:ss+SSS back to longs.
+	 */
+	public static long convertDateStringToLong(String inp) {
+		// Kudos: https://stackoverflow.com/questions/12473550/how-to-convert-a-string-date-to-long-millseconds
+		SimpleDateFormat f = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss+SSS");
+		try {
+		    Date d = f.parse(inp);
+		    return d.getTime();
+		} catch (Exception e) {
+		    e.printStackTrace();
+		}
+		return -1;
+	}
+	
+	/**
+	 * Converts a long to a string representing a date/time with the following format: yyyy-MM-dd HH:mm:ss+SSS
+	 */
+	public static String convertDateLongToString(long inp) {
+		Date date = new Date(inp);
+		String date_format = "yyyy-MM-dd HH:mm:ss+SSS";
+		SimpleDateFormat currdateformat = new SimpleDateFormat(date_format);
+		String currdate = currdateformat.format(date);
+		LocalDateTime ldt = LocalDateTime.parse(currdate, DateTimeFormatter.ofPattern(date_format));
+		DateTimeFormatter dtformat = DateTimeFormatter.ofPattern(date_format);
+		//System.out.println(dtformat.format(ldt));
+		return dtformat.format(ldt);
+	}
+	
+	/**
+	 * Converts a date/time long from one time zone to another.
+	 * NOTE: Always assumes Daylight Savings Time is toggled ON.
+	 * @return Long representing the input time, or -1 if the input time zones aren't real.
+	 */
+	public static long convertBetweenTimeZones(long inp, String fromTZ, String toTZ) {
+		try {
+			ZonedDateTime fromZonedDateTime = ZonedDateTime.ofInstant(Instant.ofEpochMilli(inp), ZoneId.of(fromTZ));
+			ZonedDateTime toZonedDateTime = fromZonedDateTime.withZoneSameInstant(ZoneId.of(toTZ));
+			String date_format = "yyyy-MM-dd HH:mm:ss+SSS";
+			DateTimeFormatter dtformat = DateTimeFormatter.ofPattern(date_format);
+			//System.out.println("From: "+dtformat.format(fromZonedDateTime)+" "+fromTZ);
+			//System.out.println("To:   "+dtformat.format(toZonedDateTime)+" "+toTZ);
+			return convertDateStringToLong(dtformat.format(toZonedDateTime));
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return -1;
 	}
 	
 	public static String makeHTML(String inp, int width) {

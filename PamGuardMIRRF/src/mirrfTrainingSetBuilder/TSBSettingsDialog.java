@@ -74,6 +74,9 @@ public class TSBSettingsDialog extends PamDialog {
 	protected JRadioButton noCallType;
 	protected JRadioButton yesCallType;
 	
+	protected JComboBox<String> overlapOptionsBox;
+	protected JComboBox<String> multilabelOptionsBox;
+	
 	protected JButton umbrellaButton;
 	protected ArrayList<String> classList;
 	protected ArrayList<String> umbrellaList;
@@ -116,6 +119,26 @@ public class TSBSettingsDialog extends PamDialog {
 		}
 		b.fill = b.HORIZONTAL;
 		mainPanel.add(topPanel, b);
+		
+		JPanel middlePanel = new JPanel(new GridBagLayout());
+		c = new PamGridBagContraints();
+		middlePanel.setBorder(new TitledBorder("Overlaps"));
+		c.anchor = c.WEST;
+		c.gridwidth = 1;
+		middlePanel.add(new JLabel("Instances when contours with different species overlap:"), c);
+		c.gridy++;
+		overlapOptionsBox = new JComboBox<String>(new String[] {"Skip both", "Keep both"});
+		overlapOptionsBox.setSelectedIndex(tsbControl.overlapOption);
+		middlePanel.add(overlapOptionsBox, c);
+		c.gridy++;
+		middlePanel.add(new JLabel("Instances when multiple species occur in the same cluster:"), c);
+		c.gridy++;
+		multilabelOptionsBox = new JComboBox(new String[] {"Only keep most-occuring species", "Keep everything", "Skip entire cluster"});
+		multilabelOptionsBox.setSelectedIndex(tsbControl.multilabelOption);
+		middlePanel.add(multilabelOptionsBox, c);
+		b.gridy++;
+		mainPanel.add(middlePanel, b);
+		
 		
 		JPanel bottomPanel = new JPanel(new GridBagLayout());
 		c = new PamGridBagContraints();
@@ -171,6 +194,8 @@ public class TSBSettingsDialog extends PamDialog {
 	@Override
 	public boolean getParams() {
 		tsbControl.includeCallType = yesCallType.isSelected();
+		tsbControl.overlapOption = overlapOptionsBox.getSelectedIndex();
+		tsbControl.multilabelOption = multilabelOptionsBox.getSelectedIndex();
 		tsbControl.setUmbrellaClassList(umbrellaList);
 		HashMap<String, String> outpMap = new HashMap<String, String>();
 		for (int i = 0; i < jLabelList.size(); i++)

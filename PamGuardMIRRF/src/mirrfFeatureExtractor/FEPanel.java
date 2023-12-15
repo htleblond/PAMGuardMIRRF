@@ -163,11 +163,11 @@ public class FEPanel {
 	protected class ReloadCSVListener implements ActionListener{
 		public void actionPerformed(ActionEvent e) {
 			ArrayList<Integer> intList = new ArrayList<Integer>();
-			int csvSize = feControl.getParams().inputCSVEntries.size();
+			int csvSize = feControl.getParams().inputDataEntries.size();
 			for (int i = 0; i < csvSize; i++) {
 				intList.add(i);
 			}
-			feControl.getParams().inputCSVIndexes = new ArrayList<Integer>(intList);
+			feControl.getParams().inputDataIndexes = new ArrayList<Integer>(intList);
 		}
 	}
 	

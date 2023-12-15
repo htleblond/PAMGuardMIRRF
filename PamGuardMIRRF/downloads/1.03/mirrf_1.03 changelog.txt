@@ -1,5 +1,5 @@
 mirrf_1.03 CHANGELOG
-August 11th to September 19th, 2023
+August 11th to December 14th, 2023
 Holly LeBlond
 
 1.03a (August 11th, 2023)
@@ -46,4 +46,13 @@ Holly LeBlond
 	- "Harmonics-to-background ratio" now calculated by taking the mean magnitude of the bins corresponding to the found harmonics and dividing it by the median magnitude of the whole FFT frame.
 	- Added options for which value is calculated in each "harmonic centroid" frame (including mode), in addition to the calculated output value of the whole array.
 	- "Normalization" removed as an option, as it was never actually implemented into the Python script.
-- Improved the Feature Extractor's ability to recognize exceptions in its Python script. 
+- Improved the Feature Extractor's ability to recognize exceptions in its Python script.
+
+1.03h (December 14th, 2023)
+- Options added to Training Set Builder:
+	- Overlapping contours from different species can be removed if desired.
+	- Clusters with multiple species can have all non-most-occurring-species detections removed, or skipped over entirely, if desired.
+- Feature Extractor can now take data from a .mirrfts file as input and output directly to another .mirrfts file, in order to skip the Training Set Builder when repeatedly testing settings.
+	- NOTE: Slice data and amplitude are not stored in .mirrfts files, so desired features calculated with either of those must already be present in the input file.
+	- Feature Extractor can now import features from input .mirrfts files.
+- Fixed some string-parsing bugs in the classifiers that were likely caused by a Python update.

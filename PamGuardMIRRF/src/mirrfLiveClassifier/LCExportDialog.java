@@ -373,7 +373,7 @@ public class LCExportDialog extends PamDialog {
 	protected StringBuilder printParamsFromFEParametersObject(StringBuilder sb, FEParameters feParams) {
 		if (feParams.inputFromCSV) {
 			sb.append("Input source: CSV file\n");
-			sb.append("Input source name: "+feParams.inputCSVName+"\n");
+			sb.append("Input source name: "+feParams.inputFileName+"\n");
 		} else {
 			sb.append("Input source: Live data from Whistle and Moan Detector\n");
 			sb.append("Input source name: "+feParams.inputProcessName+"\n");

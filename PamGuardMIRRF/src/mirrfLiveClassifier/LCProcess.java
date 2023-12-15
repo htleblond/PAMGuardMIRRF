@@ -88,16 +88,16 @@ public class LCProcess extends PamProcess {
 	public boolean addResultsData(String inp) {
 		try {
 			String[] tokens = inp.split(Pattern.quote("]|["));
-			String[] uids = tokens[1].split(Pattern.quote(" "));
-			String[] datetimes = tokens[2].substring(1, tokens[2].length()-1).split(Pattern.quote("' '"), -1);
-			String[] durations = tokens[3].split(Pattern.quote(" "));
-			String[] lfs = tokens[4].split(Pattern.quote(" "));
-			String[] hfs = tokens[5].split(Pattern.quote(" "));
-			String[] actualSpecies = tokens[6].substring(1, tokens[6].length()-1).split(Pattern.quote("' '"), -1);
-			String[] probas = tokens[7].substring(6, tokens[7].length()-3).split(Pattern.quote("]) list(["));
+			String[] uids = tokens[1].split(Pattern.quote(", "));
+			String[] datetimes = tokens[2].substring(1, tokens[2].length()-1).split(Pattern.quote("', '"), -1);
+			String[] durations = tokens[3].split(Pattern.quote(", "));
+			String[] lfs = tokens[4].split(Pattern.quote(", "));
+			String[] hfs = tokens[5].split(Pattern.quote(", "));
+			String[] actualSpecies = tokens[6].substring(1, tokens[6].length()-1).split(Pattern.quote("', '"), -1);
+			String[] probas = tokens[7].substring(1, tokens[7].length()-2).split(Pattern.quote("], ["));
 			
 			LCCallCluster cc = new LCCallCluster(lcControl.getParams().labelOrder, uids.length);
-			cc.clusterID = tokens[0].substring(0, tokens[0].length()-1).split(Pattern.quote("' '"))[0];
+			cc.clusterID = tokens[0].substring(0, tokens[0].length()-1).split(Pattern.quote("', '"))[0];
 			for (int i = 0; i < cc.getSize(); i++) {
 				cc.uids[i] = Long.valueOf(uids[i]);
 				cc.datetimes[i] = lcControl.convertDateStringToLong(datetimes[i]);
