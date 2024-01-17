@@ -14,4 +14,4 @@ Fisheries and Oceans Canada
 - Feature Extractor no longer has to freeze processing if isn't outputting data to binary storage, a database, or another module.
 - Audio clips produced by the Feature Extractor are now deleted immediately after the vector data has been processed, as opposed to the folder being wiped at the end of each file being processed.
 - Apparently fixed a bug in the Feature Extractor that caused some processed vector data to not be sent to the output block and kept the pending count above 0.
-- Some minor code improvements in the Live Classifier and WMNT.
+- Some minor code improvements in the Live Classifier.
