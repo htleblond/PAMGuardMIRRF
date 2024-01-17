@@ -7,6 +7,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -37,6 +38,7 @@ import Acquisition.filedate.StandardFileDateSettings;
 import PamUtils.PamFileChooser;
 import PamView.dialog.PamDialog;
 import PamView.dialog.PamGridBagContraints;
+import mirrf.MIRRFControlledUnit;
 
 /**
  * Dialog for generating smaller sets of audio (where detections occur) for faster testing.
@@ -54,8 +56,8 @@ public class TSBAudioTestBatchDialog extends PamDialog {
 	protected JButton audioFolderButton;
 	protected JTextField outputFolderField;
 	protected JButton outputFolderButton;
-	protected JComboBox<String> tzBox;
-	protected JCheckBox dstCheck;
+	//protected JComboBox<String> tzBox;
+	//protected JCheckBox dstCheck;
 	protected JComboBox<String> subsetBox;
 	protected JComboBox<String> priorityBox;
 	protected JTextField minimumField;
@@ -144,20 +146,19 @@ public class TSBAudioTestBatchDialog extends PamDialog {
 		c = new PamGridBagContraints();
 		c.anchor = c.WEST;
 		//c.fill = c.HORIZONTAL;
-		p2.add(new JLabel("Time zone:"), c);
+		c.fill = c.NONE;
+	/*	p2.add(new JLabel("Time zone:"), c);
 		c.gridx += c.gridwidth;
 		c.gridwidth = 2;
 		tzBox = new JComboBox<String>(TimeZone.getAvailableIDs());
 		tzBox.setSelectedItem("UTC");
-		p2.add(tzBox, c);
-		c.gridy++;
+		p2.add(tzBox, c); */
+	/*	c.gridy++;
 		c.gridx = 0;
 		c.gridwidth = 3;
-		dstCheck = new JCheckBox();
-		dstCheck.setText("Adjust for Daylight Savings Time");
-		p2.add(dstCheck, c);
+		p2.add(new JLabel("(If audio file names and annotation data are in the same time zone, select UTC.)"), c); */
 		if (useLoaded) {
-			c.gridy++;
+			//c.gridy++;
 			c.gridx = 0;
 			c.gridwidth = 1;
 			p2.add(new JLabel("Subset:"), c);
@@ -514,8 +515,8 @@ public class TSBAudioTestBatchDialog extends PamDialog {
 		int initialErrorCount = 0;
 		ArrayList<WavObject> wavList = new ArrayList<WavObject>();
 		StandardFileDateSettings sfdSettings = new StandardFileDateSettings();
-		sfdSettings.setTimeZoneName((String) tzBox.getSelectedItem());
-		sfdSettings.setAdjustDaylightSaving(dstCheck.isSelected());
+		sfdSettings.setTimeZoneName(ZonedDateTime.now().getZone().getId()); // NOTE: Yes, this needs to be set to local time in order to convert to UTC.
+		sfdSettings.setAdjustDaylightSaving(true);
 		StandardFileDate sfd = new StandardFileDate(null);
 		sfd.setSettings(sfdSettings);
 		loadingBarWindow.startFolderCheck(audioFolderList.size());
@@ -529,6 +530,9 @@ public class TSBAudioTestBatchDialog extends PamDialog {
 				File f = files[j];
 				if (!f.getName().endsWith(".wav")) continue;
 				long start = sfd.getTimeFromFile(f);
+				//long start = MIRRFControlledUnit.convertBetweenTimeZones(sfd.getTimeFromFile(f), ZonedDateTime.now().getZone().getId(), (String) tzBox.getSelectedItem());
+				//System.out.println(MIRRFControlledUnit.convertDateLongToString(sfd.getTimeFromFile(f)));
+				//System.out.println(MIRRFControlledUnit.convertDateLongToString(start)+", "+ZonedDateTime.now().getZone().getId()+" -> "+(String) tzBox.getSelectedItem());
 				try {
 					// Kudos to this: https://stackoverflow.com/questions/3009908/how-do-i-get-a-sound-files-total-time-in-java
 					AudioInputStream stream = AudioSystem.getAudioInputStream(f);
@@ -555,8 +559,9 @@ public class TSBAudioTestBatchDialog extends PamDialog {
 		}
 		if (overlapList.size() > 0) {
 			int res = JOptionPane.showOptionDialog(this,
-					"Some files appear to overlap with others in time. Succeeding overlapping files can either be ignored or "
-					+ "have their start times cut to when the preceding file ends.",
+					MIRRFControlledUnit.makeHTML("Some files appear to overlap with others in time. Succeeding overlapping files "
+							+ "can either be ignored or be interpreted as if their start times have been cut to when the preceding "
+							+ "file ends. The latter option DOES NOT modify the resulting file in any way.", 350),
 					tsbControl.getUnitName(),
 					JOptionPane.YES_NO_OPTION,
 					JOptionPane.WARNING_MESSAGE,

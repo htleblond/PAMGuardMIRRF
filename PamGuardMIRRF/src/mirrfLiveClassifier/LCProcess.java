@@ -28,13 +28,14 @@ public class LCProcess extends PamProcess {
 	}
 	
 	protected void init() {
-		for (int i = 0; i < lcControl.getPamController().getDataBlocks().size(); i++) {
+	/*	for (int i = 0; i < lcControl.getPamController().getDataBlocks().size(); i++) {
 			if (lcControl.getParams().printJava)
 				System.out.println(lcControl.getPamController().getDataBlocks().get(i).getDataName()+" : "+lcControl.getParams().inputProcessName);
 			if (lcControl.getPamController().getDataBlocks().get(i).getDataName().equals(lcControl.getParams().inputProcessName)) {
 				this.setParentDataBlock(lcControl.getPamController().getDataBlocks().get(i));
 			}
-		}
+		} */
+		this.setParentDataBlock(lcControl.getParams().inputFEDataBlock);
 		resultsDataBlock = new LCDataBlock(lcControl, streamName, this, 0);
 		this.addOutputDataBlock(resultsDataBlock);
 		resultsDataBlock.setOverlayDraw(new LCOverlayGraphics(lcControl, resultsDataBlock));

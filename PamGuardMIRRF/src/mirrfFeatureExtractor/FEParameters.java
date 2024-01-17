@@ -1,5 +1,6 @@
 package mirrfFeatureExtractor;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -20,7 +21,7 @@ public class FEParameters extends MIRRFParameters {
 	
 	public boolean inputFromCSV;
 	public String inputProcessName;
-	public String inputFileName;
+	public ArrayList<File> inputDataFiles;
 	//public ArrayList<String[]> inputCSVEntries;
 	public ArrayList<FEInputDataObject> inputDataEntries;
 	public ArrayList<Integer> inputDataIndexes;
@@ -81,7 +82,7 @@ public class FEParameters extends MIRRFParameters {
 		
 		this.inputFromCSV = false;
 		this.inputProcessName = "";
-		this.inputFileName = "";
+		this.inputDataFiles = new ArrayList<File>();
 		//this.inputCSVEntries = new ArrayList<String[]>();
 		this.inputDataEntries = new ArrayList<FEInputDataObject>();
 		this.inputDataIndexes = new ArrayList<Integer>();
@@ -146,8 +147,8 @@ public class FEParameters extends MIRRFParameters {
 		return outp;
 	}
 	
-	public boolean inputFileIsMIRRFTS() {
-		return this.inputFromCSV && this.inputFileName.endsWith(".mirrfts");
+	public boolean inputFilesAreMIRRFTS() {
+		return this.inputFromCSV && this.inputDataFiles.size() > 0 && this.inputDataFiles.get(0).getAbsolutePath().endsWith(".mirrfts");
 	}
 	
 	public HashMap<String, String> outputParamsToHashMap() {

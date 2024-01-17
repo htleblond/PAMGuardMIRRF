@@ -33,9 +33,9 @@ public class FEInputDataObject implements Serializable {
 			this.location = data[2];
 			assert FEControl.convertDateStringToLong(data[3]) > -1;
 			this.datetime = data[3];
-			this.duration = Integer.valueOf(data[4]);
-			this.lf = Integer.valueOf(data[5]);
-			this.hf = Integer.valueOf(data[6]);
+			this.duration = Double.valueOf(data[4]).intValue();
+			this.lf = Double.valueOf(data[5]).intValue();
+			this.hf = Double.valueOf(data[6]).intValue();
 			this.label = data[7];
 			this.problematicFeatures = new HashMap<String, Double>();
 			for (int i = 0; i < foundFeatureNames.size(); i++)

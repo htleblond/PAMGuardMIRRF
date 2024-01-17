@@ -36,7 +36,7 @@ public class FEPythonThreadManager {
 	private InputPrintThread ipt = null;
 	private ErrorPrintThread ept = null;
 	private RunnerThread rt = null;
-	private ArrayList<String> activePythonThreads;
+	//private ArrayList<String> activePythonThreads;
 	private Process pr;
 	public volatile ArrayList<String> commandList;
 	public PythonInterpreterThread pit = null;
@@ -50,12 +50,15 @@ public class FEPythonThreadManager {
 	private volatile ArrayList<ArrayList<String[]>> pythonOutpList;
 	private volatile boolean rdbctSignal;
 	
+	public volatile ArrayList<String> remainingUIDs; // TODO This is only for testing.
+	
 	public FEPythonThreadManager(FEControl feControl) {
 		this.feControl = feControl;
-		this.activePythonThreads = new ArrayList<String>();
+		//this.activePythonThreads = new ArrayList<String>();
 		this.printThreadsActive = true;
 		this.commandList = new ArrayList<String>();
 		this.rdbctSignal = false;
+		this.remainingUIDs = new ArrayList<String>();
 		
 		String defpathname = feControl.getParams().tempFolder;
 		this.pathname = "";
@@ -221,7 +224,9 @@ public class FEPythonThreadManager {
 	 * "headerData" should include contour header data (see use in FEProcess for details).
 	 */
 	public void sendContourClipToThread(String clusterID, String uid, String nrName, String clipName, String[] headerData) {
-		waitList.add(new ContourClip(clusterID, uid, nrName, clipName, headerData));
+		remainingUIDs.add(uid);
+		ContourClip cc = new ContourClip(clusterID, uid, nrName, clipName, headerData);
+		this.waitList.add(cc);
 	}
 	
 	/**
@@ -242,9 +247,10 @@ public class FEPythonThreadManager {
 	 * @return How many clips there are that are currently being processed.
 	 */
 	public int clipsLeft() {
+		ArrayList<ArrayList<ContourClip>> ccClone = new ArrayList<ArrayList<ContourClip>>(ccList);
 		int outp = 0;
-		for (int i = 0; i < ccList.size(); i++) {
-			outp += ccList.get(i).size();
+		for (int i = 0; i < ccClone.size(); i++) {
+			outp += ccClone.get(i).size();
 		}
 		return outp;
 	}
@@ -253,9 +259,10 @@ public class FEPythonThreadManager {
 	 * @return How many instances of Python output there are that haven't been added to the data block yet.
 	 */
 	public int vectorsLeft() {
+		ArrayList<ArrayList<String[]>> pythonOutpClone = new ArrayList<ArrayList<String[]>>(pythonOutpList);
 		int outp = 0;
-		for (int i = 0; i < pythonOutpList.size(); i++) {
-			outp += pythonOutpList.get(i).size();
+		for (int i = 0; i < pythonOutpClone.size(); i++) {
+			outp += pythonOutpClone.get(i).size();
 		}
 		return outp;
 	}
@@ -322,9 +329,7 @@ public class FEPythonThreadManager {
 			while(printThreadsActive) {
 				if (waitList.size() > 0 && clipsLeft() < maxClipsAtOnce) {
 					ContourClip cc = waitList.get(0);
-					if (cc == null) {
-						waitList.remove(0);
-					} else if (idList.contains(cc.clusterID)) {
+					if (idList.contains(cc.clusterID)) {
 						ccList.get(idList.indexOf(cc.clusterID)).add(cc);
 						String command = "thread"+String.format("%02d", idList.indexOf(cc.clusterID))+".addClip(r\""+cc.clipName+"\"";
 						for (int i = 0; i < cc.headerData.length; i++) {
@@ -380,7 +385,7 @@ public class FEPythonThreadManager {
 					}
 				}
 				if (vectorsLeft() > 0) {
-					addVectorToDataBlock();
+					pushVectorsToDataBlock();
 				}
 				if (rdbctSignal) {
 					rdbctSignal = false;
@@ -429,6 +434,7 @@ public class FEPythonThreadManager {
 					}
 				}
 				if (slot < 0) {
+					remainingUIDs.remove(tokens[1]); // TODO
 					feControl.subtractOneFromPendingCounter();
 					feControl.addOneToCounter(FEPanel.FAILURE, tokens[1]);
 					return false;
@@ -449,10 +455,10 @@ public class FEPythonThreadManager {
 						String location = tokens[index++]; // 2 (.mirrfts) - location
 						outp += ","+location.substring(1, location.length()-1);
 					}
-					SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss+SSS");
-					df.setTimeZone(TimeZone.getTimeZone("UTC"));
-					Date date  = new Date(Long.valueOf(tokens[index++])); // 2 (.mirrfe), 3 (.mirrfts) - date
-					outp += ","+df.format(date);
+					//SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss+SSS");
+					//df.setTimeZone(TimeZone.getTimeZone("UTC"));
+					//Date date  = new Date(Long.valueOf(tokens[index++])); 
+					outp += ","+FEControl.convertDateLongToString(Long.valueOf(tokens[index++])); // 2 (.mirrffe), 3 (.mirrfts) - date
 					outp += ","+tokens[index++]; // 3 (.mirrffe), 4 (.mirrfts) - duration
 					outp += ","+tokens[index++]; // 4 (.mirrffe), 5 (.mirrfts) - lf
 					outp += ","+tokens[index++]; // 5 (.mirrffe), 6 (.mirrfts) - hf
@@ -501,8 +507,10 @@ public class FEPythonThreadManager {
 	/**
 	 * Parses through pythonOutpList and sends any feature vector data that's ready to go to the data block.
 	 */
-	private void addVectorToDataBlock() {
+	private void pushVectorsToDataBlock() {
 		for (int i = 0; i < pythonOutpList.size(); i++) {
+			if (feControl.feProcess.getVectorDataBlock().isFinished() && getWaitlistSize() == 0 && clipsLeft() == 0)
+				resetActiveThread();
 			ArrayList<String[]> currList = new ArrayList<String[]>(pythonOutpList.get(i));
 			if (i == activeThread || ccList.get(i).size() > 0 || currList.size() == 0) {
 				continue;
@@ -517,7 +525,7 @@ public class FEPythonThreadManager {
 				for (int j = 0; j < currList.size(); j++) {
 					cc.uids[j] = Long.valueOf(currList.get(j)[1]);
 					int index = 2;
-					if (feControl.getParams().inputFileIsMIRRFTS()) {
+					if (feControl.getParams().inputFilesAreMIRRFTS()) {
 						String location = currList.get(j)[index++];
 						cc.locations[j] = location.substring(1, location.length()-1);
 					}
@@ -525,7 +533,7 @@ public class FEPythonThreadManager {
 					cc.durations[j] = (int) Double.valueOf(currList.get(j)[index++]).doubleValue();
 					cc.lfs[j] = (int) Double.valueOf(currList.get(j)[index++]).doubleValue();
 					cc.hfs[j] = (int) Double.valueOf(currList.get(j)[index++]).doubleValue();
-					if (feControl.getParams().inputFileIsMIRRFTS()) {
+					if (feControl.getParams().inputFilesAreMIRRFTS()) {
 						String label = currList.get(j)[index++];
 						cc.labels[j] = label.substring(1, label.length()-1);
 					}
@@ -537,6 +545,7 @@ public class FEPythonThreadManager {
 					FEDataUnit du = new FEDataUnit(feControl, cc);
 					feControl.feProcess.addVectorData(du);
 					for (int j = 0; j < cc.uids.length; j++) {
+						remainingUIDs.remove(String.valueOf(cc.uids[j])); // TODO
 						feControl.subtractOneFromPendingCounter();
 						feControl.addOneToCounter(FEPanel.SUCCESS, String.valueOf(cc.uids[j]));
 					}
@@ -544,11 +553,30 @@ public class FEPythonThreadManager {
 			} catch (Exception e) {
 				e.printStackTrace();
 				for (int j = 0; j < currList.size(); j++) {
+					remainingUIDs.remove(currList.get(j)[1]); // TODO
 					feControl.subtractOneFromPendingCounter();
 					feControl.addOneToCounter(FEPanel.FAILURE, currList.get(j)[1]);
 				}
 			}
+			deleteFilesAfterProcessing(cc);
 			pythonOutpList.get(i).clear();
+		}
+	/*	String outp = "Remaining:";
+		ArrayList<String> remainingClone = new ArrayList<String>(remainingUIDs);
+		for (int i = 0; i < remainingClone.size(); i++) outp += " "+remainingClone.get(i);
+		outp += ", vectorsLeft: "+String.valueOf(this.vectorsLeft());
+		System.out.println(outp); */
+	}
+	
+	protected void deleteFilesAfterProcessing(FECallCluster cc) {
+		new File(feControl.getParams().tempFolder+"NR_"+cc.clusterID.replace("-", "_")+".wav").delete();
+		String toDelete = feControl.getParams().tempFolder+"FE_"+cc.clusterID.replace("-", "_")+"_";
+		for (int i = 0; i < cc.getSize(); i++) {
+			try { // In case UIDs were not parsed correctly for whatever reason.
+				new File(toDelete+cc.uids[i]+".wav").delete();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
 		}
 	}
 	
@@ -613,6 +641,7 @@ public class FEPythonThreadManager {
 			}
 		}
 		if (breakLoop) {
+			remainingUIDs.remove(uid); // TODO
 			boolean subd = feControl.subtractOneFromPendingCounter();
 			feControl.addOneToCounter(FEPanel.FAILURE, uid);
 		}

@@ -1,0 +1,17 @@
+mirrf_1.04 CHANGELOG
+January 17th, 2024
+Holly LeBlond
+Fisheries and Oceans Canada
+
+1.04a (January 17th, 2024)
+- Time zone issue fixed in Training Set Builder's audio batch generator, so the time zone option has been removed entirely.
+- Feature Extractor can now take in multiple .wmnt or .mirrts files as input.
+- Test Classifier can now optionally perform leave-one-out cross-validation by only partitioning on the first digit of each subset ID.
+- Feature Extractor side panel GUI slightly modified for legibility.
+- Training Set Builder's audio batch creator's "cut start time" message clarified - selecting that option DOES NOT actually modify the file copy.
+- Default time zone for classifiers is now UTC as opposed to Canada/Pacific. This will probably be removed entirely in the future.
+- Fixed bug in the Training Set Builder where the label "de-selection" dialog is totally ignored when saving a training set.
+- Feature Extractor no longer has to freeze processing if isn't outputting data to binary storage, a database, or another module.
+- Audio clips produced by the Feature Extractor are now deleted immediately after the vector data has been processed, as opposed to the folder being wiped at the end of each file being processed.
+- Apparently fixed a bug in the Feature Extractor that caused some processed vector data to not be sent to the output block and kept the pending count above 0.
+- Some minor code improvements in the Live Classifier and WMNT.

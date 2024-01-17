@@ -100,7 +100,7 @@ class FEThread():
     # that perform the feature extraction.
     def extractFeatures(self, fn: str, headerData):
         self.sr = librosa.core.get_samplerate(fn)
-        y, sr = librosa.load(fn, sr=self.sr)
+        y = loadAudio(fn, self.sr)
         y_orig = y
         y_stft = librosa.stft(y, n_fft=self.audioSTFTLength, hop_length=self.audioHopSize, win_length=self.audioSTFTLength, \
                               window=self.getWindowName(self.audioWindowFunction))
@@ -430,10 +430,12 @@ class HeaderData:
         self.pe_header_features = pe_header_features
         self.from_mirrfts = len(pe_cluster_id) > 0
 
+# Loads clip into a variable and then deletes the file, as it is no longer needed.
 def loadAudio(fn: str, sr: int):
     warnings.simplefilter(action='ignore', category=FutureWarning)
     try:
         y, newsr = librosa.load(fn, sr=sr)
+        #os.remove(fn)
         return y
     except (Exception, RuntimeError, FileNotFoundError) as e:
         print("loadAudio exception")

@@ -328,9 +328,9 @@ public class LCExportDialog extends PamDialog {
 	 * Produces Feature Extractor header info for "full results".
 	 */
 	protected StringBuilder produceFeatureExtractorInfo(StringBuilder sb) {
-		FEParameters feParams = null;
+		//FEParameters feParams = null;
 		LCParameters lcParams = lcControl.getParams();
-		for (int i = 0; i < lcControl.getPamController().getDataBlocks().size(); i++) {
+	/*	for (int i = 0; i < lcControl.getPamController().getDataBlocks().size(); i++) {
 			PamDataBlock db = lcControl.getPamController().getDataBlocks().get(i);
 			if (db.getDataName().equals(lcControl.getParams().inputProcessName)) {
 				FEDataBlock fedb = (FEDataBlock) db;
@@ -338,7 +338,9 @@ public class LCExportDialog extends PamDialog {
 				feParams = fec.getParams();
 				break;
 			}
-		}
+		} */
+		FEParameters feParams = null;
+		if (lcParams.inputFEDataBlock != null) feParams = lcParams.inputFEDataBlock.getParamsClone();
 		sb = new StringBuilder();
 		boolean printFEParamsFoundInTrainingSet = false;
 		if (feParams != null && feParams.findUnmatchedParameters(lcParams.getTrainingSetInfo().feParamsMap, true).size() > 0) {
@@ -373,7 +375,12 @@ public class LCExportDialog extends PamDialog {
 	protected StringBuilder printParamsFromFEParametersObject(StringBuilder sb, FEParameters feParams) {
 		if (feParams.inputFromCSV) {
 			sb.append("Input source: CSV file\n");
-			sb.append("Input source name: "+feParams.inputFileName+"\n");
+			sb.append("Input source name: ");
+			for (int i = 0; i < feParams.inputDataFiles.size(); i++) {
+				sb.append(feParams.inputDataFiles.get(i));
+				if (i < feParams.inputDataFiles.size()-1) sb.append(", ");
+			}
+			sb.append("\n");
 		} else {
 			sb.append("Input source: Live data from Whistle and Moan Detector\n");
 			sb.append("Input source name: "+feParams.inputProcessName+"\n");
@@ -505,7 +512,7 @@ public class LCExportDialog extends PamDialog {
 		sb = new StringBuilder();
 		sb.append("LIVE CLASSIFIER PARAMETERS\n\n");
 		LCParameters params = lcControl.getParams();
-		sb.append("Feature vector data source: "+params.inputProcessName+"\n");
+		sb.append("Feature vector data source: "+params.inputFEDataBlock.getDataName()+"\n");
 		sb.append("Training set: "+lcControl.getParams().getTrainPath()+"\n");
 		if (params.selectKBest) {
 			sb.append("k-Best feature selection: On (k = "+String.valueOf(params.kBest)+")\n");

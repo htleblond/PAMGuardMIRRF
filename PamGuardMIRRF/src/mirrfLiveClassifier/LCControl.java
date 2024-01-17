@@ -84,7 +84,7 @@ public class LCControl extends MIRRFControlledUnit implements PamSettings {
 				+ "local time for whatever reason. For both the table of results\n"
 				+ "and annotation purposes, dates and times will be converted\n"
 				+ "FROM the selected time zone to UTC.)", 
-                this.getUnitName(), JOptionPane.QUESTION_MESSAGE, null, tz_list, "Canada/Pacific");
+                this.getUnitName(), JOptionPane.QUESTION_MESSAGE, null, tz_list, "UTC");
 		if (tz == null) {
 			tz = "UTC";
 		}

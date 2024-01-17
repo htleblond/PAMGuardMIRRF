@@ -70,10 +70,16 @@ public class TCPythonThreadManager extends LCPythonThreadManager {
         pyParams += "]"; */
         getLoadingBar().setValue(0);
         addCommand("modelManager.clearModelList()");
-		if (params.validation == params.LEAVEONEOUT) {
+		if (params.validation == params.LEAVEONEOUTBOTHDIGITS || params.validation == params.LEAVEONEOUTFIRSTDIGIT) {
 			ArrayList<String> idList = new ArrayList<String>();
 			Iterator<String> it = params.getTrainingSetInfo().subsetCounts.keySet().iterator();
-			while (it.hasNext()) idList.add(it.next());
+			while (it.hasNext()) {
+				if (params.validation == params.LEAVEONEOUTBOTHDIGITS) idList.add(it.next());
+				else {
+					String next = it.next().substring(0, 1);
+					if (!idList.contains(next)) idList.add(next);
+				}
+			}
 			idList.sort(Comparator.naturalOrder());
 			getLoadingBar().setString("Fitting classifier models 0/"+String.valueOf(idList.size())+" (0.0%)");
 			for (int i = 0; i < idList.size(); i++) {

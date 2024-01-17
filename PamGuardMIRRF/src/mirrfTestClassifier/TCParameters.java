@@ -11,11 +11,12 @@ import mirrfLiveClassifier.LCTrainingSetInfo;
  */
 public class TCParameters extends LCParameters {
 	
-	public static final int LEAVEONEOUT = 0;
-	public static final int KFOLD = 1;
-	public static final int TESTSUBSET = 2;
-	public static final int LABELLED = 3;
-	public static final int UNLABELLED = 4;
+	public static final int LEAVEONEOUTBOTHDIGITS = 0;
+	public static final int LEAVEONEOUTFIRSTDIGIT = 1;
+	public static final int KFOLD = 2;
+	public static final int TESTSUBSET = 3;
+	public static final int LABELLED = 4;
+	public static final int UNLABELLED = 5;
 	
 	public LCTrainingSetInfo loadedTestingSetInfo;
 	
@@ -28,7 +29,7 @@ public class TCParameters extends LCParameters {
 		
 		loadedTestingSetInfo = new LCTrainingSetInfo("");
 		
-		validation = LEAVEONEOUT;
+		validation = LEAVEONEOUTBOTHDIGITS;
 		testSubset = "";
 	}
 	

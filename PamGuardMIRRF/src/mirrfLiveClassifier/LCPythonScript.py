@@ -107,7 +107,8 @@ class LCModel():
             testNum = self.kNum*clusterList.index(row[0])/len(clusterList)
             #print(str(self.kNum))
             #print(str(i)+": "+str(testNum)+" -> "+str(np.floor(testNum)))
-            if row[0][:2] not in self.excludeIDs and int(np.floor(self.kNum*clusterList.index(row[0])/len(clusterList))) not in self.excludeFolds:
+            if row[0][:2] not in self.excludeIDs and row[0][:1] not in self.excludeIDs \
+            and int(np.floor(self.kNum*clusterList.index(row[0])/len(clusterList))) not in self.excludeFolds:
                 X.append(row[8:])
                 y.append(row[7])
                 if row[0] not in self.containsClusters:

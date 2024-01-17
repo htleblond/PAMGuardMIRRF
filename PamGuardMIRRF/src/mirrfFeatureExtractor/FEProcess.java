@@ -24,12 +24,16 @@ import Acquisition.filedate.StandardFileDate;
 import warnings.PamWarning;
 import clipgenerator.localisation.ClipDelays;
 import fftManager.FFTDataBlock;
+import mirrfLiveClassifier.LCControl;
 import wavFiles.Wav16AudioFormat;
 import wavFiles.WavFileWriter;
 import whistlesAndMoans.ConnectedRegionDataBlock;
 import whistlesAndMoans.ConnectedRegionDataUnit;
 import whistlesAndMoans.SliceData;
+import PamController.PamControlledUnit;
 import PamController.PamController;
+import PamController.StorageOptions;
+import PamController.StorageParameters;
 import PamguardMVC.PamDataBlock;
 import PamguardMVC.PamDataUnit;
 import PamguardMVC.PamObservable;
@@ -39,6 +43,7 @@ import PamguardMVC.PamProcess;
 import PamguardMVC.PamRawDataBlock;
 import PamguardMVC.RawDataUnavailableException;
 import annotation.handler.ManualAnnotationHandler;
+import binaryFileStorage.BinaryStore;
 
 /**
  * A modified version of clipGenerator.ClipProcess that creates sound clips
@@ -168,12 +173,20 @@ public class FEProcess extends PamProcess {
 		
 		rdbct = new RawDataBlockCheckerThread();
 		rdbct.start();
+		
+		feControl.getThreadManager().checkThreads(); // TODO MAKE SURE THIS DOESN'T MESS THINGS UP !!!!!
 	}
 	
 	@Override
 	public void pamStop() {
-		if (feControl.getParams().miscPrintJavaChecked)
-			System.out.println("Went through pamStop().");
+		//if (feControl.getParams().miscPrintJavaChecked)
+		//	System.out.println("Went through pamStop().");
+	/*	boolean shouldWait = false;
+		StorageParameters storageParams = StorageOptions.getInstance().getStorageParameters();
+		if (storageParams.isStoreBinary(vectorDataBlock, false)) shouldWait = true;
+		if (storageParams.isStoreDatabase(vectorDataBlock, false)) shouldWait = true;
+		if (vectorDataBlock.countObservers() > 0) shouldWait = true;
+		System.out.println("countObservers: "+String.valueOf(vectorDataBlock.countObservers())); */
 		FEPythonThreadManager threadManager = feControl.getThreadManager();
 		int waitNum = 0;
 		//System.out.println(String.valueOf(threadManager.getWaitlistSize() > 0)+
@@ -183,7 +196,8 @@ public class FEProcess extends PamProcess {
 		int currWaitlistSize = threadManager.getWaitlistSize();
 		int currClipsLeft = threadManager.clipsLeft();
 		int currVectorsLeft = threadManager.vectorsLeft();
-		while (threadManager.getWaitlistSize() > 0 || threadManager.clipsLeft() > 0 || threadManager.vectorsLeft() > 0) {
+		while (vectorDataBlock.countObservers() > 0
+				&& (threadManager.getWaitlistSize() > 0 || threadManager.clipsLeft() > 0 || threadManager.vectorsLeft() > 0)) {
 			if (!(threadManager.getWaitlistSize() > 0 || threadManager.clipsLeft() > 0)) {
 				threadManager.resetActiveThread();
 			}
@@ -227,13 +241,14 @@ public class FEProcess extends PamProcess {
 				e.printStackTrace();
 			}
 		}
-		File tempFolder = new File(feControl.getParams().tempFolder);
+		// This is now done via pushVectorDataToBlock() in FEPythonThread.
+	/*	File tempFolder = new File(feControl.getParams().tempFolder);
 		File[] filesToDelete = tempFolder.listFiles();
 		for (int i = 0; i < filesToDelete.length; i++) {
 			if (filesToDelete[i].getName().substring(filesToDelete[i].getName().length()-4).equals(".wav")) {
 				filesToDelete[i].delete();
 			}
-		}
+		} */
 		vectorDataBlock.setFinished(true);
 	}
 	
@@ -275,11 +290,11 @@ public class FEProcess extends PamProcess {
 			}
 			if (!(start <= currTime && currTime < end)) continue;
 			try {
-				if (feControl.getParams().inputFileIsMIRRFTS()) {
+				if (feControl.getParams().inputFilesAreMIRRFTS()) {
 					FETrainingDataUnit newDU = new FETrainingDataUnit(curr, (long) (feControl.getParams().sr*(currTime - start))/1000,
 							(long) (feControl.getParams().sr*(curr.duration))/1000);
 					csvClipList.add(new ClipRequest(clipBlockProcesses[0], newDU));
-				} else { // input file is .wmnt
+				} else { // input files are .wmnt
 					FESliceDataUnit newDU = new FESliceDataUnit(curr, (long) (feControl.getParams().sr*(currTime - start))/1000,
 							(long) (feControl.getParams().sr*(curr.duration))/1000);
 					csvClipList.add(new ClipRequest(clipBlockProcesses[0], newDU));
@@ -370,8 +385,8 @@ public class FEProcess extends PamProcess {
 				(params.miscIgnoreHighFreqChecked && dataUnit.getFrequency()[1] > params.miscIgnoreHighFreq) ||
 				(params.miscIgnoreShortDurChecked && dataUnit.getDurationInMilliseconds() < params.miscIgnoreShortDur) ||
 				(params.miscIgnoreLongDurChecked && dataUnit.getDurationInMilliseconds() > params.miscIgnoreLongDur) ||
-				(!params.inputFileIsMIRRFTS() && params.miscIgnoreQuietAmpChecked && dataUnit.getAmplitudeDB() < params.miscIgnoreQuietAmp) ||
-				(!params.inputFileIsMIRRFTS() && params.miscIgnoreLoudAmpChecked && dataUnit.getAmplitudeDB() > params.miscIgnoreLoudAmp) ||
+				(!params.inputFilesAreMIRRFTS() && params.miscIgnoreQuietAmpChecked && dataUnit.getAmplitudeDB() < params.miscIgnoreQuietAmp) ||
+				(!params.inputFilesAreMIRRFTS() && params.miscIgnoreLoudAmpChecked && dataUnit.getAmplitudeDB() > params.miscIgnoreLoudAmp) ||
 				(params.sr < 2*dataUnit.getFrequency()[1])) {
 					return 4;
 			}
@@ -449,12 +464,12 @@ public class FEProcess extends PamProcess {
 			String clusterID = createClusterID(dataUnit.getUID(), clusterCountID, false);
 			long[] sliceStartSamples;
 			double[] sliceFreqs;
-			if (params.inputFromCSV && params.inputFileIsMIRRFTS()) {
+			if (params.inputFromCSV && params.inputFilesAreMIRRFTS()) {
 				FETrainingDataUnit tdu = (FETrainingDataUnit) dataUnit;
 				sliceStartSamples = new long[] {-1,-1};
 				sliceFreqs = new double[] {-1,-1};
 				clusterID = tdu.clusterID;
-			} else if (params.inputFromCSV && !params.inputFileIsMIRRFTS()) {
+			} else if (params.inputFromCSV && !params.inputFilesAreMIRRFTS()) {
 				FESliceDataUnit sdu = (FESliceDataUnit) dataUnit;
 				sliceStartSamples = sdu.sliceStartSamples;
 				sliceFreqs = sdu.sliceFreqs;
@@ -488,7 +503,7 @@ public class FEProcess extends PamProcess {
 				extras[6] += "),("+String.valueOf(sliceStartSamples[i])+","+String.valueOf(sliceFreqs[i]);
 			extras[6] += ")]";
 			extras[7] = "";
-			if (params.inputFromCSV && params.inputFileIsMIRRFTS()) {
+			if (params.inputFromCSV && params.inputFilesAreMIRRFTS()) {
 				FETrainingDataUnit tdu = (FETrainingDataUnit) dataUnit;
 				extras[7] += "pe_cluster_id=\""+clusterID+"\"";
 				extras[7] += ",pe_location=\""+tdu.location+"\"";

@@ -70,6 +70,7 @@ public class FESettingsDialog extends PamDialog {
 	protected SourcePanel inputSourcePanel;
 	protected JTextField inputDataField;
 	protected JButton inputDataButton;
+	protected ArrayList<File> inputDataList;
 	protected JTextField inputDataFileSizeField;
 	protected JCheckBox inputIgnoreBlanksCheck;
 	protected JCheckBox inputIgnore2SecondGlitchCheck;
@@ -199,7 +200,7 @@ public class FESettingsDialog extends PamDialog {
 		c.gridx += c.gridwidth;
 		c.gridwidth = 1;
 		inputDataButton = new JButton("Select file");
-		inputDataButton.addActionListener(new CSVListener(false));
+		inputDataButton.addActionListener(new CSVListener(this, false));
 		inputDataPanel.add(inputDataButton, c);
 		c.gridy++;
 		c.gridx = 0;
@@ -271,7 +272,7 @@ public class FESettingsDialog extends PamDialog {
 		c.gridx = 3;
 		c.gridwidth = 1;
 		outputDataButton = new JButton("Select file");
-		outputDataButton.addActionListener(new CSVListener(true));
+		outputDataButton.addActionListener(new CSVListener(this, true));
 		outputDataPanel.add(outputDataButton, c);
 		outputFP1.add(outputDataPanel);
 		mainPanel2.add(outputFP1, b);
@@ -917,16 +918,18 @@ public class FESettingsDialog extends PamDialog {
 	 */
 	class CSVListener implements ActionListener{
 		
-		private boolean forOutput;
+		protected FESettingsDialog dialog;
+		protected boolean forOutput;
 		
-		public CSVListener(boolean forOutput) {
+		public CSVListener(FESettingsDialog dialog, boolean forOutput) {
+			this.dialog = dialog;
 			this.forOutput = forOutput;
 		}
 		
 		public void actionPerformed(ActionEvent e) {
 			PamFileChooser fc = new PamFileChooser();
 			fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
-			fc.setMultiSelectionEnabled(false);
+			fc.setMultiSelectionEnabled(true);
 			if (forOutput) {
 				if (outputDataBox.getSelectedIndex() == 1)
 					fc.addChoosableFileFilter(new FileNameExtensionFilter("MIRRF feature vector data file (*.mirrffe)","mirrffe"));
@@ -944,42 +947,68 @@ public class FESettingsDialog extends PamDialog {
 					f.setWritable(true, false);
 					outputDataField.setText(f.getPath());
 				} else {
-					File f = getSelectedFileWithExtension(fc);
-					if (!f.exists()) {
-						feControl.SimpleErrorDialog("Selected file does not exist.");
-						return;
-					}
-					Scanner sc;
-					try {
-						sc = new Scanner(f);
-						if (!sc.hasNextLine()) {
-							sc.close();
-							feControl.SimpleErrorDialog("Selected file is blank.");
+					//File f = getSelectedFileWithExtension(fc);
+					File[] fs = fc.getSelectedFiles();
+					ArrayList<File> placeholderList = new ArrayList<File>();
+					for (int i = 0; i < fs.length; i++) {
+						File f = fs[i];
+						if (!f.exists()) {
+							feControl.SimpleErrorDialog("Selected file does not exist.");
 							return;
 						}
-						String firstLine = sc.nextLine();
-						sc.close();
-						if (f.getPath().endsWith(".wmnt")) {
-							if (firstLine.startsWith("uid,datetime,lf,hf,duration,amplitude,species,calltype,comment,slicedata")) {
-								inputDataField.setText(f.getPath());
-							} else {
-								feControl.SimpleErrorDialog("Header in selected .wmnt file is not formatted correctly.");
+						Scanner sc;
+						try {
+							sc = new Scanner(f);
+							if (!sc.hasNextLine()) {
+								sc.close();
+								feControl.SimpleErrorDialog("Selected file is blank.");
 								return;
 							}
-						} else { // ends with .mirrfts
-							ArrayList<String> features = feControl.findFeaturesInFile(f);
-							if (features != null && features.size() > 0) {
-								inputDataField.setText(f.getPath());
-							} else {
-								feControl.SimpleErrorDialog("Header in selected .mirrfts file is not formatted correctly.");
-								return;
+							String firstLine = sc.nextLine();
+							sc.close();
+							if (f.getPath().endsWith(".wmnt")) {
+								if (firstLine.startsWith("uid,datetime,lf,hf,duration,amplitude,species,calltype,comment,slicedata")) {
+									//inputDataField.setText(f.getPath());
+									placeholderList.add(f);
+								} else {
+									//feControl.SimpleErrorDialog("Header in selected .wmnt file is not formatted correctly.");
+									System.out.println("Error: Header in "+f.getName()+" is not formatted correctly.");
+									continue;
+								}
+							} else { // ends with .mirrfts
+								ArrayList<String> features = feControl.findFeaturesInFile(f);
+								if (features != null && features.size() > 0) {
+									//inputDataField.setText(f.getPath());
+									placeholderList.add(f);
+								} else {
+									System.out.println("Error: Header in "+f.getName()+" is not formatted correctly.");
+									continue;
+								}
 							}
+						} catch (Exception e2) {
+							e2.printStackTrace();
+							//feControl.SimpleErrorDialog("Could not parse selected file.");
+							//return;
+							System.out.println("Error: "+f.getName()+" could not be parsed.");
 						}
-					} catch (Exception e2) {
-						e2.printStackTrace();
-						feControl.SimpleErrorDialog("Could not parse selected file.");
-						return;
 					}
+					if (placeholderList.size() == 0) {
+						feControl.SimpleErrorDialog("No valid .wmnt or .mirrfts files were selected.");
+						return;
+					} else if (placeholderList.size() < fs.length) {
+						String message = String.valueOf(fs.length - placeholderList.size())+" selected file(s) were invalid (see console).\n\n"
+								+ "Proceed with the rest?";
+						int res = JOptionPane.showConfirmDialog(dialog,
+								feControl.makeHTML(message, 250),
+								feControl.getUnitName(),
+								JOptionPane.YES_NO_OPTION,
+								JOptionPane.WARNING_MESSAGE);
+						if (res != JOptionPane.YES_OPTION) return;
+					}
+					inputDataList = placeholderList;
+					if (inputDataList.get(0).getAbsolutePath().endsWith(".mirrfts"))
+						inputDataField.setText(String.valueOf(inputDataList.size())+" .mirrfts file(s) selected.");
+					else inputDataField.setText(String.valueOf(inputDataList.size())+" .wmnt file(s) selected.");
 				}
 			}
 		}
@@ -1424,10 +1453,15 @@ public class FESettingsDialog extends PamDialog {
 				inputSourcePanel.setSourceIndex(0);
 			}
 		}
-		if (params.inputFileName.length() > 0) {
-			inputDataField.setText(params.inputFileName);
+		if (params.inputDataFiles.size() > 0) {
+			inputDataList = new ArrayList<File>(params.inputDataFiles);
+			if (params.inputFilesAreMIRRFTS()) {
+				inputDataField.setText(String.valueOf(inputDataList.size())+" .mirrfts file(s) selected.");
+			} else {
+				inputDataField.setText(String.valueOf(inputDataList.size())+" .wmnt file(s) selected.");
+			}
 		} else {
-			inputDataField.setText("No file selected.");
+			inputDataField.setText("No file(s) selected.");
 		}
 		inputDataFileSizeField.setText(String.valueOf(params.inputDataExpectedFileSize));
 		inputIgnoreBlanksCheck.setSelected(params.inputIgnoreBlanks);
@@ -1620,7 +1654,7 @@ public class FESettingsDialog extends PamDialog {
 			}
 			sb = new StringBuilder();
 			sb.append("EXTRACTOR PARAMS END\n");
-			if (newParams.inputFileIsMIRRFTS())
+			if (newParams.inputFilesAreMIRRFTS())
 				sb.append("cluster,uid,location,date,duration,lf,hf,label,"+newParams.getFeatureAbbrsAsString()+"\n");
 			else sb.append("cluster,uid,date,duration,lf,hf,"+newParams.getFeatureAbbrsAsString()+"\n");
 			pw.write(sb.toString());
@@ -1655,10 +1689,12 @@ public class FESettingsDialog extends PamDialog {
 		} else if (outputDataBox.getSelectedIndex() > 0 && outputDataField.getText() == "No file selected.") {
 			SimpleErrorDialog("No .wmnt file has been selected for output.");
 			return false;
-		} else if (outputDataBox.getSelectedIndex() == 2 && !(inputDataRB.isSelected() && inputDataField.getText().endsWith(".mirrfts"))) {
+		} else if (outputDataBox.getSelectedIndex() == 2 && 
+				!(inputDataRB.isSelected() && inputDataList.size() > 0 && inputDataList.get(0).getAbsolutePath().endsWith(".mirrfts"))) {
 			SimpleErrorDialog("Output .mirrfts files must take input data from a pre-existing .mirrfts file.");
 			return false;
-		} else if (outputDataBox.getSelectedIndex() == 1 && (inputDataRB.isSelected() && inputDataField.getText().endsWith(".mirrfts"))) {
+		} else if (outputDataBox.getSelectedIndex() == 1 &&
+				(inputDataRB.isSelected() && inputDataList.size() > 0 && inputDataList.get(0).getAbsolutePath().endsWith(".mirrfts"))) {
 			SimpleErrorDialog("Input .mirrfts files can only output to other .mirrfts files and vice-versa.");
 			return false;
 		} else if (inputDataField.getText().equals(outputDataField.getText())) {
@@ -1696,132 +1732,162 @@ public class FESettingsDialog extends PamDialog {
 			}
 			//feControl.getSidePanel().getFEPanel().getReloadCSVButton().setEnabled(false);
 		} else if (inputDataRB.isSelected()) {
-			if (inputDataField.getText().equals("No file selected.")) {
-				feControl.SimpleErrorDialog("No input .wmnt file has been selected.", 250);
+			if (inputDataList.size() == 0) {
+				feControl.SimpleErrorDialog("No input files have been selected.", 250);
 				return false;
 			}
-			try {
-				File f = new File(inputDataField.getText());
-				SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss+SSS");
-				df.setTimeZone(TimeZone.getTimeZone("UTC"));
-				if (!f.exists()) {
-					feControl.SimpleErrorDialog("Input .wmnt file does not exist.");
+			ArrayList<String[]> startsAndEnds = new ArrayList<String[]>();
+			for (int k = 0; k < inputDataList.size(); k++) {
+				try {
+					File f = inputDataList.get(k);
+					SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss+SSS");
+					df.setTimeZone(TimeZone.getTimeZone("UTC"));
+					if (!f.exists()) {
+						feControl.SimpleErrorDialog(f.getName()+" does not exist.");
+						return false;
+					}
+					Scanner sc;
+					if (f.getAbsolutePath().endsWith(".wmnt")) {
+						try {
+							sc = new Scanner(f);
+							if (!sc.hasNextLine()) {
+								sc.close();
+								feControl.SimpleErrorDialog(f.getName()+" is blank.", 250);
+								return false;
+							}
+							String firstLine = sc.nextLine();
+							if (!firstLine.startsWith("uid,datetime,lf,hf,duration,amplitude,species,calltype,comment,slicedata")) {
+								sc.close();
+								feControl.SimpleErrorDialog(f.getName()+" is not correctly formatted.", 250);
+								return false;
+							}
+							String start = "";
+							String end = "";
+							while (sc.hasNextLine()) {
+								String[] nextSplit = sc.nextLine().split(",");
+								try {
+									if ((inputIgnoreBlanksCheck.isSelected() && nextSplit[6].length() == 0)
+											|| (inputIgnore2SecondGlitchCheck.isSelected() && nextSplit[6].equals("2-second glitch"))
+											|| (inputIgnoreFalsePositivesCheck.isSelected() && nextSplit[6].equals("False positive"))
+											|| (inputIgnoreUnkCheck.isSelected() && 
+													(nextSplit[6].equals("Unk") || nextSplit[6].equals("Unknown")))) {
+										continue;
+									}
+									String datetime = nextSplit[1];
+									if (start.length() == 0 || start.compareTo(datetime) > 0) start = datetime;
+									if (end.length() == 0 || end.compareTo(datetime) < 0) end = datetime;
+									newParams.inputDataEntries.add(new FEInputDataObject(nextSplit, false, null));
+								} catch (Exception e) {
+									e.printStackTrace(); // TODO Remove if it becomes a problem.
+									continue;
+								}
+								//newParams.inputDataEntries.add(nextSplit);
+							}
+							startsAndEnds.add(new String[] {start, end});
+							sc.close();
+						} catch (Exception e) {
+							e.printStackTrace();
+							feControl.SimpleErrorDialog("Error occured when attempting to read "+f.getName()+".", 350);
+							return false;
+						}
+					} else { // ends with .mirrfts
+						try {
+							sc = new Scanner(f);
+							if (!sc.hasNextLine()) {
+								sc.close();
+								feControl.SimpleErrorDialog(f.getName()+" is blank.", 250);
+								return false;
+							}
+							ArrayList<String> foundFeatures = feControl.findFeaturesInFile(f);
+							if (foundFeatures == null || foundFeatures.size() == 0) {
+								sc.close();
+								feControl.SimpleErrorDialog(f.getName()+" is not correctly formatted.", 250);
+								return false;
+							}
+							boolean foundHeader = false;
+							String header = "cluster,uid,location,date,duration,lf,hf,label";
+							for (int i = 0; i < foundFeatures.size(); i++)
+								header += ","+foundFeatures.get(i);
+							String start = "";
+							String end = "";
+							while (sc.hasNextLine()) {
+								String next = sc.nextLine();
+								if (!foundHeader) {
+									if (next.equals(header)) foundHeader = true;
+									continue;
+								}
+								String[] nextSplit = next.split(",");
+								try {
+									if ((inputIgnoreBlanksCheck.isSelected() && nextSplit[7].length() == 0)
+											|| (inputIgnore2SecondGlitchCheck.isSelected() && nextSplit[7].equals("2-second glitch"))
+											|| (inputIgnoreFalsePositivesCheck.isSelected() && nextSplit[7].equals("False positive"))
+											|| (inputIgnoreUnkCheck.isSelected() && 
+													(nextSplit[7].equals("Unk") || nextSplit[7].equals("Unknown")))) {
+										continue;
+									}
+									ArrayList<String> problematicFeatures = feControl.findProblematicFeaturesInFile(f);
+									ArrayList<String> cantRetrieve = new ArrayList<String>();
+									for (int j = 0; j < featureTable.getRowCount(); j++) {
+										String value = (String) featureTable.getValueAt(j, 1);
+										String[] tokens = value.split("_");
+										if (tokens[0].equals("amplitude") || tokens[0].equals("freqsd") || tokens[0].equals("freqsdd1") ||
+												tokens[0].equals("freqsdd2") || tokens[0].equals("freqsdslope") || tokens[0].equals("freqsdelbow"))
+											if (!problematicFeatures.contains(value)) cantRetrieve.add(value);
+									}
+									if (cantRetrieve.size() > 0) {
+										String txt = "Since you're taking input from a .mirrfts file, the following header features can't be retrieved, "
+												+ "as amplitude and slice data are not normally stored in .mirrfts files and the selected features weren't "
+												+ "found in the input file to copy over:\n";
+										for (int j = 0; j < cantRetrieve.size(); j++)
+											txt += "\n"+cantRetrieve.get(j);
+										feControl.SimpleErrorDialog(txt, 350);
+										return false;
+									}
+									String datetime = nextSplit[3];
+									if (start.length() == 0 || start.compareTo(datetime) > 0) start = datetime;
+									if (end.length() == 0 || end.compareTo(datetime) < 0) end = datetime;
+									newParams.inputDataEntries.add(new FEInputDataObject(nextSplit, true, problematicFeatures));
+								} catch (Exception e) {
+									e.printStackTrace(); // TODO Remove if it becomes a problem.
+									continue;
+								}
+								//newParams.inputDataEntries.add(nextSplit);
+							}
+							startsAndEnds.add(new String[] {start, end});
+							sc.close();
+						} catch (Exception e) {
+							e.printStackTrace();
+							feControl.SimpleErrorDialog("Error occured when attempting to read "+f.getName()+".", 350);
+							return false;
+						}
+					}
+				} catch (Exception e) {
+					e.printStackTrace();
+					feControl.SimpleErrorDialog("Error occured when attempting to read input files.", 350);
 					return false;
 				}
-				Scanner sc;
-				if (inputDataField.getText().endsWith(".wmnt")) {
-					try {
-						sc = new Scanner(f);
-						if (!sc.hasNextLine()) {
-							sc.close();
-							feControl.SimpleErrorDialog("Input .wmnt file is blank.", 250);
-							return false;
-						}
-						String firstLine = sc.nextLine();
-						if (!firstLine.startsWith("uid,datetime,lf,hf,duration,amplitude,species,calltype,comment,slicedata")) {
-							sc.close();
-							feControl.SimpleErrorDialog("Input .wmnt file is not correctly formatted.", 250);
-							return false;
-						}
-						while (sc.hasNextLine()) {
-							String[] nextSplit = sc.nextLine().split(",");
-							try {
-								if ((inputIgnoreBlanksCheck.isSelected() && nextSplit[6].length() == 0)
-										|| (inputIgnore2SecondGlitchCheck.isSelected() && nextSplit[6].equals("2-second glitch"))
-										|| (inputIgnoreFalsePositivesCheck.isSelected() && nextSplit[6].equals("False positive"))
-										|| (inputIgnoreUnkCheck.isSelected() && 
-												(nextSplit[6].equals("Unk") || nextSplit[6].equals("Unknown")))) {
-									continue;
-								}
-								newParams.inputDataEntries.add(new FEInputDataObject(nextSplit, false, null));
-							} catch (Exception e) {
-								e.printStackTrace(); // TODO Remove if it becomes a problem.
-								continue;
-							}
-							//newParams.inputDataEntries.add(nextSplit);
-						}
-						sc.close();
-					} catch (Exception e) {
-						e.printStackTrace();
-						feControl.SimpleErrorDialog("Error occured when attempting to read selected input .wmnt file.", 350);
-						return false;
-					}
-				} else { // ends with .mirrfts
-					try {
-						sc = new Scanner(f);
-						if (!sc.hasNextLine()) {
-							sc.close();
-							feControl.SimpleErrorDialog("Input .mirrfts file is blank.", 250);
-							return false;
-						}
-						ArrayList<String> foundFeatures = feControl.findFeaturesInFile(f);
-						if (foundFeatures == null || foundFeatures.size() == 0) {
-							sc.close();
-							feControl.SimpleErrorDialog("Input .mirrfts file is not correctly formatted.", 250);
-							return false;
-						}
-						boolean foundHeader = false;
-						String header = "cluster,uid,location,date,duration,lf,hf,label";
-						for (int i = 0; i < foundFeatures.size(); i++)
-							header += ","+foundFeatures.get(i);
-						while (sc.hasNextLine()) {
-							String next = sc.nextLine();
-							if (!foundHeader) {
-								if (next.equals(header)) foundHeader = true;
-								continue;
-							}
-							String[] nextSplit = next.split(",");
-							try {
-								if ((inputIgnoreBlanksCheck.isSelected() && nextSplit[7].length() == 0)
-										|| (inputIgnore2SecondGlitchCheck.isSelected() && nextSplit[7].equals("2-second glitch"))
-										|| (inputIgnoreFalsePositivesCheck.isSelected() && nextSplit[7].equals("False positive"))
-										|| (inputIgnoreUnkCheck.isSelected() && 
-												(nextSplit[7].equals("Unk") || nextSplit[7].equals("Unknown")))) {
-									continue;
-								}
-								ArrayList<String> problematicFeatures = feControl.findProblematicFeaturesInFile(f);
-								ArrayList<String> cantRetrieve = new ArrayList<String>();
-								for (int j = 0; j < featureTable.getRowCount(); j++) {
-									String value = (String) featureTable.getValueAt(j, 1);
-									String[] tokens = value.split("_");
-									if (tokens[0].equals("amplitude") || tokens[0].equals("freqsd") || tokens[0].equals("freqsdd1") ||
-											tokens[0].equals("freqsdd2") || tokens[0].equals("freqsdslope") || tokens[0].equals("freqsdelbow"))
-										if (!problematicFeatures.contains(value)) cantRetrieve.add(value);
-								}
-								if (cantRetrieve.size() > 0) {
-									String txt = "Since you're taking input from a .mirrfts file, the following header features can't be retrieved, "
-											+ "as amplitude and slice data are not normally stored in .mirrfts files and the selected features weren't "
-											+ "found in the input file to copy over:\n";
-									for (int j = 0; j < cantRetrieve.size(); j++)
-										txt += "\n"+cantRetrieve.get(j);
-									feControl.SimpleErrorDialog(txt, 350);
-									return false;
-								}
-								newParams.inputDataEntries.add(new FEInputDataObject(nextSplit, true, problematicFeatures));
-							} catch (Exception e) {
-								e.printStackTrace(); // TODO Remove if it becomes a problem.
-								continue;
-							}
-							//newParams.inputDataEntries.add(nextSplit);
-						}
-						
-					} catch (Exception e) {
-						e.printStackTrace();
-						feControl.SimpleErrorDialog("Error occured when attempting to read selected input .wmnt file.", 350);
-						return false;
-					}
+			}
+			// Kudos to Lukas Eder on https://stackoverflow.com/questions/4699807/sort-arraylist-of-array-in-java.
+			startsAndEnds.sort(Comparator.comparing(a -> a[0]));
+			for (int i = 0; i < startsAndEnds.size()-1; i++) {
+				if (startsAndEnds.get(i)[1].compareTo(startsAndEnds.get(i+1)[0]) >= 0) {
+					String message = "The selected input files overlap each other in terms of date/time. This may result in features being extracted "
+							+ "from the wrong audio file and multiple instances of the same data entry appearing in the output file.\n\n"
+							+ "Proceed? (It is highly advised that you don't!)";
+					int res = JOptionPane.showConfirmDialog(this,
+							feControl.makeHTML(message, 350),
+							feControl.getUnitName(),
+							JOptionPane.YES_NO_OPTION,
+							JOptionPane.WARNING_MESSAGE);
+					if (res != JOptionPane.YES_OPTION) return false;
+					break;
 				}
-			} catch (Exception e) {
-				e.printStackTrace();
-				feControl.SimpleErrorDialog("Error occured when attempting to read selected input .wmnt file.", 350);
-				return false;
 			}
 			if (newParams.inputDataEntries.size() == 0) {
-				feControl.SimpleErrorDialog("Input .wmnt file contains no valid entries.", 300);
+				feControl.SimpleErrorDialog("Input data files contain no valid entries.", 300);
 				return false;
 			}
-			newParams.inputFileName = inputDataField.getText();
-			// Kudos to Lukas Eder on https://stackoverflow.com/questions/4699807/sort-arraylist-of-array-in-java.
+			newParams.inputDataFiles = inputDataList;
 			newParams.inputDataEntries.sort(Comparator.comparing(a -> a.datetime));
 			ArrayList<Integer> intList = new ArrayList<Integer>();
 			for (int i = 0; i < newParams.inputDataEntries.size(); i++) {

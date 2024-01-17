@@ -6,6 +6,8 @@ import java.util.HashMap;
 
 import PamModel.parametermanager.PamParameterSet;
 import mirrf.MIRRFParameters;
+import mirrfFeatureExtractor.FEDataBlock;
+import wmnt.WMNTDataBlock;
 
 import org.apache.commons.text.WordUtils;
 
@@ -18,8 +20,8 @@ public class LCParameters extends MIRRFParameters {
 	
 	protected LCTrainingSetInfo loadedTrainingSetInfo;
 	
-	public String inputProcessName;
-	public String updateProcessName;
+	public FEDataBlock inputFEDataBlock;
+	public WMNTDataBlock wmntUpdateDataBlock;
 	
 	public int kNum;
 	public boolean selectKBest;
@@ -64,8 +66,8 @@ public class LCParameters extends MIRRFParameters {
 		
 		this.loadedTrainingSetInfo = new LCTrainingSetInfo("");
 		
-		this.inputProcessName = "";
-		this.updateProcessName = "";
+		this.inputFEDataBlock = null;
+		this.wmntUpdateDataBlock = null;
 		
 		this.kNum = 10; // Must be int > 1, only used if validation == "kfold"
 		this.selectKBest = false;

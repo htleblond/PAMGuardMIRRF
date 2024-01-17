@@ -1,6 +1,8 @@
 package mirrfTestClassifier;
 
 import java.awt.Window;
+import java.util.ArrayList;
+import java.util.Iterator;
 
 import mirrfFeatureExtractor.FEParameters;
 import mirrfLiveClassifier.LCExportDialog;
@@ -46,9 +48,18 @@ public class TCExportDialog extends LCExportDialog {
 		sb.append("TEST CLASSIFIER PARAMETERS\n\n");
 		TCParameters params = getControl().getParams();
 		
-		if (params.validation == params.LEAVEONEOUT) {
+		if (params.validation == params.LEAVEONEOUTBOTHDIGITS) {
 			sb.append("Validation: Leave-one-out cross-validation (by subset ID)\n");
-			sb.append("Number of subsets: "+String.valueOf(params.getTrainingSetInfo().subsetCounts)+"\n");
+			sb.append("Number of subsets: "+String.valueOf(params.getTrainingSetInfo().subsetCounts.size())+"\n");
+		} else if (params.validation == params.LEAVEONEOUTFIRSTDIGIT) {
+			sb.append("Validation: Leave-one-out cross-validation (by first digit in subset ID)\n");
+			Iterator<String> it = params.getTrainingSetInfo().subsetCounts.keySet().iterator();
+			ArrayList<String> firstDigits = new ArrayList<String>();
+			while (it.hasNext()) {
+				String next = it.next().substring(0, 1);
+				if (!firstDigits.contains(next)) firstDigits.add(next);
+			}
+			sb.append("Number of subsets: "+String.valueOf(firstDigits.size())+"\n");
 		} else if (params.validation == params.KFOLD) {
 			sb.append("Validation: k-fold cross-validation\n");
 			sb.append("Number of k-folds: "+String.valueOf(params.kNum)+"\n");

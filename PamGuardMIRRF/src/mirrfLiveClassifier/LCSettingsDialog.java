@@ -958,7 +958,8 @@ public class LCSettingsDialog extends PamDialog {
 	 */
 	public void actuallyGetParams() {
 		LCParameters params = lcControl.getParams();
-		inputSourcePanel.setSource(params.inputProcessName);
+		if (params.inputFEDataBlock != null)
+			inputSourcePanel.setSource(params.inputFEDataBlock.getDataName());
 		tempField.setText(params.tempFolder);
 		kBestCheck.setSelected(params.selectKBest);
 		kBestField.setEnabled(params.selectKBest);
@@ -1252,7 +1253,7 @@ public class LCSettingsDialog extends PamDialog {
 	public LCParameters generateParameters() {
 		LCParameters params = lcControl.getParams();
 		if (inputSourcePanel.getSource() != null)
-			params.inputProcessName = inputSourcePanel.getSource().getDataName();
+			params.inputFEDataBlock = (FEDataBlock) inputSourcePanel.getSource();
 		params.selectKBest = kBestCheck.isSelected();
 		if (params.selectKBest) {
 			params.kBest = Integer.valueOf(kBestField.getText());
@@ -1333,9 +1334,9 @@ public class LCSettingsDialog extends PamDialog {
 		params.printOutput = printOutputCheck.isSelected();
 		if (lcControl.isViewer()) {
 			if (updateSourcePanel != null && updateSourcePanel.getSource() != null)
-				params.updateProcessName = updateSourcePanel.getSourceName();
-			else params.updateProcessName = "";
-			if (lcControl.getParams().updateProcessName.length() > 0) {
+				params.wmntUpdateDataBlock = (WMNTDataBlock) updateSourcePanel.getSource();
+			else params.wmntUpdateDataBlock = null;
+			if (lcControl.getParams().wmntUpdateDataBlock != null) {
 				WMNTDataBlock db = (WMNTDataBlock) updateSourcePanel.getSource();
 				lcControl.getUpdateProcess().setParentDataBlock(db);
 				db.updateLC(true);

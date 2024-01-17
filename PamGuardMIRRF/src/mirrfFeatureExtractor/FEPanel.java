@@ -45,22 +45,23 @@ public class FEPanel {
 		GridBagConstraints c = new PamGridBagContraints();
 		memPanel.setBorder(new TitledBorder("MIRRF Feature Extractor"));
 		
+		c.fill = c.NONE;
 		c.gridy = 0;
 		c.gridx = 0;
 		c.gridwidth = 1;
 		memPanel.add(new JLabel("Successes: "), c);
 		c.gridx++;
-		successField = new JTextField(3);
+		successField = new JTextField(4);
 		memPanel.add(successField, c);
 		c.gridx++;
 		memPanel.add(new JLabel("Failures: "), c);
 		c.gridx++;
-		failureField = new JTextField(3);
+		failureField = new JTextField(4);
 		memPanel.add(failureField, c);
 		c.gridx++;
 		memPanel.add(new JLabel("Ignores: "), c);
 		c.gridx++;
-		ignoreField = new JTextField(3);
+		ignoreField = new JTextField(4);
 		memPanel.add(ignoreField, c);
 		
 		c.gridy++;
@@ -68,10 +69,10 @@ public class FEPanel {
 		c.gridwidth = 1;
 		memPanel.add(new JLabel("Pending: "), c);
 		c.gridx++;
-		pendingField = new JTextField(3);
+		pendingField = new JTextField(4);
 		memPanel.add(pendingField, c);
 		c.gridx++;
-		c.gridwidth = 2;
+		c.gridwidth = 3;
 		resetButton = new JButton("Reset counters");
 		resetButton.addActionListener(new ResetListener());
 		memPanel.add(resetButton, c);

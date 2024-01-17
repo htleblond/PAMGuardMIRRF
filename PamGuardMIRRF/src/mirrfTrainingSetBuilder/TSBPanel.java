@@ -701,6 +701,7 @@ public class TSBPanel extends PamBorderPanel {
 						for (int k = 0; k < currCluster.size(); k++) {
 							TSBDetection currDetection = currCluster.get(k);
 							if (!tsbControl.getFullClassList().contains(currDetection.species)) continue;
+							if (!outputLabelList.contains(tsbControl.getClassMap().get(currDetection.species))) continue;
 							String[] nextLine = new String[8+outputFeatureIndices.length];
 							nextLine[0] = currID+"-"+currDetection.clusterID;
 							nextLine[1] = String.valueOf(currDetection.uid);

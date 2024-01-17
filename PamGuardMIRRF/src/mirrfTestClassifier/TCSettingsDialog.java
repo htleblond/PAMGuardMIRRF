@@ -16,6 +16,7 @@ import java.util.Scanner;
 
 import javax.swing.ButtonGroup;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -41,6 +42,7 @@ public class TCSettingsDialog extends LCSettingsDialog {
 	protected JButton testSetButton;
 	protected ButtonGroup validationRBG;
 	protected JRadioButton leaveOneOutRB;
+	protected JCheckBox firstDigitCheck;
 	protected JRadioButton kFoldRB;
 	protected JRadioButton testSubsetRB;
 	protected JRadioButton labelledRB;
@@ -115,6 +117,12 @@ public class TCSettingsDialog extends LCSettingsDialog {
 		c.fill = c.NONE;
 		validationPanel.add(leaveOneOutRB, c);
 		c.gridy++;
+		c.gridx = 1;
+		c.gridwidth = 3;
+		firstDigitCheck = new JCheckBox("Split by first subset ID digit only");
+		validationPanel.add(firstDigitCheck, c);
+		c.gridy++;
+		c.gridx = 0;
 		c.gridwidth = 1;
 		kFoldRB = new JRadioButton();
 		kFoldRB.addActionListener(new ValidationRBListener(ValidationRBListener.KFOLD));
@@ -237,6 +245,7 @@ public class TCSettingsDialog extends LCSettingsDialog {
 		
 		@Override
 		public void actionPerformed(ActionEvent e) {
+			firstDigitCheck.setEnabled(selection == LEAVEONEOUT);
 			testSetButton.setEnabled(selection == TESTSET);
 			kFoldField.setEnabled(selection == KFOLD);
 			testSubsetBox.setEnabled(selection == TESTSUBSET);
@@ -250,17 +259,16 @@ public class TCSettingsDialog extends LCSettingsDialog {
 	 * When testing a single subset, checks if all instances of a class are contained in the selected subset.
 	 * If either of these are the case, classification cannot proceed, as all training set instances must contains all classes.
 	 * @param curr - The currently loaded training set.
-	 * @param kFold - If true, assume k-fold cross-validation. Otherwise, assume leave-one-out.
-	 * @param testSubset - Whether or not a single subset is being tested as opposed to the whole set.
+	 * @param params - The new set of parameters.
 	 * @return False if there's an instance of a training set missing a class, or if another error occurs. Otherwise, true.
 	 */
-	public boolean checkClassSpread(LCTrainingSetInfo curr, boolean kFold, boolean testSubset) {
-		if (kFold) testSubset = false; // kFold overrides testSubset.
-		if (testSubset && testSubsetBox.getItemCount() == 0) {
+	public boolean checkClassSpread(LCTrainingSetInfo curr, TCParameters params) {
+		//if (kFold) testSubset = false; // kFold overrides testSubset.
+		if (params.validation == params.TESTSUBSET && testSubsetBox.getItemCount() == 0) {
 			getControl().SimpleErrorDialog("Invalid testing subset selected.", 250);
 			return false;
 		}
-		TCParameters params = generateParameters();
+		//TCParameters params = generateParameters();
 		HashMap<String, boolean[]> containMap = new HashMap<String, boolean[]>();
 		File f = new File(curr.pathName);
 		if (!f.exists()) {
@@ -293,7 +301,7 @@ public class TCSettingsDialog extends LCSettingsDialog {
 				return false;
 			}
 			int kNum = params.kNum;
-			if (kFold && clusterList.size() < kNum) {
+			if (params.validation == params.KFOLD && clusterList.size() < kNum) {
 				getControl().SimpleErrorDialog("k-fold number must be greater than the number of call clusters in the table.", 250);
 				return false;
 			}
@@ -311,10 +319,12 @@ public class TCSettingsDialog extends LCSettingsDialog {
 				if (nextSplit.length < 8+curr.featureList.size() || nextSplit[0].length() < 2) {
 					continue;
 				}
-				String key = nextSplit[0].substring(0,2);
-				if (kFold) {
+				String key = nextSplit[0].substring(0,2); //LEAVEONEOUTBOTHDIGITS
+				if (params.validation == params.LEAVEONEOUTFIRSTDIGIT) {
+					key = key.substring(0, 1);
+				} else if (params.validation == params.KFOLD) {
 					key = String.valueOf((int) Math.floor(kNum * (double) clusterList.indexOf(nextSplit[0]) / clusterList.size()));
-				} else if (testSubset) {
+				} else if (params.validation == params.TESTSUBSET) {
 					String currID = (String) testSubsetBox.getSelectedItem();
 					if (currID.length() == 1 && key.substring(0, 1).equals(currID)) continue;
 					if (currID.equals(key)) continue;
@@ -328,7 +338,7 @@ public class TCSettingsDialog extends LCSettingsDialog {
 				lineNum++;
 			}
 			sc.close();
-			if (testSubset && containMap.size() == 0) {
+			if (params.validation == params.TESTSUBSET && containMap.size() == 0) {
 				getControl().SimpleErrorDialog("Training set must contain at least one other subset for training in order to "
 						+ "test individual subsets.", 250);
 				return false;
@@ -341,15 +351,15 @@ public class TCSettingsDialog extends LCSettingsDialog {
 					if (containMap.get(next)[i]) occursIn++;
 				}
 				if (occursIn == 0) {
-					if (testSubset) {
+					if (params.validation == params.TESTSUBSET) {
 						getControl().SimpleErrorDialog("\""+labelList.get(i)+"\" only occurs in the selected "
 								+ "testing subset. It must occur somewhere else in the set as well.", 250);
 						return false;
 					}
 					else throw new LabelNotFoundException();
 				}
-				if (occursIn == 1 && !testSubset) {
-					if (kFold) getControl().SimpleErrorDialog("\""+labelList.get(i)+"\" only occurs in one fold. "
+				if (occursIn == 1 && params.validation != params.TESTSUBSET) {
+					if (params.validation == params.KFOLD) getControl().SimpleErrorDialog("\""+labelList.get(i)+"\" only occurs in one fold. "
 								+ "Try again with a new k-value or consider spreading the label "
 								+ "out through the set more.", 250);
 					else getControl().SimpleErrorDialog("\""+labelList.get(i)+"\" only occurs in one subset. "
@@ -405,12 +415,16 @@ public class TCSettingsDialog extends LCSettingsDialog {
 			getControl().SimpleErrorDialog("Training set must contain at least two features.", 250);
 			return false;
 		}
-		if (params.validation == params.LEAVEONEOUT) {
+	/*	if (params.validation == params.LEAVEONEOUT) {
 			if (!checkClassSpread(curr, false, false)) return false;
 		} else if (params.validation == params.KFOLD) {
 			if (!checkClassSpread(curr, true, false)) return false;
 		} else if (params.validation == params.TESTSUBSET) {
 			if (!checkClassSpread(curr, false, true)) return false;
+		} */
+		if (params.validation != params.LEAVEONEOUTBOTHDIGITS || params.validation != params.LEAVEONEOUTFIRSTDIGIT ||
+				params.validation != params.KFOLD || params.validation != params.TESTSUBSET) {
+			if (!checkClassSpread(curr, params)) return false;
 		}
 		return true;
 	}
@@ -504,7 +518,10 @@ public class TCSettingsDialog extends LCSettingsDialog {
 	public void actuallyGetParams() {
 		super.actuallyGetParams();
 		TCParameters params = getControl().getParams();
-		if (params.validation == params.LEAVEONEOUT) leaveOneOutRB.doClick();
+		if (params.validation == params.LEAVEONEOUTBOTHDIGITS || params.validation == params.LEAVEONEOUTFIRSTDIGIT) {
+			leaveOneOutRB.doClick();
+			firstDigitCheck.setSelected(params.validation == params.LEAVEONEOUTFIRSTDIGIT);
+		}
 		else if (params.validation == params.KFOLD) kFoldRB.doClick();
 		else if (params.validation == params.TESTSUBSET) testSubsetRB.doClick();
 		else if (params.validation == params.LABELLED) labelledRB.doClick();
@@ -525,7 +542,8 @@ public class TCSettingsDialog extends LCSettingsDialog {
 	public TCParameters generateParameters() {
 		TCParameters params = (TCParameters) super.generateParameters();
 		if (leaveOneOutRB.isSelected()) {
-			params.validation = params.LEAVEONEOUT;
+			if (firstDigitCheck.isSelected()) params.validation = params.LEAVEONEOUTFIRSTDIGIT;
+			else params.validation = params.LEAVEONEOUTBOTHDIGITS;
 		} else if (kFoldRB.isSelected()) {
 			params.validation = params.KFOLD;
 			params.kNum = Integer.valueOf(kFoldField.getText());

@@ -1,6 +1,7 @@
 mirrf_1.03 CHANGELOG
-August 11th to December 14th, 2023
+August 11th, 2023 to January 15th, 2024
 Holly LeBlond
+Fisheries and Oceans Canada
 
 1.03a (August 11th, 2023)
 - SQLite compatibility added to the WMNT:
