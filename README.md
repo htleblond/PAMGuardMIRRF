@@ -1,6 +1,6 @@
 # Music Information Retrieval Random Forest (MIRRF) Classifier for PAMGuard
 
-This is an external PAMGuard plugin for classifying Whistle and Moan Detector (WMD) contours using music information retrieval (MIR) techniques and contour header data in conjunction with an ensemble classifier model. While the primary goal of this project is to create a classifier that can discriminate between killer whale, humpback whale and vessel noise in high-traffic areas of the Salish Sea, the classifier should theoretically work with any sound source that produces WMD detections.
+This is an external PAMGuard plugin for classifying Whistle and Moan Detector (WMD) contours using music information retrieval (MIR) techniques and contour header and slice data in conjunction with an ensemble classifier model. While the primary goal of this project is to create a classifier that can discriminate between killer whale, humpback whale and vessel noise in high-traffic areas of the Salish Sea, the classifier should theoretically work with any sound source that produces WMD detections.
 
 ![alt text](https://github.com/htleblond/PamGuardMIRRF/blob/main/screenshots/Live%20Classifier%20and%20WMNT%20example.png?raw=true)
 <p align="center">
