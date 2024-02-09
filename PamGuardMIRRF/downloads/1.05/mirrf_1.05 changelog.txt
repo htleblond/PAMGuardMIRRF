@@ -1,0 +1,29 @@
+mirrf_1.05 CHANGELOG
+February 8th, 2024
+Holly LeBlond
+Fisheries and Oceans Canada
+
+1.05a (February 8th, 2024)
+- Added new features to Feature Extractor: 
+	- "Harmonic-to-fundamental ratio"
+	- Linear predictive coding formants:
+		- Frequency of a specified formant
+		- Number of valid formants found
+		- Difference in frequency between two formants
+- Changes made to feature calculations in Feature Extractor that may result in .mirrffe and .mirrfts files containing the following becoming outdated:
+	- 1st and 2nd derivatives of slice data frequency are now frequency over time in milliseconds, as opposed to frequency over frame number.
+	- Fixed oversight in Praat-tracked fundamental frequency where zeroes were added to the array on frames where a discernible pitch was not found.
+	- Fixed total harmonic distortion, as the formula was incorrect.
+	- Slightly modified the harmonics-to-background ratio calculation, but not in a way to make pre-existing use of that feature obsolete.
+	- Minimum number of harmonics in harmonic features set to 2, as calculating these features only on the fundamental is pointless.
+	- Default pitch tracker ceiling raised to 20000 Hz (shouldn't affect anything otherwise).
+- Feature Extractor audio clip length and noise remove clip start and length are all now in milliseconds. Keep note of this if you have configs with an instance of the Feature Extractor saved into them!
+- Fixed major bug in Feature Extractor where the end sample was input into the sample retrieval function instead of the clip duration when using a fixed clip length.
+- Minor work-around in the Feature Extractor for a bug that causes some call clusters to be null.
+- Fixed oversight in Training Set Builder where Feature Extractor settings were not read back in.
+- Exporting full classifier results now takes significantly less time.
+- Default file names for classifier output slightly changed.
+- Fixed some bugs involving the Feature Extractor's success/failure/ignore/pending counters.
+- Fixed oversight when exporting full classifier results where feature names were not listed, and also added plugin version, added hydrophone location, and fixed time zone miscalculation.
+- Fixed oversight in WMNT where changes weren't logged and undo button didn't work when double-click editing an individual cell.
+- Added loading bar in WMNT for when database entries are being loaded in, as premature editing was causing some exceptions.

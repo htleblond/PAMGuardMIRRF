@@ -22,6 +22,11 @@ public class FEPanel {
 	public static final int FAILURE = 1;
 	public static final int IGNORE = 2;
 	public static final int PENDING = 3;
+	
+	private int successCount = 0;
+	private int failureCount = 0;
+	private int ignoreCount = 0;
+	private int pendingCount = 0;
 
 	protected FEControl feControl;
 	protected FESettingsDialog settingsDialog;
@@ -97,9 +102,12 @@ public class FEPanel {
 	 * Resets all counters except "pending" to 0.
 	 */
 	public void resetCounters() {
-		successField.setText("0");
-		failureField.setText("0");
-		ignoreField.setText("0");
+		successCount = 0;
+		failureCount = 0;
+		ignoreCount = 0;
+		successField.setText(String.valueOf(successCount));
+		failureField.setText(String.valueOf(failureCount));
+		ignoreField.setText(String.valueOf(ignoreCount));
 	}
 	
 	/**
@@ -114,16 +122,16 @@ public class FEPanel {
 	public void addOneToCounter(int i, String uid) {
 		try {
 			if (i == SUCCESS) {
-				successField.setText(String.valueOf(Integer.valueOf(successField.getText())+1));
+				successField.setText(String.valueOf(++this.successCount));
 				System.out.println("Successfully processed contour "+uid+".");
 			} else if (i == FAILURE) {
-				failureField.setText(String.valueOf(Integer.valueOf(failureField.getText())+1));
+				failureField.setText(String.valueOf(++this.failureCount));
 				System.out.println("Could not process contour "+uid+".");
 			} else if (i == IGNORE) {
-				ignoreField.setText(String.valueOf(Integer.valueOf(ignoreField.getText())+1));
+				ignoreField.setText(String.valueOf(++this.ignoreCount));
 				System.out.println("Ignored contour "+uid+" due to settings.");
 			} else if (i == PENDING) {
-				pendingField.setText(String.valueOf(Integer.valueOf(pendingField.getText())+1));
+				pendingField.setText(String.valueOf(++this.pendingCount));
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -136,8 +144,8 @@ public class FEPanel {
 	 */
 	public boolean subtractOneFromPendingCounter() {
 		try {
-			if (Integer.valueOf(pendingField.getText()) > 0) {
-				pendingField.setText(String.valueOf(Integer.valueOf(pendingField.getText())-1));
+			if (this.pendingCount > 0) {
+				pendingField.setText(String.valueOf(--this.pendingCount));
 			} else {
 				return false;
 			}

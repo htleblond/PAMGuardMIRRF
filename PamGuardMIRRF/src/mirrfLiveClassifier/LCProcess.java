@@ -60,6 +60,7 @@ public class LCProcess extends PamProcess {
 			outp += "["+cc.clusterID+",";
 			outp += String.valueOf(cc.uids[i])+",";
 			//outp += String.valueOf(cc.datetimes[i])+",";
+			outp += "\"\","; // Live Classifier doesn't record location.
 			outp += "\""+lcControl.convertLocalLongToUTC(cc.datetimes[i])+"\",";
 			outp += String.valueOf(cc.durations[i])+",";
 			outp += String.valueOf(cc.lfs[i])+",";
@@ -90,15 +91,17 @@ public class LCProcess extends PamProcess {
 		try {
 			String[] tokens = inp.split(Pattern.quote("]|["));
 			String[] uids = tokens[1].split(Pattern.quote(", "));
-			String[] datetimes = tokens[2].substring(1, tokens[2].length()-1).split(Pattern.quote("', '"), -1);
-			String[] durations = tokens[3].split(Pattern.quote(", "));
-			String[] lfs = tokens[4].split(Pattern.quote(", "));
-			String[] hfs = tokens[5].split(Pattern.quote(", "));
-			String[] actualSpecies = tokens[6].substring(1, tokens[6].length()-1).split(Pattern.quote("', '"), -1);
-			String[] probas = tokens[7].substring(1, tokens[7].length()-2).split(Pattern.quote("], ["));
+			String[] locations = tokens[2].substring(1, tokens[2].length()-1).split(Pattern.quote("', '"), -1);
+			String[] datetimes = tokens[3].substring(1, tokens[3].length()-1).split(Pattern.quote("', '"), -1);
+			String[] durations = tokens[4].split(Pattern.quote(", "));
+			String[] lfs = tokens[5].split(Pattern.quote(", "));
+			String[] hfs = tokens[6].split(Pattern.quote(", "));
+			String[] actualSpecies = tokens[7].substring(1, tokens[7].length()-1).split(Pattern.quote("', '"), -1);
+			String[] probas = tokens[8].substring(1, tokens[8].length()-2).split(Pattern.quote("], ["));
 			
 			LCCallCluster cc = new LCCallCluster(lcControl.getParams().labelOrder, uids.length);
 			cc.clusterID = tokens[0].substring(0, tokens[0].length()-1).split(Pattern.quote("', '"))[0];
+			cc.location = locations[0]; // Only really used by Test Classifier.
 			for (int i = 0; i < cc.getSize(); i++) {
 				cc.uids[i] = Long.valueOf(uids[i]);
 				cc.datetimes[i] = lcControl.convertDateStringToLong(datetimes[i]);

@@ -49,8 +49,11 @@ public class WMNTSQLLogging {
 	protected Object[][] originalTable;
 	protected boolean[] tableChangeLog;
 	
-	protected volatile WMNTSQLLoadingBarWindow loadingBarWindow;
-	protected volatile LoadingBarThread loadingBarThread;
+	protected volatile WMNTDatabaseLoadingBarWindow databaseLoadingBarWindow;
+	protected volatile DatabaseLoadingBarThread databaseLoadingBarThread;
+	
+	protected volatile WMNTCommitLoadingBarWindow commitLoadingBarWindow;
+	protected volatile CommitLoadingBarThread commitLoadingBarThread;
 	
 	public WMNTSQLLogging(WMNTControl wmntControl) {
 		this.wmntControl = wmntControl;
@@ -62,6 +65,9 @@ public class WMNTSQLLogging {
 	 * @return True if columns were created and the table was filled. Otherwise, false.
 	 */
 	public boolean createColumnsAndFillTable(boolean overwrite) {
+		databaseLoadingBarWindow = new WMNTDatabaseLoadingBarWindow(wmntControl.getGuiFrame());
+		databaseLoadingBarThread = new DatabaseLoadingBarThread();
+		databaseLoadingBarThread.start();
 		Statement stmt = null;
 		ResultSet rsColumns = null;
 		try {
@@ -80,6 +86,7 @@ public class WMNTSQLLogging {
 			}
 			wmntControl.getSidePanel().getWMNTPanel().checkButton.setEnabled(false);
 			wmntControl.getSidePanel().getWMNTPanel().updateButton.setEnabled(false);
+			databaseLoadingBarWindow.setVisible(false);
 			JOptionPane.showMessageDialog(wmntControl.getGuiFrame(),
 				"Could not connect to database - see console for details.\nIf this problem persists, try restarting PamGuard.",
 			    "Database error",
@@ -115,7 +122,7 @@ public class WMNTSQLLogging {
 					stmt.executeUpdate("ALTER TABLE "+wmntControl.getParams().sqlTableName+"\r\nADD COLUMN comment NVARCHAR(400);");
 				rsColumns.close();
 				stmt.close();
-			} catch(SQLException e) {
+			} catch (SQLException e) {
 				e.printStackTrace();
 				try {
 					if (rsColumns != null && !rsColumns.isClosed()) rsColumns.close();
@@ -123,6 +130,7 @@ public class WMNTSQLLogging {
 				} catch (SQLException e1) {
 					e1.printStackTrace();
 				}
+				databaseLoadingBarWindow.setVisible(false);
 				JOptionPane.showMessageDialog(wmntControl.getGuiFrame(),
 						"Could not create new columns - see console for details.",
 					    "Database error",
@@ -136,11 +144,15 @@ public class WMNTSQLLogging {
 				    + "Proceed?",
 				    "Creating columns",
 				    JOptionPane.OK_CANCEL_OPTION);
-			if (res == JOptionPane.CANCEL_OPTION) return false;
+			if (res == JOptionPane.CANCEL_OPTION) {
+				databaseLoadingBarWindow.setVisible(false);
+				return false;
+			}
 			EmptyTableDefinition edt = new EmptyTableDefinition(wmntControl.getParams().sqlTableName);
 			if (!getDBProcess().checkColumn(edt, new PamTableItem("species", Types.CHAR, 20)) ||
 					!getDBProcess().checkColumn(edt, new PamTableItem("callType", Types.CHAR, 20)) ||
 					!getDBProcess().checkColumn(edt, new PamTableItem("comment", Types.VARCHAR, 400))) {
+				databaseLoadingBarWindow.setVisible(false);
 				JOptionPane.showMessageDialog(wmntControl.getGuiFrame(),
 						"Could not create new columns - see console for details.",
 					    "Database error",
@@ -154,10 +166,13 @@ public class WMNTSQLLogging {
 		try {
 			stmt = getDBSystem().getConnection().getConnection().createStatement();
 			rs = stmt.executeQuery("SELECT * FROM "+wmntControl.getParams().sqlTableName+";");
+			rs.last();
+			databaseLoadingBarWindow.startReadingCount(rs.getRow());
+			rs.first();
 			dbSet = new HashSet<String>();
 			dbList = new ArrayList<String>();
 			int rownum = -1;
-			while(rs.next()) {
+			do { // due to rs.first() above
 				String datetime = convertDate(String.valueOf(rs.getTimestamp("UTC")).substring(0, 19),
 						rs.getShort("UTCMilliseconds"), false);
 				String entry = String.valueOf(rs.getLong("UID")) + " - " + datetime;
@@ -203,7 +218,8 @@ public class WMNTSQLLogging {
 						ttable.setValueAt("", rownum, 8);
 					}
 				}
-			}
+				databaseLoadingBarWindow.addOneToLoadingBar();
+			} while(rs.next());
 			rs.close();
 			stmt.close();
 			wmntControl.getSidePanel().getWMNTPanel().checkButton.setEnabled(true);
@@ -216,12 +232,14 @@ public class WMNTSQLLogging {
 			} catch (HeadlessException | SQLException e1) {
 				e1.printStackTrace();
 			}
+			databaseLoadingBarWindow.setVisible(false);
 			JOptionPane.showMessageDialog(wmntControl.getGuiFrame(),
 					"Error encountered while attempting to fill table - see console for details.",
 				    "Database error",
 				    JOptionPane.ERROR_MESSAGE);
 			return false;
 		}
+		databaseLoadingBarWindow.setVisible(false);
 		return true;
 	}
 
@@ -326,14 +344,22 @@ public class WMNTSQLLogging {
 				JOptionPane.INFORMATION_MESSAGE);
 	}
 	
+	protected class DatabaseLoadingBarThread extends Thread {
+		protected DatabaseLoadingBarThread() {}
+		@Override
+		public void run() {
+			databaseLoadingBarWindow.setVisible(true);
+		}
+	}
+	
 	/**
 	 * Thread used for running the loading bar window.
 	 */
-	protected class LoadingBarThread extends Thread {
-		protected LoadingBarThread() {}
+	protected class CommitLoadingBarThread extends Thread {
+		protected CommitLoadingBarThread() {}
 		@Override
 		public void run() {
-			loadingBarWindow.setVisible(true);
+			commitLoadingBarWindow.setVisible(true);
 		}
 	}
 	
@@ -351,9 +377,9 @@ public class WMNTSQLLogging {
 				totalChanges++;
 			}
 		}
-		loadingBarWindow = new WMNTSQLLoadingBarWindow(wmntControl, wmntControl.getGuiFrame(), totalChanges);
-		loadingBarThread = new LoadingBarThread();
-		loadingBarThread.start();
+		commitLoadingBarWindow = new WMNTCommitLoadingBarWindow(wmntControl, wmntControl.getGuiFrame(), totalChanges);
+		commitLoadingBarThread = new CommitLoadingBarThread();
+		commitLoadingBarThread.start();
 		int y = 0;
 		int n = 0;
 		DBControl dbControl = (DBControl) PamController.getInstance().findControlledUnit(DBControl.getDbUnitType());
@@ -400,7 +426,7 @@ public class WMNTSQLLogging {
 							+ outpTable.getValueAt(i, 0).toString()+", "+outpTable.getValueAt(i, 1).toString()+", "+outpTable.getValueAt(i, 6).toString()
 							+ ", "+outpTable.getValueAt(i, 7).toString()+", "+outpTable.getValueAt(i, 8).toString()+")");
 				}
-				loadingBarWindow.updateLoadingBar(success, commitNow);
+				commitLoadingBarWindow.updateLoadingBar(success, commitNow);
 			}
 		}
 		originalTable = origTable;
@@ -409,10 +435,10 @@ public class WMNTSQLLogging {
 			System.out.println("COMMITTING CHANGES TO DATABASE: "+mySystem.getDatabaseName());
 			if (getDBControl().commitChanges()) {
 				System.out.println("COMMIT SUCCEEDED");
-				loadingBarWindow.finish(loadingBarWindow.COMMIT_SUCCEEDED);
+				commitLoadingBarWindow.finish(commitLoadingBarWindow.COMMIT_SUCCEEDED);
 			} else {
 				System.out.println("COMMIT FAILED");
-				loadingBarWindow.finish(loadingBarWindow.COMMIT_FAILED);
+				commitLoadingBarWindow.finish(commitLoadingBarWindow.COMMIT_FAILED);
 			}
 		}
 	}

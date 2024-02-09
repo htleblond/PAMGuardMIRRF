@@ -98,7 +98,7 @@ public class FEParameters extends MIRRFParameters {
 		
 		this.audioSourceProcessName = "";
 		this.audioAutoClipLength = true;
-		this.audioClipLength = 16384;
+		this.audioClipLength = 350;
 		this.audioSTFTLength = 2048;
 		this.audioHopSize = 1024;
 		this.audioWindowFunction = "Hann";
@@ -110,8 +110,8 @@ public class FEParameters extends MIRRFParameters {
 		this.audioLPFThreshold = 20000;
 		this.audioLPFMagnitude = 1;
 		this.audioNRChecked = false;
-		this.audioNRStart = 24000;
-		this.audioNRLength = 16384;
+		this.audioNRStart = 500;
+		this.audioNRLength = 350;
 		this.audioNRScalar = 1.0;
 		
 		this.featureList = new String[0][0];

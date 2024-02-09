@@ -19,7 +19,7 @@ import PamView.dialog.PamGridBagContraints;
  * Loading bar window for SQL commits.
  * @author Holly LeBlond
  */
-public class WMNTSQLLoadingBarWindow extends PamDialog {
+public class WMNTCommitLoadingBarWindow extends PamDialog {
 	
 	public static final int NOTHING_TO_UPDATE = -1;
 	public static final int UPDATE_WITHOUT_COMMIT = 0;
@@ -37,7 +37,7 @@ public class WMNTSQLLoadingBarWindow extends PamDialog {
 	protected JTextField successField;
 	protected JTextField failureField;
 
-	public WMNTSQLLoadingBarWindow(WMNTControl wmntControl, Window parentFrame, int totalToUpdate) {
+	public WMNTCommitLoadingBarWindow(WMNTControl wmntControl, Window parentFrame, int totalToUpdate) {
 		super(parentFrame, wmntControl.getUnitName(), false);
 		this.wmntControl = wmntControl;
 		this.totalToUpdate = totalToUpdate;

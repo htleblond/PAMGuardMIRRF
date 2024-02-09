@@ -373,11 +373,12 @@ public class TSBPanel extends PamBorderPanel {
 			while (subsetTable.getRowCount() > 0) {
 				subsetTableModel.removeRow(0);
 			}
-			tsbControl.getFullClassList().clear();
-			tsbControl.getClassMap().clear();
-			tsbControl.getSubsetList().clear();
-			tsbControl.getFeatureList().clear();
 		}
+		tsbControl.classMap.clear();
+		tsbControl.fullClassList.clear();
+		tsbControl.subsetList.clear();
+		tsbControl.featureList.clear();
+		tsbControl.feParamsMap.clear();
 		String[] firstSplit = null;
 		ArrayList<String[]> dataLines = new ArrayList<String[]>();
 		Scanner sc = null;
@@ -390,7 +391,13 @@ public class TSBPanel extends PamBorderPanel {
 			}
 			String firstLine = sc.nextLine();
 			if (firstLine.equals("EXTRACTOR PARAMS START")) {
-				while (sc.hasNextLine() && !sc.nextLine().equals("EXTRACTOR PARAMS END"));
+				while (sc.hasNextLine()) {
+					String nextLine = sc.nextLine();
+					if (nextLine.equals("EXTRACTOR PARAMS END")) break;
+					String[] split = nextLine.split("=");
+					if (split.length >= 2)
+						tsbControl.feParamsMap.put(split[0], split[1]);
+				}
 				if (sc.hasNextLine()) firstLine = sc.nextLine();
 				else {
 					tsbControl.SimpleErrorDialog("Selected file does not contain any valid entries.", 250);

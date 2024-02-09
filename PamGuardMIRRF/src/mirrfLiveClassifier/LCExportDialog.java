@@ -6,6 +6,7 @@ import java.awt.Window;
 import java.io.File;
 import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Date;
@@ -19,6 +20,8 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
+import org.tensorflow.proto.example.FeatureList;
+
 import PamController.PamControlledUnit;
 import PamView.PamTable;
 import PamView.dialog.PamDialog;
@@ -26,6 +29,7 @@ import PamView.dialog.PamGridBagContraints;
 import PamguardMVC.PamDataBlock;
 import binaryFileStorage.BinaryStore;
 import generalDatabase.DBControl;
+import mirrf.MIRRFInfo;
 import mirrfFeatureExtractor.FEControl;
 import mirrfFeatureExtractor.FEDataBlock;
 import mirrfFeatureExtractor.FEParameters;
@@ -96,16 +100,17 @@ public class LCExportDialog extends PamDialog {
 		fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
 		fc.setAcceptAllFileFilterUsed(false);
 		fc.setMultiSelectionEnabled(false);
+		String tsName = lcControl.getParams().getTrainPath().replace(".mirrfts", "");
 		if (selectedIndex == 0) {
-			fc.setSelectedFile(new File(bsName+"/"+dbName+"_ClusterResults.csv"));
+			fc.setSelectedFile(new File(tsName+", cluster results.csv"));
 		} else if (selectedIndex == 1) {
-			fc.setSelectedFile(new File(bsName+"/"+dbName+"_ContourResults.csv"));
+			fc.setSelectedFile(new File(tsName+", individual contour results.csv"));
 		} else if (selectedIndex == 2) {
-			fc.setSelectedFile(new File(bsName+"/"+dbName+"_AccuracyMatrix.csv"));
+			fc.setSelectedFile(new File(tsName+", accuracy matrix.csv"));
 		} else if (selectedIndex == 3) {
-			fc.setSelectedFile(new File(bsName+"/"+dbName+"_ConfusionMatrix.csv"));
+			fc.setSelectedFile(new File(tsName+", confusion matrix.csv"));
 		} else if (selectedIndex == 4) {
-			fc.setSelectedFile(new File(bsName+"/"+dbName+"_FullResults.txt"));
+			fc.setSelectedFile(new File(tsName+", full results.txt"));
 		}
 		if (selectedIndex != 4) {
 			fc.addChoosableFileFilter(new FileNameExtensionFilter("Comma-separated values file (*.csv)","csv"));
@@ -166,7 +171,7 @@ public class LCExportDialog extends PamDialog {
 	 * Basically exports the table into a .csv file.
 	 */
 	protected void exportClusterResults() {
-		sb.append("Cluster ID,First UID,Last UID,Date/Time (UTC),n,Actual species,Predicted sprecies,"
+		sb.append("Cluster ID,First UID,Last UID,Date/Time (UTC),n,Actual species,Predicted species,"
 				+ "Prediction counter,Prediction probabilities,Lead,Lead descriptor\n");
 		pw.write(sb.toString());
 		pw.flush();
@@ -209,7 +214,7 @@ public class LCExportDialog extends PamDialog {
 	 * Exports all individual contour results into a .csv file.
 	 */
 	protected void exportIndividualContourResults() {
-		sb.append("Cluster ID,UID,Date/Time (UTC),Duration (ms),Lowest frequency,Highest Frequency,Actual Species,Predicted Species,");
+		sb.append("Cluster ID,UID,Location,Date/Time (UTC),Duration (ms),Lowest frequency,Highest Frequency,Actual Species,Predicted Species,");
 		for (int i = 0; i < lcControl.getParams().labelOrder.length; i++) {
 			sb.append(lcControl.getParams().labelOrder[i]+" probability score,");
 		}
@@ -224,6 +229,10 @@ public class LCExportDialog extends PamDialog {
 				sb = new StringBuilder();
 				sb.append(cc.clusterID+",");
 				sb.append(String.valueOf(cc.uids[j])+",");
+				if (cc.location.length() > 0)
+					sb.append(cc.location+",");
+				else
+					sb.append("n/a,");
 				sb.append(lcControl.convertLocalLongToUTC(cc.datetimes[j])+",");
 				sb.append(String.valueOf(cc.durations[j])+",");
 				sb.append(String.valueOf(cc.lfs[j])+",");
@@ -316,7 +325,9 @@ public class LCExportDialog extends PamDialog {
 		sb.append("NOTE - Some of the parameters listed here may be incorrect if the binary files were changed, "
 				+ "or if any of the modules were replaced.\n\n");
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss+SSS");
+		long currtime = lcControl.convertBetweenTimeZones(System.currentTimeMillis(), ZonedDateTime.now().getZone().getId(), "UTC");
 		sb.append("Export time (UTC): "+sdf.format(new Date(System.currentTimeMillis()))+"\n");
+		sb.append("Plugin version: "+MIRRFInfo.getVersion()+"\n");
 		sb.append("Database: "+dbName+"\n");
 		sb.append("Binary folder: "+bsName+"\n\n");
 		pw.write(sb.toString());
@@ -390,7 +401,7 @@ public class LCExportDialog extends PamDialog {
 		if (feParams.audioAutoClipLength) {
 			sb.append("Audio clip length: Full length of contour\n");
 		} else {
-			sb.append("Audio clip length: "+String.valueOf(feParams.audioClipLength)+" samples\n");
+			sb.append("Audio clip length: "+String.valueOf(feParams.audioClipLength)+" ms\n");
 		}
 		sb.append("STFT length: "+String.valueOf(feParams.audioSTFTLength)+" bins\n");
 		sb.append("STFT hop size: "+String.valueOf(feParams.audioHopSize)+" samples\n");
@@ -412,8 +423,8 @@ public class LCExportDialog extends PamDialog {
 		}
 		if (feParams.audioNRChecked) {
 			sb.append("Noise reduction: On\n");
-			sb.append("Noise reduction clip start time: "+String.valueOf(feParams.audioNRStart)+" samples\n");
-			sb.append("Noise reduction clip length: "+String.valueOf(feParams.audioNRLength)+" samples\n");
+			sb.append("Noise reduction clip start time: "+String.valueOf(feParams.audioNRStart)+" ms\n");
+			sb.append("Noise reduction clip length: "+String.valueOf(feParams.audioNRLength)+" ms\n");
 			sb.append("Noise reduction scalar: "+String.valueOf(feParams.audioNRScalar)+"\n");
 		} else {
 			sb.append("Noise reduction: Off\n");
@@ -466,15 +477,15 @@ public class LCExportDialog extends PamDialog {
 		//for (int i = 0; i < unmatched.size(); i++) System.out.println(unmatched.get(i)); // TODO REMOVE
 		if (unmatched.size() > 0) {
 			sb.append(message+"\n\n");
-			if (unmatched.contains("sr")) sb.append("Audio sampling rate: "+map.get("sr")+"\n");
+			if (unmatched.contains("sr")) sb.append("Audio sampling rate: "+map.get("sr")+" Hz\n");
 			if (unmatched.contains("audioAutoClipLength")) {
 				if (Boolean.valueOf(map.get("audioAutoClipLength"))) sb.append("Audio clip length: Full length of contour\n");
 				else {
 					if (unmatched.contains("audioClipLength"))
-						sb.append("Audio clip length: "+map.get("audioClipLength")+" samples\n");
+						sb.append("Audio clip length: "+map.get("audioClipLength")+" ms\n");
 					else sb.append("Audio clip length: ?\n");
 				}
-			} else if (unmatched.contains("audioClipLength")) sb.append("Audio clip length: "+map.get("audioClipLength")+" samples\n");
+			} else if (unmatched.contains("audioClipLength")) sb.append("Audio clip length: "+map.get("audioClipLength")+" ms\n");
 			if (unmatched.contains("audioSTFTLength")) sb.append("STFT length: "+map.get("audioSTFTLength")+" bins\n");
 			if (unmatched.contains("audioHopSize")) sb.append("STFT hop size: "+map.get("audioHopSize")+" samples\n");
 			if (unmatched.contains("audioWindowFunction")) sb.append("STFT window function: "+map.get("audioWindowFunction")+"\n");
@@ -495,9 +506,13 @@ public class LCExportDialog extends PamDialog {
 				if (Boolean.valueOf(map.get("audioNRChecked"))) sb.append("Noise reduction: On\n");
 				else sb.append("Noise reduction: Off\n");
 			}
-			if (unmatched.contains("audioNRStart")) sb.append("Noise reduction clip start time: "+map.get("audioNRStart")+" samples\n");
-			if (unmatched.contains("audioNRLength")) sb.append("Noise reduction clip length: "+map.get("audioNRLength")+" samples\n");
+			if (unmatched.contains("audioNRStart")) sb.append("Noise reduction clip start time: "+map.get("audioNRStart")+" ms\n");
+			if (unmatched.contains("audioNRLength")) sb.append("Noise reduction clip length: "+map.get("audioNRLength")+" ms\n");
 			if (unmatched.contains("audioNRScalar")) sb.append("Noise reduction scalar: "+map.get("audioNRScalar")+"\n");
+			LCTrainingSetInfo tsi = lcControl.getParams().getTrainingSetInfo();
+			sb.append("Features: "+String.valueOf(tsi.featureList.size())+"\n");
+			for (int i = 0; i < tsi.featureList.size(); i++)
+				sb.append("\t"+tsi.featureList.get(i)+"\n");
 			sb.append("\n");
 		}
 		pw.write(sb.toString());
@@ -525,6 +540,11 @@ public class LCExportDialog extends PamDialog {
 			sb.append("Sampling limit: Automatically set to size of least-populated class\n");
 		} else {
 			sb.append("Sampling limit: Manually-set maximum (n = "+String.valueOf(params.maxSamples)+")\n");
+		}
+		if (params.limitClusterSize) {
+			sb.append("Cluster size limit for training data: None\n");
+		} else {
+			sb.append("Cluster size limit for training data: "+String.valueOf(params.maxClusterSize)+"\n");
 		}
 		sb.append("Time zone: "+params.timeZone+"\n");
 		sb.append("Class labels: "+String.valueOf(params.labelOrder.length)+"\n");
@@ -631,7 +651,7 @@ public class LCExportDialog extends PamDialog {
 		for (int i = 0; i < table.getRowCount(); i++) {
 			fullMapInput.add(table.getValueAt(i, 0)+", "+table.getValueAt(i, 1));
 		}
-		final int maxInputSize = 100;
+		final int maxInputSize = 10000;
 		for (int i = 0; (double) i < ((double) fullMapInput.size())/maxInputSize; i++) {
 			ArrayList<String> mapInput = new ArrayList<String>();
 			for (int j = 0; j < maxInputSize && i*maxInputSize+j < fullMapInput.size(); j++) {
@@ -652,6 +672,11 @@ public class LCExportDialog extends PamDialog {
 				LCCallCluster cc = du.getCluster();
 				sb = new StringBuilder();
 				sb.append("\n\nCLUSTER "+cc.clusterID+"\n");
+				sb.append("Location: ");
+				if (cc.location.length() > 0)
+					sb.append(cc.location+"\n");
+				else
+					sb.append("n/a\n");
 				sb.append("Date/Time (UTC): "+lcControl.convertLocalLongToUTC(cc.getStartAndEnd()[0])+"\n");
 				sb.append("Duration: "+String.valueOf(cc.getStartAndEnd()[1]-cc.getStartAndEnd()[0])+" ms\n");
 				sb.append("Size: "+String.valueOf(cc.getSize())+" contour(s)\n");

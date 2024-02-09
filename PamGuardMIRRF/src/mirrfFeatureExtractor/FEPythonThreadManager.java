@@ -329,7 +329,11 @@ public class FEPythonThreadManager {
 			while(printThreadsActive) {
 				if (waitList.size() > 0 && clipsLeft() < maxClipsAtOnce) {
 					ContourClip cc = waitList.get(0);
-					if (idList.contains(cc.clusterID)) {
+					if (cc == null) { // TODO FIGURE OUT WHAT CAUSES THIS
+						waitList.remove(0);
+						feControl.subtractOneFromPendingCounter();
+						feControl.addOneToCounter(FEPanel.FAILURE, "???");
+					} else if (idList.contains(cc.clusterID)) {
 						ccList.get(idList.indexOf(cc.clusterID)).add(cc);
 						String command = "thread"+String.format("%02d", idList.indexOf(cc.clusterID))+".addClip(r\""+cc.clipName+"\"";
 						for (int i = 0; i < cc.headerData.length; i++) {

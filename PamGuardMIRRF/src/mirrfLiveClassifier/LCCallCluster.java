@@ -12,7 +12,7 @@ public class LCCallCluster implements Serializable, Cloneable {
 	
 	public String clusterID;
 	public long[] uids;
-	//public String location;
+	public String location;
 	public long[] datetimes;
 	public int[] durations;
 	public int[] lfs;
@@ -29,7 +29,7 @@ public class LCCallCluster implements Serializable, Cloneable {
 	public LCCallCluster(String[] labelOrder, int size) {
 		this.clusterID = "";
 		this.uids = new long[size];
-		//this.location = "";
+		this.location = "";
 		this.datetimes = new long[size];
 		this.durations = new int[size];
 		this.lfs = new int[size];

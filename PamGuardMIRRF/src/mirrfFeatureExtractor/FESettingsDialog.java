@@ -325,7 +325,7 @@ public class FESettingsDialog extends PamDialog {
 		audioLengthField.setDocument(JIntFilter());
 		audioLengthPanel.add(audioLengthField, c);
 		c.gridx++;
-		audioLengthPanel.add(new JLabel("samples"), c);
+		audioLengthPanel.add(new JLabel("ms"), c);
 		audioFP2.add(audioLengthPanel);
 		mainPanel3.add(audioFP2, b);
 		
@@ -471,7 +471,7 @@ public class FESettingsDialog extends PamDialog {
 		audioNRPanel.add(audioNRStartField, c);
 		c.gridx++;
 		c.anchor = GridBagConstraints.WEST;
-		audioNRPanel.add(new JLabel(" samples", SwingConstants.LEFT), c);
+		audioNRPanel.add(new JLabel(" ms", SwingConstants.LEFT), c);
 		c.gridy++;
 		c.gridx = 0;
 		c.anchor = GridBagConstraints.EAST;
@@ -483,7 +483,7 @@ public class FESettingsDialog extends PamDialog {
 		audioNRPanel.add(audioNRLengthField, c);
 		c.gridx++;
 		c.anchor = GridBagConstraints.WEST;
-		audioNRPanel.add(new JLabel(" samples", SwingConstants.LEFT), c);
+		audioNRPanel.add(new JLabel(" ms", SwingConstants.LEFT), c);
 		c.gridy++;
 		c.gridx = 0;
 		c.anchor = GridBagConstraints.EAST;
@@ -1229,9 +1229,21 @@ public class FESettingsDialog extends PamDialog {
 					}
 				}
 			} else if (tokens.length == 4) {
-				ArrayList<String> fourfers = new ArrayList<String>(Arrays.asList("mfcc","poly","bandwidth","specmag","praat"));
-				if (fourfers.contains(tokens[0]) && calcs.contains(tokens[3])) {
-					if (tokens[0].equals("mfcc") || tokens[0].equals("poly")) {
+				ArrayList<String> fourfers = new ArrayList<String>(Arrays.asList("formantcount","mfcc","poly","bandwidth","specmag","praat"));
+				if (fourfers.contains(tokens[0])) {
+					if (tokens[0].equals("formantcount")) {
+						try {
+							double max_exp_freq = Double.valueOf(tokens[1]);
+							double min_freq = Double.valueOf(tokens[2]);
+							double max_bandwidth = Double.valueOf(tokens[3]);
+							if (max_exp_freq >= 10) {
+								validFeatures.add(inp.get(i));
+								continue;
+							}
+						} catch (Exception e2) {
+							// do nothing
+						}
+					} else if (tokens[0].equals("mfcc") || tokens[0].equals("poly")) {
 						try {
 							int order = Integer.valueOf(tokens[1]);
 							if (tokens[2].equals("all")) {
@@ -1239,7 +1251,7 @@ public class FESettingsDialog extends PamDialog {
 								continue;
 							}
 							int coefficient = Integer.valueOf(tokens[2]);
-							if (coefficient > 0 && coefficient <= order) {
+							if (coefficient > 0 && coefficient <= order && calcs.contains(tokens[3])) {
 								validFeatures.add(inp.get(i));
 								continue;
 							}
@@ -1249,7 +1261,7 @@ public class FESettingsDialog extends PamDialog {
 					} else if (tokens[0].equals("bandwidth")) {
 						try {
 							int power = Integer.valueOf(tokens[1]);
-							if (power > 0 && (tokens[2].equals("ny") || tokens[2].equals("nn"))) {
+							if ((power > 0 && (tokens[2].equals("ny") || tokens[2].equals("nn"))) && calcs.contains(tokens[3])) {
 								validFeatures.add(inp.get(i));
 								continue;
 							}
@@ -1260,7 +1272,7 @@ public class FESettingsDialog extends PamDialog {
 						try {
 							int min = Integer.valueOf(tokens[1]);
 							int max = Integer.valueOf(tokens[2]);
-							if (min < max) {
+							if (min < max && calcs.contains(tokens[3])) {
 								validFeatures.add(inp.get(i));
 								continue;
 							}
@@ -1270,9 +1282,22 @@ public class FESettingsDialog extends PamDialog {
 					}
 				}
 			} else if (tokens.length == 5) {
-				ArrayList<String> fivers = new ArrayList<String>(Arrays.asList("contrast","thd","hbr"));
+				ArrayList<String> fivers = new ArrayList<String>(Arrays.asList("formantfreq","formantdiff","contrast","thd","hbr"));
 				if (fivers.contains(tokens[0])) {
-					if (tokens[0].equals("contrast")) {
+					if (tokens[0].equals("formantfreq") || tokens[0].equals("formantdiff")) {
+						try {
+							double max_exp_freq = Double.valueOf(tokens[1]);
+							double min_freq = Double.valueOf(tokens[2]);
+							double max_bandwidth = Double.valueOf(tokens[3]);
+							int formant_num = Integer.valueOf(tokens[4]);
+							if (max_exp_freq >= 10 && formant_num > 0) {
+								validFeatures.add(inp.get(i));
+								continue;
+							}
+						} catch (Exception e2) {
+							// do nothing
+						}
+					} else if (tokens[0].equals("contrast")) {
 						try {
 							int cutoff = Integer.valueOf(tokens[1]);
 							int bands = Integer.valueOf(tokens[2]);
@@ -1288,7 +1313,7 @@ public class FESettingsDialog extends PamDialog {
 							int harmonics = Integer.valueOf(tokens[1]);
 							int min = Integer.valueOf(tokens[2]);
 							int max = Integer.valueOf(tokens[3]);
-							if (harmonics > 0 && min < max && calcs.contains(tokens[4])) {
+							if (harmonics >= 2 && min < max && calcs.contains(tokens[4])) {
 								validFeatures.add(inp.get(i));
 								continue;
 							}
@@ -1298,21 +1323,26 @@ public class FESettingsDialog extends PamDialog {
 					}
 				}
 			} else if (tokens.length == 6) {
-				ArrayList<String> sixers = new ArrayList<String>(Arrays.asList("hcentroid"));
+				ArrayList<String> sixers = new ArrayList<String>(Arrays.asList("hcentroid","hfr"));
 				if (sixers.contains(tokens[0])) {
-					if (tokens[0].equals("hcentroid")) {
-						try {
-							int nh = Integer.valueOf(tokens[1]);
-							int min = Integer.valueOf(tokens[2]);
-							int max = Integer.valueOf(tokens[3]);
+					try {
+						int nh = Integer.valueOf(tokens[1]);
+						int min = Integer.valueOf(tokens[2]);
+						int max = Integer.valueOf(tokens[3]);
+						if (tokens[0].equals("hcentroid")) {
 							ArrayList<String> fcalcs = new ArrayList<String>(Arrays.asList("mean","median","std","mode"));
-							if (nh > 0 && min < max && fcalcs.contains(tokens[4]) && calcs.contains(tokens[5])) {
+							if (nh >= 2 && min < max && fcalcs.contains(tokens[4]) && calcs.contains(tokens[5])) {
 								validFeatures.add(inp.get(i));
 								continue;
 							}
-						} catch (Exception e2) {
-							// do nothing
+						} else if (tokens[0].equals("hfr")) {
+							if (Double.valueOf(tokens[4]) >= 1.0 && calcs.contains(tokens[5])) {
+								validFeatures.add(inp.get(i));
+								continue;
+							}
 						}
+					} catch (Exception e2) {
+						// do nothing
 					}
 				}
 			}
@@ -1358,16 +1388,20 @@ public class FESettingsDialog extends PamDialog {
 		outp.put("frange","Frequency range (header data)");
 		outp.put("fslopehd","Frequency slope (header data)");
 		outp.put("freqsd","Frequency (slice data)");
-		outp.put("freqsdd1", "Frequency, 1st derivative (slice data)");
-		outp.put("freqsdd2", "Frequency, 2nd derivative (slice data)");
-		outp.put("freqsdelbow", "Frequency, elbow angle (slice data)");
-		outp.put("freqsdslope", "Frequency, start-to-end slope (slice data)");
+		outp.put("freqsdd1","Frequency, 1st derivative (slice data)");
+		outp.put("freqsdd2","Frequency, 2nd derivative (slice data)");
+		outp.put("freqsdelbow","Frequency, elbow angle (slice data)");
+		outp.put("freqsdslope","Frequency, start-to-end slope (slice data)");
+		outp.put("formantfreq","Formant frequency");
+		outp.put("formantcount","Valid formant count");
+		outp.put("formantdiff","Difference between two formants");
 		outp.put("mfcc","Mel-frequency cepstral coefficients");
 		outp.put("poly","Polynomial features");
 		outp.put("praat","Praat fundamental frequency");
 		outp.put("thd","Total harmonic distortion");
 		outp.put("hbr","Harmonics-to-background ratio");
 		outp.put("hcentroid","Harmonic centroid");
+		outp.put("hfr","Harmonic-to-fundamental ratio");
 		outp.put("rms","Root mean square");
 		outp.put("bandwidth","Spectral bandwidth");
 		outp.put("centroid","Spectral centroid");

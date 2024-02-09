@@ -305,6 +305,7 @@ public class TCPythonThreadManager extends LCPythonThreadManager {
 					outp += "[\""+curr.clusterID+"\",";
 					outp += String.valueOf(curr.uid)+",";
 					//outp += String.valueOf(getControl().convertDateStringToLong(curr.datetime))+",";
+					outp += "\""+curr.location+"\",";
 					outp += "\""+String.valueOf(curr.datetime)+"\",";
 					outp += String.valueOf(curr.duration)+",";
 					outp += String.valueOf(curr.lf)+",";

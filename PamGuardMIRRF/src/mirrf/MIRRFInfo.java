@@ -15,7 +15,7 @@ public abstract class MIRRFInfo {
 	}
 	
 	public static String getVersion() {
-		return "1.04a";
+		return "1.05a";
 	}
 	
 	public static String getPamVerDevelopedOn() {

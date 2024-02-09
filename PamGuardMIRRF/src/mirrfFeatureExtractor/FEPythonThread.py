@@ -71,7 +71,8 @@ class FEThread():
                 pe_cluster_id="", pe_location="", pe_label="", pe_header_features={}): # "pe" stands for "pre-existing", implying it came from a pre-existing .mirrfts file
         #print("Reached addClip().")
         self.clipList.append(fn)
-        headerData = HeaderData(uid, datelong, amplitude, duration, freqhd_min, freqhd_max, slice_data, pe_cluster_id, pe_location, pe_label, pe_header_features)
+        headerData = HeaderData(uid, datelong, amplitude, duration, freqhd_min, freqhd_max, slice_data, \
+                                pe_cluster_id, pe_location, pe_label, pe_header_features)
         thread = threading.Thread(target=self.threadFunc, args=(fn,headerData,))
         #thread = multiprocessing.Process(target=self.threadFunc, args=(fn,headerData,))
         thread.start()
@@ -152,12 +153,73 @@ class FEThread():
                 outp.append(self.extractIndividualFeature(self.features[i], preCalcFeatures[self.featureProcessIndexes[i]], headerData))
         return outp
     
+    # Parses through input settings and creates a list of what to process, while making sure it doesn't process the same thing if used by the
+    # same feature with marginally different settings.
+    def featuresToProcess(self, features: list):
+        outp = []
+        outpIndexes = []
+        for i in np.arange(len(features)):
+            curr = ""
+            tokens = features[i].split("_")
+            if tokens[0] in ["amplitude","duration","freqhd","frange","fslopehd", \
+                             "freqsd","freqsdd1","freqsdd2","freqsdelbow","freqsdslope"]:
+                # These are just calculated from input header data.
+                pass
+            elif tokens[0] in ["rms","centroid","flux","zcr"]:
+                curr = tokens[0]
+            elif tokens[0] in ["mfcc","poly","flatness","rolloff"]:
+                curr = tokens[0]+"_"+tokens[1]
+            elif tokens[0] in ["bandwidth","specmag","praat"]:
+                curr = tokens[0]+"_"+tokens[1]+"_"+tokens[2]
+            elif tokens[0] in ["formantfreq","formantcount","formantdiff","contrast"]:
+                curr = tokens[0]+"_"+tokens[1]+"_"+tokens[2]+"_"+tokens[3]
+            elif tokens[0] in ["thd","hbr","hcentroid","hfr"]:
+                curr = "harms_"+tokens[1]+"_"+tokens[2]+"_"+tokens[3]
+                if tokens[0] == "hfr":
+                    for prev in outp:
+                        ptokens = prev.split("_")
+                        if len(ptokens) >= 4 and ptokens[0] == "harms" and ptokens[2] == tokens[2] \
+                        and ptokens[3] == tokens[3] and ptokens[1] >= tokens[1]:
+                            curr = prev
+                            break
+            if len(curr) == 0:
+                outpIndexes.append(-1)
+            elif curr not in outp:
+                outp.append(curr)
+                outpIndexes.append(len(outp)-1)
+            else:
+                outpIndexes.append(outp.index(curr))
+        return outp, outpIndexes
+    
     # Performs the actual feature extraction. Designed such that instances where
     # the actual processing is the same will use the same output without having
     # to calculate it more than once.
     def preCalculateFeature(self, feature: str, y, y_stft):
         tokens = feature.split("_")
-        if tokens[0] == "mfcc":
+        if tokens[0] in ["formantfreq","formantcount","formantdiff"]:
+            # Kudos: https://www.mathworks.com/help/signal/ug/formant-estimation-with-lpc-coefficients.html
+            # and also: https://support.ircam.fr/docs/AudioSculpt/3.0/co/LPC_1.html
+            order = int(np.ceil(self.sr/(int(tokens[1])*0.25)))
+            #lpccs = [x for x in librosa.lpc(y, order=order) if not np.isinf(x) and not np.isnan(x)]
+            windowed = y * librosa.filters.get_window('hamming', len(y))
+            filtered = scipy.signal.lfilter([1], [1, 0.63], windowed)
+            lpccs = [x for x in librosa.lpc(filtered, order=order)]
+            for x in lpccs:
+                if np.isnan(x) or np.isinf(x):
+                    return [] # End result should be zero in every case if this happens
+            roots = [x for x in np.roots(lpccs) if np.imag(x) >= 0]
+            freqs = [x*(self.sr/(2*np.pi)) for x in np.arctan2(np.imag(roots),np.real(roots))]
+            stuff = [[freqs[i],roots[i]] for i in np.arange(len(freqs))]
+            stuff.sort()
+            #bandwidths = [-1/2*(self.sr/(2*np.pi))*np.log(np.abs(x[1])) for x in stuff]
+            bandwidths = []
+            for x in stuff:
+                if np.abs(x[1]) > 0:
+                    bandwidths.append(-0.5*(self.sr/(2*np.pi))*np.log(np.abs(x[1])))
+                else:
+                    bandwidths.append(float(tokens[3])) # discounts it in case of log 0
+            return [stuff[i][0] for i in np.arange(len(stuff)) if stuff[i][0] > float(tokens[2]) and bandwidths[i] < float(tokens[3])]
+        elif tokens[0] == "mfcc":
             #return librosa.feature.mfcc(y=y, sr=sr, n_mfcc=int(tokens[1]), n_fft=audioSTFTLength)
             return librosa.feature.mfcc(y=y, sr=self.sr, n_mfcc=int(tokens[1]))
         elif tokens[0] == "poly":
@@ -200,19 +262,23 @@ class FEThread():
             #                   frame_length=2*self.audioSTFTLength, hop_length=self.audioHopSize, win_length=self.audioSTFTLength)
             snd = parselmouth.Sound(y, sampling_frequency=self.sr)
             praat = snd.to_pitch(time_step=self.audioHopSize/self.sr, pitch_floor=int(tokens[1]), pitch_ceiling=int(tokens[2]))
-            outp = [x[0] for x in praat.to_array()[0]]
+            outp = [x[0] for x in praat.to_array()[0] if x[0] > 0.0]
+            if len(outp) == 0:
+                return [0.0]
             return outp
         elif tokens[0] == "harms":
             #yin_orig = librosa.yin(y, fmin=int(tokens[2]), fmax=int(tokens[3]), sr=self.sr, \
             #                   frame_length=2*self.audioSTFTLength, hop_length=self.audioHopSize, win_length=self.audioSTFTLength)
             snd = parselmouth.Sound(y, sampling_frequency=self.sr)
-            praat = snd.to_pitch(time_step=self.audioHopSize/self.sr, pitch_floor=int(tokens[2]), pitch_ceiling=int(tokens[3]))
+            time_step = self.audioHopSize/self.sr
+            praat = snd.to_pitch(time_step=time_step, pitch_floor=int(tokens[2]), pitch_ceiling=int(tokens[3]))
             praat = [x[0] for x in praat.to_array()[0]]
             nh = int(tokens[1])
             y_fft_arr = []
             j = 0
-            while (j+1)*int(self.sr*self.audioHopSize/self.sr) <= len(y):
-                y_fft_arr.append(fft.fft(y[j*int(self.sr*self.audioHopSize/self.sr):(j+1)*int(self.sr*self.audioHopSize/self.sr)], n=self.sr)[:int(self.sr/2)])
+            # Not sure what the window size is, so it assumes it's the same as the time step.
+            while (j+1)*int(self.sr*time_step) <= len(y):
+                y_fft_arr.append(fft.fft(y[j*int(self.sr*time_step):(j+1)*int(self.sr*time_step)], n=self.sr)[:int(self.sr/2)])
                 j += 1
             freqs_mags = []
             fft_mag_outp = []
@@ -282,6 +348,18 @@ class FEThread():
             return self.calculateUnit(self.calculateFreqSD2ndDerivative(headerData.slice_data), tokens[len(tokens)-1])
         elif tokens[0] in ["rms","bandwidth","centroid","contrast","flatness","flux","specmag","rolloff","praat","zcr"]:
             return self.calculateUnit(featureArray, tokens[len(tokens)-1])
+        elif tokens[0] == "formantfreq":
+            if len(featureArray) >= int(tokens[4]):
+                return featureArray[int(tokens[4])-1]
+            else:
+                return 0.0
+        elif tokens[0] == "formantcount":
+            return len(featureArray)
+        elif tokens[0] == "formantdiff":
+            num = int(tokens[4])-1
+            if num+1 < len(featureArray):
+                return featureArray[num+1] - featureArray[num]
+            return 0.0
         elif tokens[0] in ["mfcc","poly"]:
             if tokens[2] == "all":
                 return self.calculateUnit(featureArray, tokens[len(tokens)-1])
@@ -296,12 +374,20 @@ class FEThread():
             #return outp
         elif tokens[0] == "thd":
             # Kudos: https://www.analog.com/media/en/training-seminars/design-handbooks/Practical-Analog-Design-Techniques/Section8.pdf
+            # and also: https://www.youtube.com/watch?v=s_cVP5gu4SY for deriving THD out of FFT magnitudes
             if len(featureArray[0]) == 0 or len(featureArray[0][0]) < 2:
                 return 0.0
             thd = []
             for i in np.arange(len(featureArray[0])):
                 frame = featureArray[0][i]
-                thd.append(np.sqrt(np.sum([np.power(frame[x][1], 2) for x in np.arange(len(frame)-1)+1]))/frame[0][1])
+                if (frame[0][1] > 0.0):
+                    #thd.append(np.sqrt(np.sum([np.power(frame[x][1], 2) for x in np.arange(len(frame)-1)+1]))/frame[0][1])
+                    harmonic_power_ratios = []
+                    for j in np.arange(len(frame)-1)+1:
+                        dbc = frame[j][1] - frame[0][1]
+                        power_ratio = np.power(10, dbc/10)
+                        harmonic_power_ratios.append(power_ratio)
+                    thd.append(100*np.sqrt(np.sum(harmonic_power_ratios)))
             thd = [x for x in thd if str(x) != 'nan']
             return self.calculateUnit(thd, tokens[len(tokens)-1])
         elif tokens[0] == "hbr": # harmonic-mean divided by frame-median FFT magnitude
@@ -320,13 +406,17 @@ class FEThread():
             centroids = []
             for i in np.arange(len(featureArray[0])):
                 frame_t = np.transpose(featureArray[0][i])
-                harmonics_1000 = [1000*x/np.max(frame_t[1]) for x in frame_t[1]]
-                harmonics_1000 = [x for x in harmonics_1000 if str(x) != 'nan']
-                if len(harmonics_1000) == 0:
-                    harmonics_1000 = [1.0]
+                harmonics_100 = []
+                if np.max(frame_t[1]) == 0.0:
+                    harmonics_100 = [1.0]
+                else:
+                    harmonics_100 = [100*x/np.max(frame_t[1]) for x in frame_t[1]]
+                    #harmonics_100 = [x for x in harmonics_100 if str(x) != 'nan']
+                if len(harmonics_100) == 0:
+                    harmonics_100 = [1.0]
                 harmonics_histo = []
-                for j in np.arange(len(harmonics_1000)):
-                    for k in np.arange(int(harmonics_1000[j])):
+                for j in np.arange(len(harmonics_100)):
+                    for k in np.arange(int(harmonics_100[j])):
                         harmonics_histo.append(j+1)
                 if tokens[len(tokens)-2] == "mean":
                     centroids.append(np.mean(harmonics_histo))
@@ -335,14 +425,35 @@ class FEThread():
                 elif tokens[len(tokens)-2] == "std":
                     centroids.append(np.std(harmonics_histo))
                 elif tokens[len(tokens)-2] == "mode":
-                    centroids.append(np.array(harmonics_1000).argmax()+1)
+                    centroids.append(np.array(harmonics_100).argmax()+1)
                 else:
                     return feature
             return self.calculateUnit(centroids, tokens[len(tokens)-1])
+        elif tokens[0] == "hfr":
+            hn = int(tokens[1])-1
+            max_ratio = float(tokens[4])
+            ratios = []
+            for i in np.arange(len(featureArray[0])):
+                frame = featureArray[0][i]
+                # Harmonic frequency must be below half of sampling rate.
+                if 0.0 < frame[hn][0] < self.sr/2:
+                    if frame[hn][1] == 0.0:
+                        ratios.append(0.0)
+                    elif frame[0][1] > 0.0:
+                        ratio = frame[hn][1]/frame[0][1]
+                        if ratio < max_ratio:
+                            ratios.append(ratio)
+                        else:
+                            ratios.append(max_ratio)
+                    else: # Fundamental has a magnitude of zero
+                        ratios.append(max_ratio)
+            return self.calculateUnit(ratios, tokens[len(tokens)-1])
         return feature
      
     # Extracts the mean, median, standard deviation, maximum or minimum from pre-calculated data.
     def calculateUnit(self, featureArray, function):
+        if len(featureArray) == 0:
+            return 0.0
         if function == "mean":
             return np.mean(featureArray)
         elif function == "med":
@@ -355,41 +466,7 @@ class FEThread():
             return np.min(featureArray)
         elif function == "rng":
             return np.max(featureArray) - np.min(featureArray)
-        return 0;
-    
-    # Parses through input settings and creates a list of what to process
-    def featuresToProcess(self, features: list):
-        outp = []
-        outpIndexes = []
-        for i in np.arange(len(features)):
-            curr = ""
-            tokens = features[i].split("_")
-            if tokens[0] in ["amplitude","duration","freqhd","frange","fslopehd", \
-                             "freqsd","freqsdd1","freqsdd2","freqsdelbow","freqsdslope"]:
-                # These are just calculated from input header data.
-                pass
-            elif tokens[0] in ["rms","centroid","flux","zcr"]:
-                curr = tokens[0]
-            elif tokens[0] in ["mfcc","poly","flatness","rolloff"]:
-                curr = tokens[0]+"_"+tokens[1]
-            elif tokens[0] in ["bandwidth","specmag","praat"]:
-                curr = tokens[0]+"_"+tokens[1]+"_"+tokens[2]
-            elif tokens[0] in ["contrast"]:
-                curr = tokens[0]+"_"+tokens[1]+"_"+tokens[2]+"_"+tokens[3]
-            elif tokens[0] in ["thd","hbr"]:
-                curr = "harms_"+tokens[1]+"_"+tokens[2]+"_"+tokens[3]
-            elif tokens[0] in ["hcentroid"]:
-                curr = "harms_"+tokens[1]+"_"+tokens[2]+"_"+tokens[3]+"_"+tokens[4]
-                
-            if len(curr) == 0:
-                outpIndexes.append(-1)
-            elif curr not in outp:
-                outp.append(curr)
-                outpIndexes.append(len(outp)-1)
-            else:
-                outpIndexes.append(outp.index(curr))
-                
-        return outp, outpIndexes
+        return 0.0;
     
     # Returns shorthands for window functions.
     def getWindowName(self, winname):
@@ -404,16 +481,18 @@ class FEThread():
         return winname.lower()
     
     def calculateFreqSD1stDerivative(self, slice_data: list):
-        freqs = [x[1] for x in slice_data]
-        if len(freqs) <= 1:
+        if len(slice_data) <= 1:
             return [0.0]
-        return [freqs[i+1] - freqs[i] for i in np.arange(len(freqs)-1)]
+        ms = [1000*(x[0]-slice_data[0][0])/self.sr for x in slice_data]
+        freqs = [x[1] for x in slice_data]
+        return [(freqs[i+1] - freqs[i])/(ms[i+1] - ms[i]) for i in np.arange(len(freqs)-1)]
     
     def calculateFreqSD2ndDerivative(self, slice_data: list):
         deriv = self.calculateFreqSD1stDerivative(slice_data)
         if len(deriv) <= 1:
             return [0.0]
-        return [deriv[i+1] - deriv[i] for i in np.arange(len(deriv)-1)]
+        ms = [1000*(x[0]-slice_data[0][0])/self.sr for x in slice_data]
+        return [(deriv[i+1] - deriv[i])/(ms[i+1] - ms[i]) for i in np.arange(len(deriv)-1)]
 
 class HeaderData:
     def __init__(self, uid, datelong, amplitude, duration, freqhd_min, freqhd_max, slice_data, pe_cluster_id, pe_location, pe_label, pe_header_features):

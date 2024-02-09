@@ -395,13 +395,12 @@ public class FEProcess extends PamProcess {
 			if (prevDU == null || !params.miscClusterChecked || (params.audioNRChecked && nrData == null)) countUp = true;
 			else if (prevDU.getEndTimeInMilliseconds() + params.miscJoinDistance < dataUnit.getTimeMilliseconds()) countUp = true;
 			
-			
 			if (params.audioNRChecked && countUp) {
 				try {
-					nrData = rawDataBlock.getSamples(rawStart-params.audioNRStart, params.audioNRLength, channelMap);
+					nrData = rawDataBlock.getSamples(rawStart - convertMsToSamples(params.audioNRStart), convertMsToSamples(params.audioNRLength), channelMap);
 				} catch (RawDataUnavailableException e) {
 					System.out.println("Start sample in block: "+String.valueOf(rawDataBlock.getLastUnit().getStartSample()));
-					System.out.println("Start sample of NR clip: "+String.valueOf(rawStart-params.audioNRStart));
+					System.out.println("Start sample of NR clip: "+String.valueOf(rawStart-convertMsToSamples(params.audioNRStart)));
 					e.printStackTrace(); // TODO Remove?
 					return e.getDataCause();
 				}
@@ -412,11 +411,10 @@ public class FEProcess extends PamProcess {
 				}
 			}
 			
-			
 			double[][] rawData = null;
 			try {
 				if (params.audioAutoClipLength) rawData = rawDataBlock.getSamples(rawStart, (int) (rawEnd-rawStart), channelMap);
-				else rawData = rawDataBlock.getSamples(rawStart, (int) (rawStart + params.audioClipLength), channelMap);
+				else rawData = rawDataBlock.getSamples(rawStart, convertMsToSamples(params.audioClipLength), channelMap);
 			}
 			catch (RawDataUnavailableException e) {
 				System.out.println("Start sample in block: "+String.valueOf(rawDataBlock.getLastUnit().getStartSample()));
@@ -647,6 +645,12 @@ public class FEProcess extends PamProcess {
 				threadManager.setRDBCTSignal(true);
 			}
 		}
+	}
+	
+	public int convertMsToSamples(int ms) {
+		int samples = (int) (feControl.getParams().sr * ((double) ms/1000));
+		//System.out.println("Samples: "+String.valueOf(samples));
+		return samples;
 	}
 	
 	/**

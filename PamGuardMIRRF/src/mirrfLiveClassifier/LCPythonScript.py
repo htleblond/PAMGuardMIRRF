@@ -191,10 +191,10 @@ class LCModel():
                     outp = []
                     for entry in testList:
                         #testEntry = entry[7:][0]
-                        testEntry = entry[7]
+                        testEntry = entry[8]
                         ua = currModel.predict_proba([[testEntry[num] for num in self.featureIndices[0]]])[0]
                         predictionArr = [ua[self.sortedLabels.index(label)] for label in self.labels]
-                        subOutp = entry[:7]
+                        subOutp = entry[:8]
                         subOutp.append(predictionArr)
                         outp.append(subOutp)
                     #print("outp: "+str(outp))

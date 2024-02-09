@@ -22,6 +22,8 @@ import java.io.PrintWriter;
 import java.sql.SQLException;
 
 import javax.swing.border.TitledBorder;
+import javax.swing.event.CellEditorListener;
+import javax.swing.event.ChangeEvent;
 
 import PamView.dialog.PamGridBagContraints;
 import PamView.panel.PamPanel;
@@ -106,8 +108,8 @@ public class WMNTPanel {
 	protected int[] backupIndexes;
 	protected Object[][] backupValues;
 	
-	protected WMNTBinaryLoadingBarWindow loadingBarWindow;
-	protected LoadingBarThread loadingBarThread;
+	protected WMNTBinaryLoadingBarWindow binaryLoadingBarWindow;
+	protected BinaryLoadingBarThread binaryLoadingBarThread;
 	
 	public WMNTPanel(WMNTControl wmntControl) {
 		this.wmntControl = wmntControl;
@@ -211,11 +213,16 @@ public class WMNTPanel {
 		
 		JTextField f20 = new JTextField();
 		f20.setDocument(new CommaRemovingDocument(20));
-		ttable.getColumnModel().getColumn(6).setCellEditor(new DefaultCellEditor(f20));
-		ttable.getColumnModel().getColumn(7).setCellEditor(new DefaultCellEditor(f20));
+		ttable.getColumnModel().getColumn(6).setCellEditor(new BackupCellEditor(f20));
+		ttable.getColumnModel().getColumn(7).setCellEditor(new BackupCellEditor(f20));
 		JTextField f400 = new JTextField();
 		f400.setDocument(new CommaRemovingDocument(400));
-		ttable.getColumnModel().getColumn(8).setCellEditor(new DefaultCellEditor(f400));
+		ttable.getColumnModel().getColumn(8).setCellEditor(new BackupCellEditor(f400));
+		
+		ttable.getColumnModel().getColumn(6).getCellEditor().addCellEditorListener(new CellEditorLoggingListener());
+		ttable.getColumnModel().getColumn(7).getCellEditor().addCellEditorListener(new CellEditorLoggingListener());
+		ttable.getColumnModel().getColumn(8).getCellEditor().addCellEditorListener(new CellEditorLoggingListener());
+		
 
 		JScrollPane sp = new JScrollPane(ttable);
 		sp.setPreferredSize(new Dimension(300,300));
@@ -469,14 +476,22 @@ public class WMNTPanel {
 	 */
 	class ConnectListener implements ActionListener{
 		public void actionPerformed(ActionEvent e) {
+			ConnectThread connectThread = new ConnectThread();
+			connectThread.start();
+		}
+	}
+	
+	protected class ConnectThread extends Thread {
+		protected ConnectThread() {}
+		@Override
+		public void run() {
 			int res = JOptionPane.showConfirmDialog(wmntControl.getGuiFrame(),
 				    "This will turn on AutoCommit.\nProceed?",
 				    "Connect to database",
 				    JOptionPane.YES_NO_OPTION);
 			if (res == JOptionPane.YES_OPTION) {
 				res = JOptionPane.showConfirmDialog(wmntControl.getGuiFrame(),
-					    "Read data from database into table?\n(Data currently in the table will be overwritten.)\n"
-					    + "This may freeze PamGuard for a few seconds.",
+					    "Read data from database into table?\n(Data currently in the table will be overwritten.)\n",
 					    "Connect to database",
 					    JOptionPane.YES_NO_CANCEL_OPTION);
 				if (res != JOptionPane.CANCEL_OPTION) {
@@ -522,11 +537,11 @@ public class WMNTPanel {
 	/**
 	 * Thread used for running the loading bar window.
 	 */
-	protected class LoadingBarThread extends Thread {
-		protected LoadingBarThread() {}
+	protected class BinaryLoadingBarThread extends Thread {
+		protected BinaryLoadingBarThread() {}
 		@Override
 		public void run() {
-			loadingBarWindow.setVisible(true);
+			binaryLoadingBarWindow.setVisible(true);
 		}
 	}
 	
@@ -583,9 +598,9 @@ public class WMNTPanel {
 				dirQueue.add(defFolder);
 				
 				//loadingBarWindow = new WMNTBinaryLoadingBarWindow(wmntControl.getGuiFrame(), fileList.size());
-				loadingBarWindow = new WMNTBinaryLoadingBarWindow(wmntControl.getGuiFrame());
-				loadingBarThread = new LoadingBarThread();
-				loadingBarThread.start();
+				binaryLoadingBarWindow = new WMNTBinaryLoadingBarWindow(wmntControl.getGuiFrame());
+				binaryLoadingBarThread = new BinaryLoadingBarThread();
+				binaryLoadingBarThread.start();
 				
 				while (dirQueue.size() > 0) {
 					File currDir = dirQueue.remove(0);
@@ -596,13 +611,13 @@ public class WMNTPanel {
 							dirQueue.add(files[i]); // Disabling it isn't even an option in Viewer Mode for some reason.
 						} else if (files[i].getPath().endsWith(".pgdf")) {
 							fileList.add(files[i]);
-							loadingBarWindow.addOneToTotalFileCount();
+							binaryLoadingBarWindow.addOneToTotalFileCount();
 						}
 					}
 				}
 				
 				if (fileList.size() == 0) {
-					loadingBarWindow.setVisible(false);
+					binaryLoadingBarWindow.setVisible(false);
 				/*	if (checkBinaryStoreSubfolderOption())
 						wmntControl.SimpleErrorDialog("No Whistle and Moan Detector binary files were found in the specified "
 								+ "binary file folder.");
@@ -630,9 +645,9 @@ public class WMNTPanel {
 						System.out.println("Error while parsing "+fileList.get(i).getName()+".");
 						e2.printStackTrace();
 					}
-					loadingBarWindow.addOneToLoadingBar();
+					binaryLoadingBarWindow.addOneToLoadingBar();
 				}
-				loadingBarWindow.setVisible(false);
+				binaryLoadingBarWindow.setVisible(false);
 				fileField.setText(defaultloc);
 				
 			} catch (Exception e2) {
@@ -646,7 +661,7 @@ public class WMNTPanel {
 			
 			if(!(fileField.getText().equals("Load error - see console."))) {
 				int res = JOptionPane.showConfirmDialog(wmntControl.getGuiFrame(),
-					    "Connect to database as well? (Recommended)\n(This will turn on AutoCommit. PamGuard may also freeze for a few seconds.)",
+					    "Connect to database as well? (Recommended)\n(This will turn on AutoCommit.)",
 					    "Opening data",
 					    JOptionPane.YES_NO_OPTION);
 				if (res == JOptionPane.YES_OPTION) {
@@ -1091,18 +1106,16 @@ public class WMNTPanel {
 	 * Saves the selected values in 'backupIndexes' and their index numbers in 'backupValues'. 
 	 */
 	private void createBackup() {
-		if (ttable.getRowCount() > 0) {
-			if (ttable.getSelectedRowCount() > 0) {
-				// NOTE: getSelectedRows() does NOT actually cause any issues if the rows are re-arranged.
-				backupIndexes = ttable.getSelectedRows();
-				backupValues = new Object[backupIndexes.length][ttable.getModel().getColumnCount()];
-				for (int i = 0; i < backupIndexes.length; i++) {
-					for (int j = 0; j < ttable.getModel().getColumnCount(); j++) {
-						backupValues[i][j] = ttable.getValueAt(backupIndexes[i], j);
-					}
+		if (ttable.getRowCount() > 0 && ttable.getSelectedRowCount() > 0) {
+			// NOTE: getSelectedRows() does NOT actually cause any issues if the rows are re-arranged.
+			backupIndexes = ttable.getSelectedRows();
+			backupValues = new Object[backupIndexes.length][ttable.getModel().getColumnCount()];
+			for (int i = 0; i < backupIndexes.length; i++) {
+				for (int j = 0; j < ttable.getModel().getColumnCount(); j++) {
+					backupValues[i][j] = ttable.getValueAt(backupIndexes[i], j);
 				}
-				undoButton.setEnabled(true);
 			}
+			undoButton.setEnabled(true);
 		}
 	}
 	
@@ -1202,6 +1215,37 @@ public class WMNTPanel {
 			if (str == null) return;
 			super.insertString(param, str.replaceAll(",", ""), attributeSet);
 		}
+	}
+	
+	protected class BackupCellEditor extends DefaultCellEditor {
+
+		public BackupCellEditor(JTextField textField) {
+			super(textField);
+		}
+		
+		@Override
+		public boolean stopCellEditing() {
+			createBackup();
+			return super.stopCellEditing();
+		}
+		
+	}
+	
+	protected class CellEditorLoggingListener implements CellEditorListener {
+		
+		@Override
+		public void editingStopped(ChangeEvent e) {
+			// Backup done through BackupCellEditor
+			int[] selrows = ttable.getSelectedRows();
+			if (selrows.length == 0) return;
+			for(int i = 0; i < selrows.length; i++) // Only because it's possible for multiple cells to be selected while you're only editing one
+				fixChangeLog(selrows[i], getOriginalIndex(selrows[i]));
+			updateFromSelectedRows();
+		}
+
+		@Override
+		public void editingCanceled(ChangeEvent e) {}
+		
 	}
 	
 	/**
