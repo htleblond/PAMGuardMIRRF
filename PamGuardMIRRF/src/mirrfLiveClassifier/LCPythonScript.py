@@ -49,7 +49,7 @@ class LCModel():
             self.displayIgnored = txtParams[21] #boolean
             self.featureList = txtParams[22] #list
             
-            self.containsClusters = {} # for testing
+            self.containsClusters = {}
             
             self.modelList = []
             self.featureIndices = []
@@ -215,7 +215,7 @@ class LCModel():
         if testEntry[0] in self.containsClusters:
             dateList = self.containsClusters.get(testEntry[0])
             #print("ciits: "+testEntry[0]+", "+str(dateList))
-            if testEntry[2] in dateList:
+            if testEntry[3] in dateList:
                 return True
         return False
 

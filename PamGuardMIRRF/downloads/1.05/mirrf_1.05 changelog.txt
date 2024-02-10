@@ -17,7 +17,7 @@ Fisheries and Oceans Canada
 	- Slightly modified the harmonics-to-background ratio calculation, but not in a way to make pre-existing use of that feature obsolete.
 	- Minimum number of harmonics in harmonic features set to 2, as calculating these features only on the fundamental is pointless.
 	- Default pitch tracker ceiling raised to 20000 Hz (shouldn't affect anything otherwise).
-- Feature Extractor audio clip length and noise remove clip start and length are all now in milliseconds. Keep note of this if you have configs with an instance of the Feature Extractor saved into them!
+- Feature Extractor audio clip length and noise removal clip start and length are all now in milliseconds instead of samples. Keep note of this if you have configs with an instance of the Feature Extractor saved into them!
 - Fixed major bug in Feature Extractor where the end sample was input into the sample retrieval function instead of the clip duration when using a fixed clip length.
 - Minor work-around in the Feature Extractor for a bug that causes some call clusters to be null.
 - Fixed oversight in Training Set Builder where Feature Extractor settings were not read back in.
@@ -27,3 +27,6 @@ Fisheries and Oceans Canada
 - Fixed oversight when exporting full classifier results where feature names were not listed, and also added plugin version, added hydrophone location, and fixed time zone miscalculation.
 - Fixed oversight in WMNT where changes weren't logged and undo button didn't work when double-click editing an individual cell.
 - Added loading bar in WMNT for when database entries are being loaded in, as premature editing was causing some exceptions.
+
+1.05b (February 9th, 2024)
+- Fixed tiny but major bug where the Test Classifier was sending testing data to training set folds that contain the same data in cross-validation, resulting in unrealistically accurate predictions. This was caused by a change in the last update.
