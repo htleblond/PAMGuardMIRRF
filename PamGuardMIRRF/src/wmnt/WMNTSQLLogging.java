@@ -166,13 +166,19 @@ public class WMNTSQLLogging {
 		try {
 			stmt = getDBSystem().getConnection().getConnection().createStatement();
 			rs = stmt.executeQuery("SELECT * FROM "+wmntControl.getParams().sqlTableName+";");
-			rs.last();
+		/*	rs.last(); // Doesn't work with SQLite.
 			databaseLoadingBarWindow.startReadingCount(rs.getRow());
-			rs.first();
+			rs.first(); */
+			int rowCount = 0;
+			while (rs.next()) {
+				rowCount++;
+			}
+			databaseLoadingBarWindow.startReadingCount(rowCount);
+			rs = stmt.executeQuery("SELECT * FROM "+wmntControl.getParams().sqlTableName+";");
 			dbSet = new HashSet<String>();
 			dbList = new ArrayList<String>();
 			int rownum = -1;
-			do { // due to rs.first() above
+			while (rs.next()) {
 				String datetime = convertDate(String.valueOf(rs.getTimestamp("UTC")).substring(0, 19),
 						rs.getShort("UTCMilliseconds"), false);
 				String entry = String.valueOf(rs.getLong("UID")) + " - " + datetime;
@@ -219,7 +225,7 @@ public class WMNTSQLLogging {
 					}
 				}
 				databaseLoadingBarWindow.addOneToLoadingBar();
-			} while(rs.next());
+			}
 			rs.close();
 			stmt.close();
 			wmntControl.getSidePanel().getWMNTPanel().checkButton.setEnabled(true);

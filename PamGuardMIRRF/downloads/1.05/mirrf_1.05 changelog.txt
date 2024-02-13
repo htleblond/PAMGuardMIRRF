@@ -30,3 +30,7 @@ Fisheries and Oceans Canada
 
 1.05b (February 9th, 2024)
 - Fixed tiny but major bug where the Test Classifier was sending testing data to training set folds that contain the same data in cross-validation, resulting in unrealistically accurate predictions. This was caused by a change in the last update.
+
+1.05c (February 13th, 2024)
+- Fixed bug in the WMNT where the methods added for the new database loading bar window caused an exception when using SQLite.
+- Fixed bug in the classifiers where the export date/time in exported results was in local time instead of UTC.

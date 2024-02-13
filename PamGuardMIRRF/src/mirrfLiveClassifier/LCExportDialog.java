@@ -12,6 +12,7 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.TimeZone;
 
 import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
@@ -325,8 +326,8 @@ public class LCExportDialog extends PamDialog {
 		sb.append("NOTE - Some of the parameters listed here may be incorrect if the binary files were changed, "
 				+ "or if any of the modules were replaced.\n\n");
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss+SSS");
-		long currtime = lcControl.convertBetweenTimeZones(System.currentTimeMillis(), ZonedDateTime.now().getZone().getId(), "UTC");
-		sb.append("Export time (UTC): "+sdf.format(new Date(System.currentTimeMillis()))+"\n");
+		long currtime = lcControl.convertBetweenTimeZones(System.currentTimeMillis(), TimeZone.getDefault().getID(), "UTC");
+		sb.append("Export time (UTC): "+sdf.format(new Date(currtime))+"\n");
 		sb.append("Plugin version: "+MIRRFInfo.getVersion()+"\n");
 		sb.append("Database: "+dbName+"\n");
 		sb.append("Binary folder: "+bsName+"\n\n");
