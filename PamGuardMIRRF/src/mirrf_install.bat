@@ -11,5 +11,5 @@ pip install --upgrade --user datetime
 pip install --upgrade --user pytz
 pip install --upgrade --user logging
 pip install --upgrade --user pandas
-pip install --upgrade --user sklearn
+pip install --upgrade --user scikit-learn
 pip install --upgrade --user praat-parselmouth
