@@ -163,7 +163,7 @@ class FEThread():
             tokens = features[i].split("_")
             if tokens[0] in ["amplitude","duration","freqhd","frange","fslopehd", \
                              "freqsd","freqsdd1","freqsdd2","freqsdelbow","freqsdslope"]:
-                # These are just calculated from input header data.
+                # These are just calculated from input header or slice data.
                 pass
             elif tokens[0] in ["rms","centroid","flux","zcr"]:
                 curr = tokens[0]
@@ -360,11 +360,18 @@ class FEThread():
             if num+1 < len(featureArray):
                 return featureArray[num+1] - featureArray[num]
             return 0.0
-        elif tokens[0] in ["mfcc","poly"]:
+        #elif tokens[0] in ["mfcc","poly"]:
+        elif tokens[0] == "mfcc":
             if tokens[2] == "all":
                 return self.calculateUnit(featureArray, tokens[len(tokens)-1])
             else:
                 return self.calculateUnit(featureArray[int(tokens[2])-1], tokens[len(tokens)-1])
+        elif tokens[0] == "poly":
+            if tokens[2] == "all":
+                return self.calculateUnit(featureArray, tokens[len(tokens)-1])
+            else:
+                # Remember - for polynomial features, array is of length order+1 and the first index is 0.
+                return self.calculateUnit(featureArray[int(tokens[2])], tokens[len(tokens)-1])
         #elif tokens[0] == "harmmags":
             #if np.max(featureArray[0]) == 0:
             #    return 1.0
@@ -373,7 +380,8 @@ class FEThread():
             #    return 0.0
             #return outp
         elif tokens[0] == "thd":
-            # Kudos: https://www.analog.com/media/en/training-seminars/design-handbooks/Practical-Analog-Design-Techniques/Section8.pdf
+            # Kudos: https://www.analog.com/media/en/training-seminars/design-handbooks/Practical-Analog-Design-Techniques/Section8.pdf'
+            # and this: https://www.researchgate.net/profile/Sebastian-Westerhold/publication/362542224_Total_Harmonic_Distortion_THD_analysis_utilizing_the_FFT_capabilities_of_modern_digital_storage_oscilloscopes/links/62f047910b37cc34477ab55e/Total-Harmonic-Distortion-THD-analysis-utilizing-the-FFT-capabilities-of-modern-digital-storage-oscilloscopes.pdf
             # and also: https://www.youtube.com/watch?v=s_cVP5gu4SY for deriving THD out of FFT magnitudes
             if len(featureArray[0]) == 0 or len(featureArray[0][0]) < 2:
                 return 0.0
@@ -420,7 +428,7 @@ class FEThread():
                         harmonics_histo.append(j+1)
                 if tokens[len(tokens)-2] == "mean":
                     centroids.append(np.mean(harmonics_histo))
-                elif tokens[len(tokens)-2] == "median":
+                elif tokens[len(tokens)-2] == "med":
                     centroids.append(np.median(harmonics_histo))
                 elif tokens[len(tokens)-2] == "std":
                     centroids.append(np.std(harmonics_histo))

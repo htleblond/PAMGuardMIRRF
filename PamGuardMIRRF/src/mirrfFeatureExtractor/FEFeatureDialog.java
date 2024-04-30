@@ -21,7 +21,9 @@ import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
+import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
+import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingConstants;
@@ -45,6 +47,7 @@ public class FEFeatureDialog extends PamDialog {
 	
 	protected FEControl feControl;
 	protected FESettingsDialog settingsDialog;
+	protected JTable table;
 	protected DefaultTableModel dtmodel;
 	
 	protected JPanel p_left;
@@ -76,7 +79,9 @@ public class FEFeatureDialog extends PamDialog {
 	//protected JPanel p_yin;
 	protected JPanel p_zcr;
 	
-	protected JButton addButton;
+	protected JPanel p_bottom;
+	protected JButton insertButton;
+	protected JButton appendButton;
 	
 	protected JComboBox<String> freq_hd_box;
 	
@@ -150,12 +155,14 @@ public class FEFeatureDialog extends PamDialog {
 	
 	protected JComboBox<String> zcr_box;
 	
-	public FEFeatureDialog(Window parentFrame, FEControl feControl, FESettingsDialog settingsDialog, DefaultTableModel dtmodel) {
+	protected JScrollPane scrollPane;
+	
+	public FEFeatureDialog(Window parentFrame, FEControl feControl, FESettingsDialog settingsDialog, JTable table) {
 		super(parentFrame, "MIRRF Feature Extractor", true);
 		this.feControl = feControl;
 		this.settingsDialog = settingsDialog;
-		this.dtmodel = dtmodel;
-		
+		this.table = table;
+		this.dtmodel = (DefaultTableModel) table.getModel();
 		
 		this.getOkButton().setVisible(false);
 		this.getCancelButton().setText("Done");
@@ -189,9 +196,9 @@ public class FEFeatureDialog extends PamDialog {
 		flist.setSize(200, 360);
 		flist.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		flist.setLayoutOrientation(JList.VERTICAL);
-		JScrollPane sp = new JScrollPane(flist);
-		sp.setPreferredSize(flist.getSize());
-		p_left.add(sp, c);
+		scrollPane = new JScrollPane(flist);
+		scrollPane.setPreferredSize(flist.getSize());
+		p_left.add(scrollPane, c);
 		subPanel.add(p_left);
 		
 		p_right = new JPanel(new BorderLayout());
@@ -334,7 +341,7 @@ public class FEFeatureDialog extends PamDialog {
 		    }
 		});
 		poly_selector_box = new JComboBox<String>();
-		poly_order_field.setText("1");
+		poly_order_field.setText("0");
 		polyBoxUpdate();
 		p_poly = constructFeaturePanel(makeHTML("Get coefficients of fitting an nth-order polynomial to the columns of a spectrogram.\n\n"
 				+ "(From Librosa documentation: https://librosa.org/doc/main/generated/librosa.feature.poly_features.html)"),
@@ -498,7 +505,7 @@ public class FEFeatureDialog extends PamDialog {
 		bandwidth_power_field.setText("2");
 		bandwidth_normalize_check = new JCheckBox();
 		bandwidth_normalize_check.setText("Normalize");
-		p_bandwidth = constructFeaturePanel(makeHTML("Compute p’th-order spectral bandwidth.\n\n"
+		p_bandwidth = constructFeaturePanel(makeHTML("Compute pï¿½th-order spectral bandwidth.\n\n"
 				+ "(From Librosa documentation: https://librosa.org/doc/main/generated/librosa.feature.spectral_bandwidth.html)"),
 				new Object[][] {{"Output:", bandwidth_box},{"Power:",bandwidth_power_field},{bandwidth_normalize_check}},
 				false);
@@ -679,11 +686,17 @@ public class FEFeatureDialog extends PamDialog {
 		p_right.add(p_cards, BorderLayout.CENTER);
 		subPanel.add(p_right);
 		mainPanel.add(subPanel, b);
+		
 		b.gridy++;
-		b.anchor = GridBagConstraints.WEST;
-		addButton = new JButton("Add to vector");
-		addButton.addActionListener(new AddButtonListener());
-		mainPanel.add(addButton, b);
+		b.anchor = GridBagConstraints.SOUTH;
+		p_bottom = new JPanel(new GridLayout(1, 2, 5, 5));
+		insertButton = new JButton("Insert into vector above selected row");
+		insertButton.addActionListener(new AddButtonListener(true));
+		p_bottom.add(insertButton);
+		appendButton = new JButton("Append to vector");
+		appendButton.addActionListener(new AddButtonListener(false));
+		p_bottom.add(appendButton);
+		mainPanel.add(p_bottom, b);
 		setDialogComponent(mainPanel);
 	}
 	
@@ -775,6 +788,13 @@ public class FEFeatureDialog extends PamDialog {
 	}
 	
 	protected class AddButtonListener implements ActionListener {
+		
+		boolean inserting;
+		
+		protected AddButtonListener(boolean inserting) {
+			this.inserting = inserting;
+		}
+		
 		public void actionPerformed(ActionEvent e) {
 			String outp = "";
 			if (flist.getSelectedIndex() > -1) {
@@ -909,7 +929,19 @@ public class FEFeatureDialog extends PamDialog {
 					outp += outpAbbr((String) zcr_box.getSelectedItem());
 				}
 				if (outp.length() > 0) {
-					dtmodel.addRow(new Object[] {selection,outp.toLowerCase()});
+					if (inserting) {
+						int tableSelection = table.getSelectedRow();
+						if (tableSelection == -1) {
+							feControl.SimpleErrorDialog("No feature in the table has been selected.");
+							return;
+						}
+						dtmodel.insertRow(tableSelection, new Object[] {selection, outp.toLowerCase()});
+					} else {
+						dtmodel.addRow(new Object[] {selection, outp.toLowerCase()});
+						table.scrollRectToVisible(table.getCellRect(table.getRowCount()-1, 0, false));
+						//JScrollBar scrollBar = scrollPane.getVerticalScrollBar();
+						//scrollBar.setValue(scrollBar.getMaximum());
+					}
 				}
 			}
 		}
@@ -1071,13 +1103,13 @@ public class FEFeatureDialog extends PamDialog {
 	 */
 	protected void polyBoxUpdate() {
 		if (poly_order_field.getText().length() < 1) {
-			poly_order_field.setText("1");
-        } else if (Integer.valueOf(poly_order_field.getText()) < 1) {
-        	poly_order_field.setText("1");
+			poly_order_field.setText("0");
+        } else if (Integer.valueOf(poly_order_field.getText()) < 0) {
+        	poly_order_field.setText("0");
         }
 		poly_selector_box.removeAllItems();
 		poly_selector_box.addItem("All");
-        for (int i = 1; i <= Integer.valueOf(poly_order_field.getText()); i++) {
+        for (int i = 0; i <= Integer.valueOf(poly_order_field.getText()); i++) {
         	poly_selector_box.addItem(Integer.toString(i));
         }
 	}

@@ -1,5 +1,5 @@
 mirrf_1.05 CHANGELOG
-February 8th, 2024
+February 8th to April 30th, 2024
 Holly LeBlond
 Fisheries and Oceans Canada
 
@@ -34,3 +34,12 @@ Fisheries and Oceans Canada
 1.05c (February 13th, 2024)
 - Fixed bug in the WMNT where the methods added for the new database loading bar window caused an exception when using SQLite.
 - Fixed bug in the classifiers where the export date/time in exported results was in local time instead of UTC.
+
+1.05d (April 30th, 2024)
+- Exporting full results in Test Classifier now includes confusion matrices specific to subsets and accuracy labels when using leave-one-out cross-validation.
+- Added "insert above selected row" button to the feature vector dialog in Feature Extractor, and the table now automatically scrolls when adding a new feature.
+- Feature Extractor:
+	- Fixed bug in Python script where attempting to calculate the median of a harmonic centroid frame would throw an error.
+	- Fixed oversight where an order of 0 for polynomial features wasn't an option and a bug where the extracted coefficient is one less than the one selected.
+	- Fixed bug where passing header/slice data from an input .mirrfts to the output would sometimes pass the wrong feature due to improper indexing. (This fix may invalidate Feature Extractor instances within config files due to a data object change.)
+- Increased number of test entries that can be added to the Test Classifier's hash map queue from 100 to 10000. (This will likely be added to the settings in the future.)

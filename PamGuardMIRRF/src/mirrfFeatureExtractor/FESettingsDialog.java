@@ -1094,7 +1094,7 @@ public class FESettingsDialog extends PamDialog {
 		
 		public void actionPerformed(ActionEvent e) {
 			FEFeatureDialog featureDialog = new FEFeatureDialog(feControl.getPamView().getGuiFrame(), feControl,
-					settingsDialog, featureTableModel);
+					settingsDialog, featureTable);
 			featureDialog.setVisible(true);
 		}
 	}
@@ -1243,7 +1243,7 @@ public class FESettingsDialog extends PamDialog {
 						} catch (Exception e2) {
 							// do nothing
 						}
-					} else if (tokens[0].equals("mfcc") || tokens[0].equals("poly")) {
+					} else if (tokens[0].equals("mfcc")) {
 						try {
 							int order = Integer.valueOf(tokens[1]);
 							if (tokens[2].equals("all")) {
@@ -1252,6 +1252,21 @@ public class FESettingsDialog extends PamDialog {
 							}
 							int coefficient = Integer.valueOf(tokens[2]);
 							if (coefficient > 0 && coefficient <= order && calcs.contains(tokens[3])) {
+								validFeatures.add(inp.get(i));
+								continue;
+							}
+						} catch (Exception e2) {
+							// do nothing
+						}
+					} else if (tokens[0].equals("poly")) {
+						try {
+							int order = Integer.valueOf(tokens[1]);
+							if (tokens[2].equals("all")) {
+								validFeatures.add(inp.get(i));
+								continue;
+							}
+							int coefficient = Integer.valueOf(tokens[2]);
+							if (coefficient >= 0 && coefficient <= order && calcs.contains(tokens[3])) {
 								validFeatures.add(inp.get(i));
 								continue;
 							}
@@ -1330,7 +1345,7 @@ public class FESettingsDialog extends PamDialog {
 						int min = Integer.valueOf(tokens[2]);
 						int max = Integer.valueOf(tokens[3]);
 						if (tokens[0].equals("hcentroid")) {
-							ArrayList<String> fcalcs = new ArrayList<String>(Arrays.asList("mean","median","std","mode"));
+							ArrayList<String> fcalcs = new ArrayList<String>(Arrays.asList("mean","med","std","mode"));
 							if (nh >= 2 && min < max && fcalcs.contains(tokens[4]) && calcs.contains(tokens[5])) {
 								validFeatures.add(inp.get(i));
 								continue;
@@ -1810,7 +1825,7 @@ public class FESettingsDialog extends PamDialog {
 									String datetime = nextSplit[1];
 									if (start.length() == 0 || start.compareTo(datetime) > 0) start = datetime;
 									if (end.length() == 0 || end.compareTo(datetime) < 0) end = datetime;
-									newParams.inputDataEntries.add(new FEInputDataObject(nextSplit, false, null));
+									newParams.inputDataEntries.add(new FEInputDataObject(nextSplit, false, null, null));
 								} catch (Exception e) {
 									e.printStackTrace(); // TODO Remove if it becomes a problem.
 									continue;
@@ -1880,7 +1895,7 @@ public class FESettingsDialog extends PamDialog {
 									String datetime = nextSplit[3];
 									if (start.length() == 0 || start.compareTo(datetime) > 0) start = datetime;
 									if (end.length() == 0 || end.compareTo(datetime) < 0) end = datetime;
-									newParams.inputDataEntries.add(new FEInputDataObject(nextSplit, true, problematicFeatures));
+									newParams.inputDataEntries.add(new FEInputDataObject(nextSplit, true, foundFeatures, problematicFeatures));
 								} catch (Exception e) {
 									e.printStackTrace(); // TODO Remove if it becomes a problem.
 									continue;

@@ -154,7 +154,7 @@ public class TCSidePanelPanel extends PamBorderPanel {
 				startButton.setEnabled(true);
 				return;
 			}
-			getControl().getThreadManager().startPredictions(100);
+			getControl().getThreadManager().startPredictions(10000);
 			//startButton.setText("Start");
 			//startButton.setEnabled(true);
 		}

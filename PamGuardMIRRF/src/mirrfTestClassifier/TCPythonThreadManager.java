@@ -254,7 +254,7 @@ public class TCPythonThreadManager extends LCPythonThreadManager {
 		} catch (Exception e) {
 			e.printStackTrace();
 			if (sc != null) sc.close();
-			getControl().SimpleErrorDialog("Error scanning set for testing.", maxMapSize);
+			getControl().SimpleErrorDialog("Error scanning set for testing.", 300);
 			endProcess("Stopped (error)");
 			return;
 		}

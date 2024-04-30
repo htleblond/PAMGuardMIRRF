@@ -15,11 +15,11 @@ public abstract class MIRRFInfo {
 	}
 	
 	public static String getVersion() {
-		return "1.05c";
+		return "1.05d";
 	}
 	
 	public static String getPamVerDevelopedOn() {
-		return "2.02.03";
+		return "2.02.10";
 	}
 
 	public static String getPamVerTestedOn() {

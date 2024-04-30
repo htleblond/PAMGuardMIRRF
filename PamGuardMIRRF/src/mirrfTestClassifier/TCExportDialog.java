@@ -2,9 +2,14 @@ package mirrfTestClassifier;
 
 import java.awt.Window;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 
 import mirrfFeatureExtractor.FEParameters;
+import mirrfLiveClassifier.LCCallCluster;
+import mirrfLiveClassifier.LCDataBlock;
+import mirrfLiveClassifier.LCDataUnit;
 import mirrfLiveClassifier.LCExportDialog;
 
 /**
@@ -136,6 +141,125 @@ public class TCExportDialog extends LCExportDialog {
 		pw.write(sb.toString());
 		pw.flush();
 		return sb;
+	}
+	
+	@Override
+	protected StringBuilder produceMatrixInfo(StringBuilder sb) {
+		sb = super.produceMatrixInfo(sb);
+		sb = new StringBuilder();
+		TCParameters params = getControl().getParams();
+		if (params.validation != params.LEAVEONEOUTBOTHDIGITS && params.validation != params.LEAVEONEOUTFIRSTDIGIT) return sb;
+		HashMap<String, int[][]> matrixMap = new HashMap<String, int[][]>();
+		ArrayList<String> labelList = params.getLabelOrderAsList();
+		ArrayList<String> subsetList = new ArrayList<String>();
+		String[] accuracyKeys = new String[] {"LOW","AVERAGE","HIGH","VERY HIGH"};
+		for (int i = 0; i < accuracyKeys.length; i++)
+			matrixMap.put(accuracyKeys[i], new int[labelList.size()][labelList.size()]);
+		LCDataBlock db = (LCDataBlock) getControl().getProcess().getOutputDataBlock(0); // TODO
+		for (int i = 0; i < db.getUnitsCount(); i++) {
+			LCCallCluster cc = db.getDataUnit(i, db.REFERENCE_ABSOLUTE).getCluster();
+			String key;
+			if (params.validation == params.LEAVEONEOUTBOTHDIGITS)
+				key = cc.clusterID.substring(0, 2);
+			else key = cc.clusterID.substring(0, 1); //LEAVEONEOUTFIRSTDIGIT
+			if (!matrixMap.containsKey(key)) {
+				matrixMap.put(key, new int[labelList.size()][labelList.size()]);
+				subsetList.add(key);
+			}
+			int [][] currMatrix = matrixMap.get(key);
+		/*	for (int j = 0; j < labelList.size(); j++) System.out.print(labelList.get(j)+" ");
+			System.out.println(labelList.indexOf(cc.getActualSpeciesString()));
+			System.out.println(labelList.indexOf(cc.getPredictedSpeciesString())); */
+			int actualIndex = labelList.indexOf(cc.getActualSpeciesString());
+			int predictedIndex = labelList.indexOf(cc.getPredictedSpeciesString());
+			if (actualIndex == -1 || predictedIndex == -1) continue;
+			//TODO No idea why the case above is sometimes true - will definitely need to fix it later.
+			currMatrix[actualIndex][predictedIndex]++;
+			matrixMap.put(key, currMatrix);
+			if (cc.getLead() >= params.veryLow) {
+				int[][] lMatrix = matrixMap.get("LOW");
+				lMatrix[labelList.indexOf(cc.getActualSpeciesString())][labelList.indexOf(cc.getPredictedSpeciesString())]++;
+			}
+			if (cc.getLead() >= params.low) {
+				int[][] aMatrix = matrixMap.get("AVERAGE");
+				aMatrix[labelList.indexOf(cc.getActualSpeciesString())][labelList.indexOf(cc.getPredictedSpeciesString())]++;
+			}
+			if (cc.getLead() >= params.average) {
+				int[][] hMatrix = matrixMap.get("HIGH");
+				hMatrix[labelList.indexOf(cc.getActualSpeciesString())][labelList.indexOf(cc.getPredictedSpeciesString())]++;
+			}
+			if (cc.getLead() >= params.high) {
+				int[][] vhMatrix = matrixMap.get("VERY HIGH");
+				vhMatrix[labelList.indexOf(cc.getActualSpeciesString())][labelList.indexOf(cc.getPredictedSpeciesString())]++;
+			}
+		}
+		Collections.sort(subsetList);
+		for (int i = 0; i < subsetList.size(); i++) {
+			String key = subsetList.get(i);
+			if (params.validation == params.LEAVEONEOUTBOTHDIGITS)
+				sb.append("CONFUSION MATRIX FOR SUBSET "+key+"\n\n");
+			else sb.append("CONFUSION MATRIX FOR SUBSETS BEGINNING WITH '"+key+"'\n\n");
+			int[][] matrix = matrixMap.get(key);
+			sb = produceConfusionMatrixString(sb, params.labelOrder, matrix);
+			sb.append("Cluster count: "+String.valueOf(getMatrixSum(matrix)));
+			sb.append(" ("+String.format("%.1f", 100 * (float) getMatrixSum(matrix)/db.getUnitsCount())+"% of full set)\n\n");
+		}
+		for (int i = 0; i < accuracyKeys.length; i++) {
+			String key = accuracyKeys[i];
+			sb.append("CONFUSION MATRIX FOR CLUSTERS WITH AN ACCURACY OF '"+key+"' OR ABOVE\n\n");
+			int[][] matrix = matrixMap.get(key);
+			sb = produceConfusionMatrixString(sb, params.labelOrder, matrix);
+			sb.append("Cluster count: "+String.valueOf(getMatrixSum(matrix))+"\n");
+			sb.append("Percentage of full set ignored: ");
+			sb.append(String.format("%.1f", 100 * (float) (db.getUnitsCount()-getMatrixSum(matrix))/db.getUnitsCount())+"%");
+			sb.append("\n\n");
+		}
+		pw.write(sb.toString());
+		pw.flush();
+		return sb;
+	}
+	
+	protected StringBuilder produceConfusionMatrixString(StringBuilder sb, String[] labels, int[][] matrix) {
+		if (labels.length == 0 || labels.length != matrix.length || matrix.length != matrix[0].length) {
+			sb.append("COULD NOT CONSTRUCT SUBSET CONFUSION MATRICES - INPUT ARRAYS WERE INCONGRUOUS.\n\n");
+			return sb;
+		}
+		sb.append("\t");
+		for (int i = 0; i < labels.length; i++) sb.append(labels[i]+"\t");
+		sb.append("Recall\n");
+		int correctSum = 0;
+		int fullSum = 0;
+		int[] precisionSums = new int[matrix.length];
+		for (int i = 0; i < labels.length; i++) {
+			sb.append(labels[i]+"\t");
+			correctSum += matrix[i][i];
+			int recallSum = 0;
+			for (int j = 0; j < matrix[i].length; j++) {
+				sb.append(String.valueOf(matrix[i][j])+"\t");
+				fullSum += matrix[i][j];
+				recallSum += matrix[i][j];
+				precisionSums[j] += matrix[i][j];
+			}
+			if (recallSum > 0) sb.append(String.format("%.1f", 100 * (float) matrix[i][i]/recallSum)+"%\n");
+			else sb.append("-%\n");
+		}
+		sb.append("Prcsn.\t");
+		for (int i = 0; i < precisionSums.length; i++) {
+			if (precisionSums[i] > 0) sb.append(String.format("%.1f", 100 * (float) matrix[i][i]/precisionSums[i])+"%\t");
+			else sb.append("-%\t");
+		}
+		if (fullSum > 0) sb.append(String.format("%.1f", 100 * (float) correctSum/fullSum)+"%");
+		else sb.append("-%");
+		sb.append("\n");
+		return sb;
+	}
+	
+	protected int getMatrixSum(int[][] matrix) {
+		int sum = 0;
+		for (int i = 0; i < matrix.length; i++) {
+			for (int j = 0; j < matrix[i].length; j++) sum += matrix[i][j];
+		}
+		return sum;
 	}
 	
 	protected TCControl getControl() {

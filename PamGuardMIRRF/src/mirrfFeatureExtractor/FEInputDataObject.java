@@ -20,7 +20,7 @@ public class FEInputDataObject implements Serializable {
 	public double[][] slicedata; // .wmnt only
 	public HashMap<String, Double> problematicFeatures; // .mirrfts only
 	
-	public FEInputDataObject(String[] data, boolean isMIRRFTS, ArrayList<String> foundFeatureNames)
+	public FEInputDataObject(String[] data, boolean isMIRRFTS, ArrayList<String> foundFeatures, ArrayList<String> foundProblematicFeatures)
 			throws NullPointerException, NumberFormatException, AssertionError {
 		this.isMIRRFTS = isMIRRFTS;
 		if (isMIRRFTS) {
@@ -38,8 +38,12 @@ public class FEInputDataObject implements Serializable {
 			this.hf = Double.valueOf(data[6]).intValue();
 			this.label = data[7];
 			this.problematicFeatures = new HashMap<String, Double>();
-			for (int i = 0; i < foundFeatureNames.size(); i++)
-				this.problematicFeatures.put(foundFeatureNames.get(i), Double.valueOf(data[i+8]));
+			for (int i = 0; i < foundProblematicFeatures.size(); i++) {
+				String pfn = foundProblematicFeatures.get(i);
+				if (foundFeatures.contains(pfn))
+					this.problematicFeatures.put(pfn, Double.valueOf(data[foundFeatures.indexOf(pfn)+8])); //TODO Find better way to index this.
+				else this.problematicFeatures.put(pfn, -1.0);
+			}
 		} else { // is .wmnt
 			this.uid = Long.valueOf(data[0]);
 			assert FEControl.convertDateStringToLong(data[1]) > -1;
