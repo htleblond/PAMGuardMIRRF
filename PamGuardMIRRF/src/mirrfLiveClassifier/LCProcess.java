@@ -35,7 +35,7 @@ public class LCProcess extends PamProcess {
 				this.setParentDataBlock(lcControl.getPamController().getDataBlocks().get(i));
 			}
 		} */
-		this.setParentDataBlock(lcControl.getParams().inputFEDataBlock);
+		this.setParentDataBlock(lcControl.getParams().getInputFEDataBlock(lcControl));
 		resultsDataBlock = new LCDataBlock(lcControl, streamName, this, 0);
 		this.addOutputDataBlock(resultsDataBlock);
 		resultsDataBlock.setOverlayDraw(new LCOverlayGraphics(lcControl, resultsDataBlock));

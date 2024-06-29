@@ -12,12 +12,15 @@ import javax.swing.JPopupMenu;
 
 import PamView.GeneralProjector.ParameterType;
 import PamView.paneloverlay.overlaymark.MarkDataSelector;
+import PamView.paneloverlay.overlaymark.MarkRelationships;
 import PamView.paneloverlay.overlaymark.OverlayMark;
 import PamView.paneloverlay.overlaymark.OverlayMarkObserver;
 import PamView.paneloverlay.overlaymark.OverlayMarkObservers;
+import PamView.paneloverlay.overlaymark.OverlayMarkProviders;
 import PamView.paneloverlay.overlaymark.OverlayMarker;
 import annotationMark.MarkDataUnit;
 import detectiongrouplocaliser.DetectionGroupSummary;
+import userDisplay.UserDisplayControl;
 
 /**
  * The WMNT's drag selection tool. Dragging the box over contours in the spectrogram
@@ -38,6 +41,12 @@ public class WMNTMarkControl extends SpectrogramAnnotationModule {
 		ArrayList<OverlayMarkObserver> observerlist = OverlayMarkObservers.singleInstance().getMarkObservers();
 		OverlayMarkObservers.singleInstance().removeObserver(observerlist.get(observerlist.lastIndexOf(displayObserver)));
 		OverlayMarkObservers.singleInstance().addObserver(newObserver = new NewObserver());
+		// Wanted to make it so the mark observer is automatically enabled, but was only able to make it so the box is checked when you open the options dialog.
+		// It looks like it can only be enabled via each SpectrogramDisplay's setParams() function, which appear to be very hard to access from here.
+		// So I'm keeping the box unchecked for now.
+	/*	ArrayList<OverlayMarker> markerList = OverlayMarkProviders.singleInstance().getMarkProviders();
+		for (int i = 0; i < markerList.size(); i++)
+			MarkRelationships.getInstance().setRelationship(markerList.get(i), newObserver, true); */
 	}
 
 	public class NewObserver implements OverlayMarkObserver {

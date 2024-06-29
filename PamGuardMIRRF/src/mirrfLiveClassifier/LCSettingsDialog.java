@@ -72,6 +72,7 @@ public class LCSettingsDialog extends PamDialog {
 	protected JRadioButton autoMaxRB;
 	protected JRadioButton setMaxRB;
 	protected JTextField setMaxField;
+	protected JRadioButton duplicateRB;
 	protected JCheckBox clusterSizeCheck;
 	protected JTextField clusterSizeField;
 	protected JComboBox<String> tzBox;
@@ -237,14 +238,22 @@ public class LCSettingsDialog extends PamDialog {
 		setMaxRB.setText("Manually set maximum per class: ");
 		setMaxRB.addActionListener(new samplingRBListener());
 		samplingPanel.add(setMaxRB, c);
-		samplingRBG = new ButtonGroup();
-		samplingRBG.add(fullSetRB);
-		samplingRBG.add(autoMaxRB);
-		samplingRBG.add(setMaxRB);
 		c.gridx++;
 		setMaxField = new JTextField(7);
 		setMaxField.setDocument(JIntFilter());
 		samplingPanel.add(setMaxField, c);
+		c.gridy++;
+		c.gridx = 0;
+		c.gridwidth = 2;
+		duplicateRB = new JRadioButton();
+		duplicateRB.setText("Duplicate entries in smaller classes to match largest class");
+		duplicateRB.addActionListener(new samplingRBListener());
+		samplingPanel.add(duplicateRB, c);
+		samplingRBG = new ButtonGroup();
+		samplingRBG.add(fullSetRB);
+		samplingRBG.add(autoMaxRB);
+		samplingRBG.add(setMaxRB);
+		samplingRBG.add(duplicateRB);
 		c.gridy++;
 		c.gridx = 0;
 		c.gridwidth = 2;
@@ -744,7 +753,7 @@ public class LCSettingsDialog extends PamDialog {
 				+ "Feature Extractor's settings.";
 		if (inp.size() == vectorDataBlock.getFeatureList().length) {
 			for (int i = 0; i < inp.size(); i++) {
-				System.out.println(inp.get(i)+" -> "+vectorDataBlock.getFeatureList()[i][1]);
+				//System.out.println(inp.get(i)+" -> "+vectorDataBlock.getFeatureList()[i][1]);
 				if (!inp.get(i).equals(vectorDataBlock.getFeatureList()[i][1])) {
 					lcControl.SimpleErrorDialog(failureMessage, 350);
 					return false;
@@ -958,8 +967,9 @@ public class LCSettingsDialog extends PamDialog {
 	 */
 	public void actuallyGetParams() {
 		LCParameters params = lcControl.getParams();
-		if (params.inputFEDataBlock != null)
-			inputSourcePanel.setSource(params.inputFEDataBlock.getDataName());
+		FEDataBlock fedb = params.getInputFEDataBlock(lcControl);
+		if (fedb != null)
+			inputSourcePanel.setSource(fedb.getDataName());
 		tempField.setText(params.tempFolder);
 		kBestCheck.setSelected(params.selectKBest);
 		kBestField.setEnabled(params.selectKBest);
@@ -967,6 +977,7 @@ public class LCSettingsDialog extends PamDialog {
 		fullSetRB.setSelected(params.samplingLimits.equals("none"));
 		autoMaxRB.setSelected(params.samplingLimits.equals("automax"));
 		setMaxRB.setSelected(params.samplingLimits.equals("setmax"));
+		duplicateRB.setSelected(params.samplingLimits.equals("duplicate"));
 		setMaxField.setEnabled(params.samplingLimits.equals("setmax"));
 		setMaxField.setText(String.valueOf(params.maxSamples));
 		clusterSizeCheck.setSelected(params.limitClusterSize);
@@ -1253,7 +1264,7 @@ public class LCSettingsDialog extends PamDialog {
 	public LCParameters generateParameters() {
 		LCParameters params = lcControl.getParams();
 		if (inputSourcePanel.getSource() != null)
-			params.inputFEDataBlock = (FEDataBlock) inputSourcePanel.getSource();
+			params.inputFEDataBlockName = inputSourcePanel.getSource().getDataName();
 		params.selectKBest = kBestCheck.isSelected();
 		if (params.selectKBest) {
 			params.kBest = Integer.valueOf(kBestField.getText());
@@ -1265,6 +1276,8 @@ public class LCSettingsDialog extends PamDialog {
 		} else if (setMaxRB.isSelected()) {
 			params.samplingLimits = "setmax";
 			params.maxSamples = Integer.valueOf(setMaxField.getText());
+		} else if (duplicateRB.isSelected()) {
+			params.samplingLimits = "duplicate";
 		}
 		params.limitClusterSize = clusterSizeCheck.isSelected();
 		if (clusterSizeCheck.isSelected()) {
@@ -1334,9 +1347,9 @@ public class LCSettingsDialog extends PamDialog {
 		params.printOutput = printOutputCheck.isSelected();
 		if (lcControl.isViewer()) {
 			if (updateSourcePanel != null && updateSourcePanel.getSource() != null)
-				params.wmntUpdateDataBlock = (WMNTDataBlock) updateSourcePanel.getSource();
-			else params.wmntUpdateDataBlock = null;
-			if (lcControl.getParams().wmntUpdateDataBlock != null) {
+				params.wmntUpdateDataBlockName = updateSourcePanel.getSource().getDataName();
+			else params.wmntUpdateDataBlockName = null;
+			if (lcControl.getParams().getWMNTUpdateDataBlock(lcControl) != null) {
 				WMNTDataBlock db = (WMNTDataBlock) updateSourcePanel.getSource();
 				lcControl.getUpdateProcess().setParentDataBlock(db);
 				db.updateLC(true);

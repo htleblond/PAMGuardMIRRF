@@ -5,11 +5,14 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import PamModel.parametermanager.PamParameterSet;
+import PamguardMVC.PamDataBlock;
 import mirrf.MIRRFParameters;
 import mirrfFeatureExtractor.FEDataBlock;
 import wmnt.WMNTDataBlock;
 
 import org.apache.commons.text.WordUtils;
+
+import PamController.PamControlledUnit;
 
 /**
  * The parameters object for the Live Classifier.
@@ -20,8 +23,10 @@ public class LCParameters extends MIRRFParameters {
 	
 	protected LCTrainingSetInfo loadedTrainingSetInfo;
 	
-	public FEDataBlock inputFEDataBlock;
-	public WMNTDataBlock wmntUpdateDataBlock;
+	//public FEDataBlock inputFEDataBlock;
+	//public WMNTDataBlock wmntUpdateDataBlock;
+	public String inputFEDataBlockName;
+	public String wmntUpdateDataBlockName;
 	
 	public int kNum;
 	public boolean selectKBest;
@@ -66,13 +71,10 @@ public class LCParameters extends MIRRFParameters {
 		
 		this.loadedTrainingSetInfo = new LCTrainingSetInfo("");
 		
-		this.inputFEDataBlock = null;
-		this.wmntUpdateDataBlock = null;
-		
 		this.kNum = 10; // Must be int > 1, only used if validation == "kfold"
 		this.selectKBest = false;
 		this.kBest = 10; // Must be int > 1, only used if selectKBest == true
-		this.samplingLimits = "none"; // Can also be "automax" or "setmax"
+		this.samplingLimits = "none"; // Can also be "automax", "setmax" or "duplicate"
 		this.maxSamples = 10000; // Must be int > 0, only used if samplingLimits == "setmax"
 		this.limitClusterSize = false;
 		this.maxClusterSize = 2;
@@ -258,6 +260,23 @@ public class LCParameters extends MIRRFParameters {
 	 */
 	public ArrayList<String> getFeatureList() {
 		return loadedTrainingSetInfo.featureList;
+	}
+	
+	public FEDataBlock getInputFEDataBlock(PamControlledUnit controlledUnit) {
+		return (FEDataBlock) findDataBlock(controlledUnit, this.inputFEDataBlockName);
+	}
+	
+	public WMNTDataBlock getWMNTUpdateDataBlock(PamControlledUnit controlledUnit) {
+		return (WMNTDataBlock) findDataBlock(controlledUnit, this.wmntUpdateDataBlockName);
+	}
+	
+	private PamDataBlock findDataBlock(PamControlledUnit controlledUnit, String name) {
+		// I know there's gotta be a better way of doing this, but getDataBlock(class, name) keeps throwing exceptions.
+		if (name == null || name.length() == 0) return null;
+		ArrayList<PamDataBlock> dbs = controlledUnit.getPamController().getDataBlocks();
+		for (int i = 0; i < dbs.size(); i++)
+			if (dbs.get(i).getDataName().equals(name)) return dbs.get(i);
+		return null;
 	}
 	
 	/**

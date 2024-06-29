@@ -89,8 +89,10 @@ public class TCExportDialog extends LCExportDialog {
 			sb.append("Sampling limit: None\n");
 		} else if (params.samplingLimits.equals("automax")) {
 			sb.append("Sampling limit: Automatically set to size of least-populated class\n");
-		} else {
+		} else if (params.samplingLimits.equals("setmax")) {
 			sb.append("Sampling limit: Manually-set maximum (n = "+String.valueOf(params.maxSamples)+")\n");
+		} else if (params.samplingLimits.equals("duplicate")) {
+			sb.append("Sampling limit: Entries in smaller classes duplicated to match largest class\n");
 		}
 		sb.append("Time zone: "+params.timeZone+"\n");
 		sb.append("Class labels: "+String.valueOf(params.labelOrder.length)+"\n");
@@ -148,7 +150,7 @@ public class TCExportDialog extends LCExportDialog {
 		sb = super.produceMatrixInfo(sb);
 		sb = new StringBuilder();
 		TCParameters params = getControl().getParams();
-		if (params.validation != params.LEAVEONEOUTBOTHDIGITS && params.validation != params.LEAVEONEOUTFIRSTDIGIT) return sb;
+		//if (params.validation != params.LEAVEONEOUTBOTHDIGITS && params.validation != params.LEAVEONEOUTFIRSTDIGIT) return sb;
 		HashMap<String, int[][]> matrixMap = new HashMap<String, int[][]>();
 		ArrayList<String> labelList = params.getLabelOrderAsList();
 		ArrayList<String> subsetList = new ArrayList<String>();
@@ -159,9 +161,9 @@ public class TCExportDialog extends LCExportDialog {
 		for (int i = 0; i < db.getUnitsCount(); i++) {
 			LCCallCluster cc = db.getDataUnit(i, db.REFERENCE_ABSOLUTE).getCluster();
 			String key;
-			if (params.validation == params.LEAVEONEOUTBOTHDIGITS)
-				key = cc.clusterID.substring(0, 2);
-			else key = cc.clusterID.substring(0, 1); //LEAVEONEOUTFIRSTDIGIT
+			if (params.validation == params.LEAVEONEOUTFIRSTDIGIT)
+				key = cc.clusterID.substring(0, 1);
+			else key = cc.clusterID.substring(0, 2); //LEAVEONEOUTFIRSTDIGIT
 			if (!matrixMap.containsKey(key)) {
 				matrixMap.put(key, new int[labelList.size()][labelList.size()]);
 				subsetList.add(key);
@@ -196,9 +198,9 @@ public class TCExportDialog extends LCExportDialog {
 		Collections.sort(subsetList);
 		for (int i = 0; i < subsetList.size(); i++) {
 			String key = subsetList.get(i);
-			if (params.validation == params.LEAVEONEOUTBOTHDIGITS)
-				sb.append("CONFUSION MATRIX FOR SUBSET "+key+"\n\n");
-			else sb.append("CONFUSION MATRIX FOR SUBSETS BEGINNING WITH '"+key+"'\n\n");
+			if (params.validation == params.LEAVEONEOUTFIRSTDIGIT)
+				sb.append("CONFUSION MATRIX FOR SUBSETS BEGINNING WITH '"+key+"'\n\n");
+			else sb.append("CONFUSION MATRIX FOR SUBSET "+key+"\n\n");
 			int[][] matrix = matrixMap.get(key);
 			sb = produceConfusionMatrixString(sb, params.labelOrder, matrix);
 			sb.append("Cluster count: "+String.valueOf(getMatrixSum(matrix)));

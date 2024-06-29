@@ -9,6 +9,7 @@ import java.awt.event.ActionListener;
 import java.util.ArrayList;
 
 import javax.swing.DefaultComboBoxModel;
+import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -42,7 +43,10 @@ public class WMNTSettingsDialog extends PamDialog {
 	protected DefaultComboBoxModel<String> callTypeModel;
 	protected JComboBox<String> callTypeBox;
 	protected JTextField intervalField;
-	protected WMNTTimeZonePanel tzPanel;
+	protected JTextField scrollBufferField;
+	//protected WMNTTimeZonePanel tzPanel;
+	protected JCheckBox binaryTZCheck;
+	protected JCheckBox databaseTZCheck;
 	protected JTextField sqlTableField;
 	
 	protected WMNTControl wmntControl;
@@ -135,15 +139,13 @@ public class WMNTSettingsDialog extends PamDialog {
 		
 		b.gridy++;
 		JPanel intervalPanel = new JPanel(new GridBagLayout());
-		intervalPanel.setBorder(new TitledBorder("Selection within start interval"));
+		intervalPanel.setBorder(new TitledBorder("Button parameters"));
 		c = new PamGridBagContraints();
-		c.gridy = 0;
-		c.gridx = 0;
 		c.anchor = GridBagConstraints.WEST;
 		c.fill = GridBagConstraints.HORIZONTAL;
 		c.gridwidth = 2;
 		String intervalText = "Everything within the specified time interval after the start of each file is selected when "
-				+ "'Select within start interval' is pressed.\n";
+				+ "'Select within start interval' is pressed.";
 		String html = "<html><body style='width: %1spx'>%1s";
 		intervalPanel.add(new JLabel(String.format(html, 250, intervalText)), c);
 		c.gridy++;
@@ -155,13 +157,42 @@ public class WMNTSettingsDialog extends PamDialog {
 		intervalField.setDocument(JNumFilter());
 		intervalField.setText(String.valueOf(wmntControl.getParams().startBuffer));
 		intervalPanel.add(intervalField, c);
+		c.gridy++;
+		c.gridx = 0;
+		c.anchor = GridBagConstraints.WEST;
+		c.fill = GridBagConstraints.HORIZONTAL;
+		c.gridwidth = 2;
+		String scrollBufferText = "When 'Scroll to selection on spectrogram' is pressed, the spectrogram scrolls to the time "
+				+ "stamp of the selected contour minus the specified buffer length.";
+		intervalPanel.add(new JLabel(String.format(html, 250, scrollBufferText)), c);
+		c.gridy++;
+		c.gridwidth = 1;
+		intervalPanel.add(new JLabel("Buffer (in milliseconds): "), c);
+		c.gridx++;
+		c.fill = GridBagConstraints.NONE;
+		scrollBufferField = new JTextField(5);
+		scrollBufferField.setDocument(JNumFilter());
+		scrollBufferField.setText(String.valueOf(wmntControl.getParams().scrollBuffer));
+		intervalPanel.add(scrollBufferField, c);
 		mainPanel.add(intervalPanel, b);
 		
 		b.gridy++;
-		tzPanel = new WMNTTimeZonePanel(true, true, true, true);
+	/*	tzPanel = new WMNTTimeZonePanel(true, true, true, true);
 		tzPanel.setAudioTimeZone(wmntControl.getParams().audioTZ);
 		tzPanel.setBinaryTimeZone(wmntControl.getParams().binaryTZ);
-		tzPanel.setDatabaseTimeZone(wmntControl.getParams().databaseTZ);
+		tzPanel.setDatabaseTimeZone(wmntControl.getParams().databaseTZ); */
+		JPanel tzPanel = new JPanel(new GridBagLayout());
+		c = new PamGridBagContraints();
+		c.anchor = c.WEST;
+		c.fill = c.HORIZONTAL;
+		tzPanel.setBorder(new TitledBorder("Time zone conversion"));
+		tzPanel.add(new JLabel("Convert from system time zone to UTC:"), c);
+		c.gridy++;
+		tzPanel.add(binaryTZCheck = new JCheckBox("Binary file time stamps"), c);
+		binaryTZCheck.setSelected(wmntControl.getParams().binaryIsInLocalTime);
+		c.gridy++;
+		tzPanel.add(databaseTZCheck = new JCheckBox("Database UTC column"), c);
+		databaseTZCheck.setSelected(wmntControl.getParams().databaseUTCColumnIsInLocalTime);
 		mainPanel.add(tzPanel, b);
 		
 		b.gridy++;
@@ -298,6 +329,7 @@ public class WMNTSettingsDialog extends PamDialog {
 	
 	@Override
 	public boolean getParams() {
+		WMNTParameters newParams = new WMNTParameters();
 		if (sqlTableField.getText().length() == 0) {
 			wmntControl.SimpleErrorDialog("SQL table must have a name.");
 			return false;
@@ -312,12 +344,11 @@ public class WMNTSettingsDialog extends PamDialog {
 						JOptionPane.OK_CANCEL_OPTION);
 				if (result != JOptionPane.OK_OPTION) return false;
 			}
-			wmntControl.getParams().sqlTableName = sqlTableField.getText();
+			newParams.sqlTableName = sqlTableField.getText();
 		}
 		
-		if (!tzPanel.getAudioTimeZone().equals(wmntControl.getParams().audioTZ) ||
-			!tzPanel.getBinaryTimeZone().equals(wmntControl.getParams().binaryTZ) ||
-			!tzPanel.getDatabaseTimeZone().equals(wmntControl.getParams().databaseTZ)) {
+		if (binaryTZCheck.isSelected() != wmntControl.getParams().binaryIsInLocalTime ||
+			databaseTZCheck.isSelected() != wmntControl.getParams().databaseUTCColumnIsInLocalTime) {
 			if (!startup) {
 				int result = JOptionPane.showConfirmDialog(parentFrame,
 						"Time zones have been changed, therefore the binary data should be manually re-loaded."
@@ -326,36 +357,37 @@ public class WMNTSettingsDialog extends PamDialog {
 						JOptionPane.OK_CANCEL_OPTION);
 				if (result != JOptionPane.OK_OPTION) return false;
 			}
-			wmntControl.getParams().audioTZ = tzPanel.getAudioTimeZone();
-			wmntControl.getParams().binaryTZ = tzPanel.getBinaryTimeZone();
-			wmntControl.getParams().databaseTZ = tzPanel.getDatabaseTimeZone();
+			newParams.binaryIsInLocalTime = binaryTZCheck.isSelected();
+			newParams.databaseUTCColumnIsInLocalTime = databaseTZCheck.isSelected();
 		}
 		
-		wmntControl.getParams().inputProcessName = inputSourcePanel.getSourceName();
-		wmntControl.getParams().speciesList = new ArrayList<String>();
-		wmntControl.getParams().speciesList.add("");
+		newParams.inputProcessName = inputSourcePanel.getSourceName();
+		newParams.speciesList = new ArrayList<String>();
+		newParams.speciesList.add("");
 		wmntControl.getSidePanel().getWMNTPanel().speciesModel = new DefaultComboBoxModel<String>();
 		wmntControl.getSidePanel().getWMNTPanel().speciesModel.addElement("");
 		for (int i = 0; i < speciesModel.getSize(); i++) {
-			wmntControl.getParams().speciesList.add(speciesModel.getElementAt(i));
+			newParams.speciesList.add(speciesModel.getElementAt(i));
 			wmntControl.getSidePanel().getWMNTPanel().speciesModel.addElement(speciesModel.getElementAt(i));
 		}
 		wmntControl.getSidePanel().getWMNTPanel().speciesBox.setModel(wmntControl.getSidePanel().getWMNTPanel().speciesModel);
 		
-		wmntControl.getParams().callTypeList = new ArrayList<String>();
-		wmntControl.getParams().callTypeList.add("");
+		newParams.callTypeList = new ArrayList<String>();
+		newParams.callTypeList.add("");
 		wmntControl.getSidePanel().getWMNTPanel().calltypeModel = new DefaultComboBoxModel<String>();
 		wmntControl.getSidePanel().getWMNTPanel().calltypeModel.addElement("");
 		for (int i = 0; i < callTypeModel.getSize(); i++) {
-			wmntControl.getParams().callTypeList.add(callTypeModel.getElementAt(i));
+			newParams.callTypeList.add(callTypeModel.getElementAt(i));
 			wmntControl.getSidePanel().getWMNTPanel().calltypeModel.addElement(callTypeModel.getElementAt(i));
 		}
 		wmntControl.getSidePanel().getWMNTPanel().calltypeBox.setModel(wmntControl.getSidePanel().getWMNTPanel().calltypeModel);
 		
-		if (intervalField.getText().length() > 0) {
-			wmntControl.getParams().startBuffer = Integer.valueOf(intervalField.getText());
-		}
+		if (intervalField.getText().length() > 0)
+			newParams.startBuffer = Integer.valueOf(intervalField.getText());
+		if (scrollBufferField.getText().length() > 0)
+			newParams.scrollBuffer = Integer.valueOf(scrollBufferField.getText());
 		
+		wmntControl.setParams(newParams);
 		return true;
 	}
 
@@ -372,9 +404,12 @@ public class WMNTSettingsDialog extends PamDialog {
 		callTypeModel.removeAllElements();
 		for (int i = 1; i < newParams.callTypeList.size(); i++) callTypeModel.addElement(newParams.callTypeList.get(i));
 		intervalField.setText(String.valueOf(newParams.startBuffer));
-		tzPanel.setAudioTimeZone(newParams.audioTZ);
+		scrollBufferField.setText(String.valueOf(newParams.scrollBuffer));
+	/*	tzPanel.setAudioTimeZone(newParams.audioTZ);
 		tzPanel.setBinaryTimeZone(newParams.binaryTZ);
-		tzPanel.setDatabaseTimeZone(newParams.databaseTZ);
+		tzPanel.setDatabaseTimeZone(newParams.databaseTZ); */
+		binaryTZCheck.setSelected(newParams.binaryIsInLocalTime);
+		databaseTZCheck.setSelected(newParams.databaseUTCColumnIsInLocalTime);
 		sqlTableField.setText(newParams.sqlTableName);
 	}
 }

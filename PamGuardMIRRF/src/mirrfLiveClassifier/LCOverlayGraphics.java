@@ -44,15 +44,15 @@ public class LCOverlayGraphics extends PamDetectionOverlayGraphics {
 
 	@Override
 	public Rectangle drawDataUnit(Graphics g, PamDataUnit pamDataUnit, GeneralProjector generalProjector) {
-		if (lcControl.getParams().printJava)
-			System.out.println("REACHED drawDataUnit");
+		//if (lcControl.getParams().printJava)
+		//	System.out.println("REACHED drawDataUnit");
 		return drawOnSpectrogram(g, pamDataUnit, generalProjector);
 	}
 	
 	@Override
 	protected Rectangle drawOnSpectrogram(Graphics g, PamDataUnit pamDataUnit, GeneralProjector generalProjector) {
-		if (lcControl.getParams().printJava)
-			System.out.println("REACHED drawOnSpectrogram");
+		//if (lcControl.getParams().printJava)
+		//	System.out.println("REACHED drawOnSpectrogram");
 		LCDataUnit lcDataUnit = (LCDataUnit) pamDataUnit;
 //		setLineColor(Color.RED);
 		// use the super class to draw a rectangle. 
@@ -66,7 +66,8 @@ public class LCOverlayGraphics extends PamDetectionOverlayGraphics {
 	 */
 	protected FFTDataBlock retrieveFFTDataBlock() {
 		FFTDataBlock fftDB = null;
-		FEDataBlock vectorDB = (FEDataBlock) lcControl.getProcess().getParentDataBlock();
+		//FEDataBlock vectorDB = (FEDataBlock) lcControl.getProcess().getParentDataBlock();
+		FEDataBlock vectorDB = (FEDataBlock) lcControl.getParams().getInputFEDataBlock(lcControl);
 		WhistleMoanControl wmc = null;
 		boolean breakAll = false;
 		try {
@@ -101,8 +102,8 @@ public class LCOverlayGraphics extends PamDetectionOverlayGraphics {
 	}
 	
 	protected Rectangle drawShape(Graphics g, LCDataUnit dataUnit, GeneralProjector generalProjector) {
-		if (lcControl.getParams().printJava)
-			System.out.println("REACHED drawShape");
+		//if (lcControl.getParams().printJava)
+		//	System.out.println("REACHED drawShape");
 		try {
 			LCCallCluster cc = dataUnit.getCluster();
 			

@@ -76,7 +76,8 @@ public class WMNTPanel {
 	protected PamButton commentButton;
 	protected PamButton allButton;
 	protected PamButton selectAllButton;
-	protected PamButton clearSelectionButton;
+	//protected PamButton clearSelectionButton;
+	protected PamButton selectWithinViewButton;
 	protected PamButton selectStartButton;
 	protected PamButton searchButton;
 	protected PamButton connectButton;
@@ -110,6 +111,8 @@ public class WMNTPanel {
 	
 	protected WMNTBinaryLoadingBarWindow binaryLoadingBarWindow;
 	protected BinaryLoadingBarThread binaryLoadingBarThread;
+	
+	protected boolean warningForMultipleScrollersTriggeredThisSession = false;
 	
 	public WMNTPanel(WMNTControl wmntControl) {
 		this.wmntControl = wmntControl;
@@ -238,10 +241,10 @@ public class WMNTPanel {
 		SelectStartListener selectStartListener = new SelectStartListener();
 		selectStartButton.addActionListener(selectStartListener);
 		buttonPanel.add(selectStartButton);
-		searchButton = new PamButton("Select by search");
-		SearchListener searchListener = new SearchListener();
-		searchButton.addActionListener(searchListener);
-		buttonPanel.add(searchButton);
+		selectWithinViewButton = new PamButton("Select all in spectrogram view");
+		SelectWithinViewListener selectWithinViewListener = new SelectWithinViewListener();
+		selectWithinViewButton.addActionListener(selectWithinViewListener);
+		buttonPanel.add(selectWithinViewButton);
 		scrollButton = new PamButton("Scroll to selection on spectrogram");
 		ScrollListener scrollListener = new ScrollListener();
 		scrollButton.addActionListener(scrollListener);
@@ -250,10 +253,14 @@ public class WMNTPanel {
 		SelectAllListener selectAllListener = new SelectAllListener();
 		selectAllButton.addActionListener(selectAllListener);
 		buttonPanel.add(selectAllButton);
-		clearSelectionButton = new PamButton("Clear selection");
+	/*	clearSelectionButton = new PamButton("Clear selection");
 		ClearSelectionListener clearSelectionListener = new ClearSelectionListener();
 		clearSelectionButton.addActionListener(clearSelectionListener);
-		buttonPanel.add(clearSelectionButton);
+		buttonPanel.add(clearSelectionButton); */
+		searchButton = new PamButton("Select by search");
+		SearchListener searchListener = new SearchListener();
+		searchButton.addActionListener(searchListener);
+		buttonPanel.add(searchButton);
 		undoButton = new PamButton("Undo");
 		UndoListener undoListener = new UndoListener();
 		undoButton.addActionListener(undoListener);
@@ -344,9 +351,44 @@ public class WMNTPanel {
 	/**
 	 * The listener for the 'Clear all' button.
 	 */
-	class ClearSelectionListener implements ActionListener{
+/*	class ClearSelectionListener implements ActionListener{
 		public void actionPerformed(ActionEvent e) {
 			ttable.clearSelection();
+		}
+	} */
+	
+	class SelectWithinViewListener implements ActionListener{
+		public void actionPerformed(ActionEvent e) {
+			ViewerScrollerManager vsm = (ViewerScrollerManager) AbstractScrollManager.getScrollManager();
+			if (vsm.getPamScrollers().size() == 0) {
+				JOptionPane.showMessageDialog(wmntControl.getGuiFrame(),
+					    "No spectrogram display has been added.",
+					    wmntControl.getUnitName(),
+					    JOptionPane.WARNING_MESSAGE);
+				return;
+			}
+			if (vsm.getPamScrollers().size() > 1 && !warningForMultipleScrollersTriggeredThisSession) {
+				JOptionPane.showMessageDialog(wmntControl.getGuiFrame(),
+					    "Multiple scrollers found — only the first one found will be used. If the wrong values are selected, the "
+					    + "other displays with scrollers may need to be removed. (This warning should only appear once per session.)",
+					    wmntControl.getUnitName(),
+					    JOptionPane.WARNING_MESSAGE);
+				warningForMultipleScrollersTriggeredThisSession = true;
+			}
+			AbstractPamScroller scroller = vsm.getPamScrollers().get(0);
+			String startTime = MIRRFControlledUnit.convertDateLongToString(scroller.getMinimumMillis());
+			startTime = wmntControl.convertBetweenTimeZones(MIRRFControlledUnit.getLocalTimeZoneName(), "UTC", startTime, true);
+			String endTime = MIRRFControlledUnit.convertDateLongToString(scroller.getMaximumMillis());
+			endTime = wmntControl.convertBetweenTimeZones(MIRRFControlledUnit.getLocalTimeZoneName(), "UTC", endTime, true);
+			//System.out.println("startTime: "+startTime);
+			//System.out.println("endTime: "+endTime);
+			
+			ttable.clearSelection();
+			for (int i = 0; i < ttable.getRowCount(); i++) {
+				String val = ttable.getValueAt(i, 1).toString();
+				if (startTime.compareTo(val) <= 0 && endTime.compareTo(val) > 0)
+					ttable.addRowSelectionInterval(i, i);
+			}
 		}
 	}
 	
@@ -713,8 +755,8 @@ public class WMNTPanel {
 					String detectionDateString = currdateformat.format(detectionDate);
 					String fileDateString = currdateformat.format(fileDate);
 					
-					detectionDateString = wmntControl.convertBetweenTimeZones(wmntControl.getParams().binaryTZ, "UTC", detectionDateString, true);
-					fileDateString = wmntControl.convertBetweenTimeZones(wmntControl.getParams().binaryTZ, "UTC", fileDateString, true);
+					detectionDateString = wmntControl.convertBetweenTimeZones(MIRRFControlledUnit.getLocalTimeZoneName(), "UTC", detectionDateString, true);
+					fileDateString = wmntControl.convertBetweenTimeZones(MIRRFControlledUnit.getLocalTimeZoneName(), "UTC", fileDateString, true);
 					if (detectionDateString == null || fileDateString == null) continue;
 				/*	LocalDateTime ldt = LocalDateTime.parse(currdate, DateTimeFormatter.ofPattern(date_format));
 					LocalDateTime ldt2 = LocalDateTime.parse(datadate, DateTimeFormatter.ofPattern(date_format));
@@ -1068,7 +1110,7 @@ public class WMNTPanel {
 					SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss+SSS");
 					df.setTimeZone(TimeZone.getTimeZone("UTC"));
 					String fromTable = ttable.getValueAt(ttable.getSelectedRow(), 1).toString();
-					fromTable = wmntControl.convertBetweenTimeZones("UTC", wmntControl.getParams().audioTZ, fromTable, true);
+					//fromTable = wmntControl.convertBetweenTimeZones("UTC", MIRRFControlledUnit.getLocalTimeZoneName(), fromTable, true);
 					try {
 						Date date = df.parse(fromTable);
 						long outpTime = date.getTime();
@@ -1076,7 +1118,9 @@ public class WMNTPanel {
 						for (int i = 0; i < vsm.getPamScrollers().size(); i++) {
 							AbstractPamScroller scroller = vsm.getPamScrollers().get(i);
 							long duration = scroller.getMaximumMillis() - scroller.getMinimumMillis();
-							scroller.anotherScrollerMovedOuter(outpTime-1000, outpTime+duration-1000);
+							int buffer = wmntControl.getParams().scrollBuffer;
+							scroller.anotherScrollerMovedOuter(outpTime-buffer, outpTime+duration-buffer);
+							//System.out.println(MIRRFControlledUnit.convertDateLongToString(scroller.getMinimumMillis()));
 						}
 						vsm.loadData(true);
 					} catch (ParseException e1) {

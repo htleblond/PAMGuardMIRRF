@@ -14,6 +14,7 @@ import PamView.dialog.PamGridBagContraints;
 /**
  * Streamlined panel containing time zone options for audio, binary files, and the database, if desired.
  */
+@Deprecated
 public class WMNTTimeZonePanel extends JPanel {
 	
 	protected JComboBox<String> audioBox;

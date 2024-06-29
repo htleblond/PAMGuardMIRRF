@@ -18,22 +18,26 @@ public class WMNTParameters implements Serializable, Cloneable, ManagedParameter
 	public ArrayList<String> callTypeList;
 	
 	public int startBuffer;
+	public int scrollBuffer;
 	
-	public String audioTZ;
-	public String binaryTZ;
-	public String databaseTZ;
+	//public String audioTZ;
+	//public String binaryTZ;
+	//public String databaseTZ;
+	public boolean binaryIsInLocalTime;
+	public boolean databaseUTCColumnIsInLocalTime;
 	
 	public String sqlTableName;
 	
 	public WMNTParameters() {
 		inputProcessName = "";
 		
-		String[] speciesNames = new String[] {"", "2-second glitch", "False positive", "KW", "HW", "CSL", "PWSD", "KW/HW?", "KW/PWSD?", "Fish",
-				"Vessel", "Mooring", "Unk", "Unk-Anthro", "Unk-Odontocete", "Unk-Mysticete", "Unk-Cetacean", "Deployment", "Aliens"};
+		String[] speciesNames = new String[] {"", "2-second glitch", "False positive", "KW", "KWSR", "KWT", "KWNR", 
+				"HW", "CSL", "PWSD", "KW/HW?", "KW/PWSD?", "Fish",
+				"Vessel", "Mooring", "Unk", "Unk-Bio", "Unk-Anthro", "Unk-Odontocete", "Unk-Mysticete", "Unk-Cetacean", "Deployment", "Aliens"};
 		speciesList = new ArrayList<String>();
 		for (int i = 0; i < speciesNames.length; i++) speciesList.add(speciesNames[i]);
 		
-		String[] callTypeNames = {"","n/a","N01i","N01ii","N01iii","N01iv","N01v","N02","N03",
+		String[] callTypeNames = {"","n/a","Whistle","Moan","N01i","N01ii","N01iii","N01iv","N01v","N02","N03",
 				"N04","N05i","N05ii","N07i","N07ii","N07iii","N07iv","N08i","N08ii","N08iii","N09i","N09ii",
 				"N09iii","N10","N11","N12","N13","N16i","N16ii","N16iii","N16iv","N17","N18","N20","N21",
 				"N27","N47","Unnamed Aclan","Unnamed AAsubclan","Unnamed ABsubclan","N23i","N23ii","N24i","N24ii","N25","N26",
@@ -45,10 +49,13 @@ public class WMNTParameters implements Serializable, Cloneable, ManagedParameter
 		for (int i = 0; i < callTypeNames.length; i++) callTypeList.add(callTypeNames[i]);
 		
 		startBuffer = 2000;
+		scrollBuffer = 1000;
 		
-		audioTZ = "UTC";
-		binaryTZ = "UTC";
-		databaseTZ = "UTC";
+		//audioTZ = "UTC";
+		//binaryTZ = "UTC";
+		//databaseTZ = "UTC";
+		binaryIsInLocalTime = true;
+		databaseUTCColumnIsInLocalTime = false;
 		
 		sqlTableName = "whistle_and_moan_detector";
 	}

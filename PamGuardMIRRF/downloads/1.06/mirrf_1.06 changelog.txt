@@ -1,0 +1,19 @@
+mirrf_1.06 CHANGELOG
+June 28th, 2024
+Holly LeBlond
+Fisheries and Oceans Canada
+
+1.06a (June 28th, 2024)
+Classifiers:
+- Added alarm function to Live Classifier, with trigger settings for species labels and certainty scores.
+- Sampling option added where smaller classes have their training data entries duplicated until each class matches the size of the largest class.
+- Exporting full results in Test Classifier now includes confusion matrices specific to subsets and accuracy labels regardless of validation method.
+- Fixed a bug in the Live Classifier where settings couldn't be saved due to an issue with data blocks.
+- Fixed a bug where the Live Classifier's overlay graphics wouldn't show up, again due to an issue with data blocks.
+- Removed some annoying print statements.
+WMNT:
+- Added option to change the buffer length between the detection and the edge of the spectrogram when pressing the scroll button.
+- Replaced "clear selection" button with button that selects all contours within the spectrogram's current viewing range.
+- Changed time zone conversion options in WMNT — instead of drop-down boxes, there are just check boxes for selecting whether or not to convert from your system's local time to UTC.
+- Buttons slightly re-arranged in the GUI.
+- Removed some annoying print statements.

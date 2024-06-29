@@ -8,6 +8,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
+import java.util.TimeZone;
 
 import javax.swing.JOptionPane;
 
@@ -105,6 +106,10 @@ public abstract class MIRRFControlledUnit extends PamControlledUnit {
 			e.printStackTrace();
 		}
 		return -1;
+	}
+	
+	public static String getLocalTimeZoneName() {
+		return TimeZone.getDefault().getID();
 	}
 	
 	public static String makeHTML(String inp, int width) {

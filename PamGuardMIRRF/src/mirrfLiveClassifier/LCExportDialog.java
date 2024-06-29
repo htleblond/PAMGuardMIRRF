@@ -352,7 +352,8 @@ public class LCExportDialog extends PamDialog {
 			}
 		} */
 		FEParameters feParams = null;
-		if (lcParams.inputFEDataBlock != null) feParams = lcParams.inputFEDataBlock.getParamsClone();
+		FEDataBlock fedb = lcParams.getInputFEDataBlock(lcControl);
+		if (fedb != null) feParams = fedb.getParamsClone();
 		sb = new StringBuilder();
 		boolean printFEParamsFoundInTrainingSet = false;
 		if (feParams != null && feParams.findUnmatchedParameters(lcParams.getTrainingSetInfo().feParamsMap, true).size() > 0) {
@@ -528,7 +529,7 @@ public class LCExportDialog extends PamDialog {
 		sb = new StringBuilder();
 		sb.append("LIVE CLASSIFIER PARAMETERS\n\n");
 		LCParameters params = lcControl.getParams();
-		sb.append("Feature vector data source: "+params.inputFEDataBlock.getDataName()+"\n");
+		sb.append("Feature vector data source: "+params.getInputFEDataBlock(lcControl).getDataName()+"\n");
 		sb.append("Training set: "+lcControl.getParams().getTrainPath()+"\n");
 		if (params.selectKBest) {
 			sb.append("k-Best feature selection: On (k = "+String.valueOf(params.kBest)+")\n");
@@ -539,8 +540,10 @@ public class LCExportDialog extends PamDialog {
 			sb.append("Sampling limit: None\n");
 		} else if (params.samplingLimits.equals("automax")) {
 			sb.append("Sampling limit: Automatically set to size of least-populated class\n");
-		} else {
+		} else if (params.samplingLimits.equals("setmax")) {
 			sb.append("Sampling limit: Manually-set maximum (n = "+String.valueOf(params.maxSamples)+")\n");
+		} else if (params.samplingLimits.equals("duplicate")) {
+			sb.append("Sampling limit: Entries in smaller classes duplicated to match largest class\n");
 		}
 		if (params.limitClusterSize) {
 			sb.append("Cluster size limit for training data: None\n");

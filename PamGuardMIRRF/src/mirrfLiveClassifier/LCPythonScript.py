@@ -118,7 +118,9 @@ class LCModel():
                     dateList.append(row[3])
                     self.containsClusters.update({row[0]: dateList})
         #print("containsClusters: "+str(len(self.containsClusters)))
-        if self.samplingLimits != "none":
+        if self.samplingLimits == "duplicate":
+            X, y = self.growSet(X, y)
+        elif self.samplingLimits != "none":
             X, y = self.shrinkSet(X, y)
         return X, y
     
@@ -140,6 +142,23 @@ class LCModel():
             for row in allocX[i]:
                 X.append(row)
                 y.append(self.labels[i])
+        return X, y
+    
+    def growSet(self, X, y):
+        allocX = [[] for val in self.labels]
+        for i in np.arange(len(y)):
+            allocX[self.labels.index(y[i])].append(X[i])
+        limit = np.max([len(arr) for arr in allocX])
+        if limit == 0:
+            # Throw error
+            pass
+        for i in np.arange(len(allocX)):
+            np.random.shuffle(allocX[i])
+            count = len(allocX[i])
+            while count < limit:
+                X.append(allocX[i][np.mod(count,len(allocX[i]))])
+                y.append(self.labels[i])
+                count += 1
         return X, y
         
     def createFittedModel(self, X, y):

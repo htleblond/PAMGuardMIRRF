@@ -32,6 +32,7 @@ import generalDatabase.DBProcess;
 import generalDatabase.DBSystem;
 import generalDatabase.EmptyTableDefinition;
 import generalDatabase.PamTableItem;
+import mirrf.MIRRFControlledUnit;
 
 /**
  * Used to read from and write to the 'whistle_and_moan_detector' (or otherwise re-named) table in the database.
@@ -275,10 +276,14 @@ public class WMNTSQLLogging {
 	 */
 	protected String convertDate(String inpdate, short mill, boolean writing) {
 		String conv;
+		String tzName;
+		if (wmntControl.getParams().databaseUTCColumnIsInLocalTime)
+			tzName = MIRRFControlledUnit.getLocalTimeZoneName();
+		else tzName = "UTC";
 		if (!writing) {
-			conv = wmntControl.convertBetweenTimeZones(wmntControl.getParams().databaseTZ, "UTC", inpdate.substring(0, 19), false);
+			conv = wmntControl.convertBetweenTimeZones(tzName, "UTC", inpdate.substring(0, 19), false);
 		} else {
-			conv = wmntControl.convertBetweenTimeZones("UTC", wmntControl.getParams().databaseTZ, inpdate.substring(0, 19), false);
+			conv = wmntControl.convertBetweenTimeZones("UTC", tzName, inpdate.substring(0, 19), false);
 		}
 		if (!isMySQL() || mill < 500) {
 			return conv;

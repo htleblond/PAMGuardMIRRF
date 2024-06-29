@@ -8,18 +8,23 @@ import java.util.ListIterator;
 import PamController.PamControlledUnit;
 import PamguardMVC.PamDataBlock;
 import PamguardMVC.dataOffline.OfflineDataLoadInfo;
+import alarm.AlarmCounterProvider;
+import alarm.AlarmDataSource;
 import binaryFileStorage.BinaryOfflineDataMap;
 import binaryFileStorage.BinaryOfflineDataMapPoint;
 import binaryFileStorage.BinaryStore;
 import pamScrollSystem.ViewLoadObserver;
+import whistlesAndMoans.alarm.WMAlarmCounterProvider;
 
 /**
  * The Live Classifier's output data block.
  * @author Holly LeBlond
  */
-public class LCDataBlock extends PamDataBlock<LCDataUnit> {
+public class LCDataBlock extends PamDataBlock<LCDataUnit> implements AlarmDataSource {
 
 	protected LCControl lcControl;
+	
+	protected LCAlarmCounterProvider lcAlarmCounterProvider;
 
 	public LCDataBlock(LCControl lcControl, String dataName, LCProcess lcProcess, int channelMap) {
 		super(LCDataUnit.class, dataName, lcProcess, channelMap);
@@ -52,8 +57,8 @@ public class LCDataBlock extends PamDataBlock<LCDataUnit> {
 	
 	@Override
 	synchronized public boolean loadViewerData(OfflineDataLoadInfo offlineDataLoadInfo, ViewLoadObserver loadObserver) {
-		if (lcControl.getParams().printJava)
-			System.out.println("REACHED loadViewerData");
+		//if (lcControl.getParams().printJava)
+		//	System.out.println("REACHED loadViewerData");
 		for (int i = 0; i < lcControl.getPamController().getNumControlledUnits(); i++) {
 			PamControlledUnit pcu = lcControl.getPamController().getControlledUnit(i);
 			//System.out.println(pcu.getUnitName()+" : "+pcu.getUnitType());
@@ -73,8 +78,8 @@ public class LCDataBlock extends PamDataBlock<LCDataUnit> {
 				}
 			}
 		}
-		if (lcControl.getParams().printJava)
-			System.out.println(String.valueOf(offlineDataLoadInfo.getStartMillis())+" -> "+String.valueOf(offlineDataLoadInfo.getEndMillis()));
+		//if (lcControl.getParams().printJava)
+		//	System.out.println(String.valueOf(offlineDataLoadInfo.getStartMillis())+" -> "+String.valueOf(offlineDataLoadInfo.getEndMillis()));
 		boolean loadOk = super.loadViewerData(offlineDataLoadInfo, loadObserver);
 		return loadOk;
 	}
@@ -156,6 +161,17 @@ public class LCDataBlock extends PamDataBlock<LCDataUnit> {
 			outp.put(cc.clusterID+", "+lcControl.convertLocalLongToUTC(cc.getStartAndEnd()[0]), currList);
 		}
 		return outp;
+	}
+	
+	/**
+	 * @author Doug Gillespie (modified by Holly LeBlond)
+	 */
+	@Override
+	public AlarmCounterProvider getAlarmCounterProvider() {
+		if (lcAlarmCounterProvider == null) {
+			lcAlarmCounterProvider = new LCAlarmCounterProvider(lcControl);
+		}
+		return lcAlarmCounterProvider;
 	}
 	
 	@Override

@@ -17,9 +17,9 @@ public class LCUpdateProcess extends PamProcess {
 	public LCUpdateProcess(LCControl lcControl) {
 		super(lcControl, null);
 		this.lcControl = lcControl;
-		if (lcControl.getParams().wmntUpdateDataBlock != null) {
-			this.setParentDataBlock(lcControl.getParams().wmntUpdateDataBlock);
-		}
+		WMNTDataBlock wmntdb = lcControl.getParams().getWMNTUpdateDataBlock(lcControl);
+		if (wmntdb != null)
+			this.setParentDataBlock(wmntdb);
 	}
 
 	@Override
