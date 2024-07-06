@@ -1,5 +1,4 @@
 mirrf_1.06 CHANGELOG
-June 28th, 2024
 Holly LeBlond
 Fisheries and Oceans Canada
 
@@ -17,3 +16,13 @@ WMNT:
 - Changed time zone conversion options in WMNT — instead of drop-down boxes, there are just check boxes for selecting whether or not to convert from your system's local time to UTC.
 - Buttons slightly re-arranged in the GUI.
 - Removed some annoying print statements.
+
+1.06b (July 5th, 2024)
+WMNT:
+- Species and call type label lists can now be exported to and imported from .txt files.
+- Added button that brings up dialog listing species and call type counts.
+- Replaced "Select all" button with button that selects the first detection in the table that hasn't been labelled yet.
+- Added toggle-able hotkeys for certain buttons and for streamlined labelling of selected detections.
+- "Select all in spectrogram view" button now scrolls to the selected detections in the table when pressed.
+- Condensed settings dialog into tabs.
+- Buttons slightly re-arranged in the GUI again.

@@ -3,6 +3,7 @@ package wmnt;
 import java.awt.*;
 import java.awt.List;
 import java.awt.event.*;
+import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.io.FilenameFilter;
 
@@ -64,6 +65,10 @@ public class WMNTPanel {
 	protected PamButton fileButton;
 	protected PamButton importButton;
 	protected PamButton exportButton;
+	protected PamButton connectButton;
+	protected PamButton checkButton;
+	protected PamButton updateButton;
+	protected PamButton countButton;
 	public PamTable ttable;
 	protected DefaultTableModel dtmodel;
 	public DefaultComboBoxModel<String> speciesModel;
@@ -75,16 +80,18 @@ public class WMNTPanel {
 	protected PamButton calltypeButton;
 	protected PamButton commentButton;
 	protected PamButton allButton;
-	protected PamButton selectAllButton;
+	//protected PamButton selectAllButton;
+	protected PamButton selectFirstUnlabelledButton;
 	//protected PamButton clearSelectionButton;
 	protected PamButton selectWithinViewButton;
 	protected PamButton selectStartButton;
 	protected PamButton searchButton;
-	protected PamButton connectButton;
-	protected PamButton checkButton;
-	protected PamButton updateButton;
 	protected PamButton scrollButton;
 	protected PamButton undoButton;
+	
+	protected BackupCellEditor speciesCellEditor;
+	protected BackupCellEditor callTypeCellEditor;
+	protected BackupCellEditor commentCellEditor;
 	
 	public Object[][] originalTable;
 	public boolean[] tableChangeLog;
@@ -165,7 +172,10 @@ public class WMNTPanel {
 		ExportListener exportListener = new ExportListener();
 		exportButton.addActionListener(exportListener);
 		dataPanel.add(exportButton);
-		
+		countButton = new PamButton("Label counts");
+		CountListener countListener = new CountListener();
+		countButton.addActionListener(countListener);
+		dataPanel.add(countButton);
 		
 		c.gridy++;
 		c.gridx = 0;
@@ -214,14 +224,18 @@ public class WMNTPanel {
 		ttable.getColumnModel().getColumn(7).setMaxWidth(60);
 		ttable.getColumnModel().getColumn(7).setPreferredWidth(60);
 		
-		JTextField f20 = new JTextField();
-		f20.setDocument(new CommaRemovingDocument(20));
-		ttable.getColumnModel().getColumn(6).setCellEditor(new BackupCellEditor(f20));
-		ttable.getColumnModel().getColumn(7).setCellEditor(new BackupCellEditor(f20));
-		JTextField f400 = new JTextField();
-		f400.setDocument(new CommaRemovingDocument(400));
-		ttable.getColumnModel().getColumn(8).setCellEditor(new BackupCellEditor(f400));
+		JTextField fSpecies = new JTextField();
+		fSpecies.setDocument(new CommaRemovingDocument(WMNTSQLLogging.SPECIES_CHAR_LENGTH));
+		ttable.getColumnModel().getColumn(6).setCellEditor(speciesCellEditor = new BackupCellEditor(fSpecies));
+		JTextField fCallType = new JTextField();
+		fCallType.setDocument(new CommaRemovingDocument(WMNTSQLLogging.CALLTYPE_CHAR_LENGTH));
+		ttable.getColumnModel().getColumn(7).setCellEditor(callTypeCellEditor = new BackupCellEditor(fCallType));
+		JTextField fComment = new JTextField();
+		fComment.setDocument(new CommaRemovingDocument(WMNTSQLLogging.COMMENT_NVARCHAR_LENGTH));
+		ttable.getColumnModel().getColumn(8).setCellEditor(commentCellEditor = new BackupCellEditor(fComment));
 		
+		//ttable.getColumnModel().getColumn(6).set
+		//System.out.println("Class name: "+ttable.getColumnModel().getColumn(6).getCellEditor().getClass().toString());
 		ttable.getColumnModel().getColumn(6).getCellEditor().addCellEditorListener(new CellEditorLoggingListener());
 		ttable.getColumnModel().getColumn(7).getCellEditor().addCellEditorListener(new CellEditorLoggingListener());
 		ttable.getColumnModel().getColumn(8).getCellEditor().addCellEditorListener(new CellEditorLoggingListener());
@@ -241,22 +255,6 @@ public class WMNTPanel {
 		SelectStartListener selectStartListener = new SelectStartListener();
 		selectStartButton.addActionListener(selectStartListener);
 		buttonPanel.add(selectStartButton);
-		selectWithinViewButton = new PamButton("Select all in spectrogram view");
-		SelectWithinViewListener selectWithinViewListener = new SelectWithinViewListener();
-		selectWithinViewButton.addActionListener(selectWithinViewListener);
-		buttonPanel.add(selectWithinViewButton);
-		scrollButton = new PamButton("Scroll to selection on spectrogram");
-		ScrollListener scrollListener = new ScrollListener();
-		scrollButton.addActionListener(scrollListener);
-		buttonPanel.add(scrollButton);
-		selectAllButton = new PamButton("Select all");
-		SelectAllListener selectAllListener = new SelectAllListener();
-		selectAllButton.addActionListener(selectAllListener);
-		buttonPanel.add(selectAllButton);
-	/*	clearSelectionButton = new PamButton("Clear selection");
-		ClearSelectionListener clearSelectionListener = new ClearSelectionListener();
-		clearSelectionButton.addActionListener(clearSelectionListener);
-		buttonPanel.add(clearSelectionButton); */
 		searchButton = new PamButton("Select by search");
 		SearchListener searchListener = new SearchListener();
 		searchButton.addActionListener(searchListener);
@@ -266,6 +264,26 @@ public class WMNTPanel {
 		undoButton.addActionListener(undoListener);
 		undoButton.setEnabled(false);
 		buttonPanel.add(undoButton);
+	/*	selectAllButton = new PamButton("Select all");
+		SelectAllListener selectAllListener = new SelectAllListener();
+		selectAllButton.addActionListener(selectAllListener);
+		buttonPanel.add(selectAllButton); */
+		selectFirstUnlabelledButton = new PamButton("Select first unlabelled detection");
+		SelectFirstUnlabelledListener selectFirstUnlabelledListener = new SelectFirstUnlabelledListener();
+		selectFirstUnlabelledButton.addActionListener(selectFirstUnlabelledListener);
+		buttonPanel.add(selectFirstUnlabelledButton);
+	/*	clearSelectionButton = new PamButton("Clear selection");
+		ClearSelectionListener clearSelectionListener = new ClearSelectionListener();
+		clearSelectionButton.addActionListener(clearSelectionListener);
+		buttonPanel.add(clearSelectionButton); */
+		selectWithinViewButton = new PamButton("Select all in spectrogram view");
+		SelectWithinViewListener selectWithinViewListener = new SelectWithinViewListener();
+		selectWithinViewButton.addActionListener(selectWithinViewListener);
+		buttonPanel.add(selectWithinViewButton);
+		scrollButton = new PamButton("Scroll to selection on spectrogram");
+		ScrollListener scrollListener = new ScrollListener();
+		scrollButton.addActionListener(scrollListener);
+		buttonPanel.add(scrollButton);
 		
 		c.gridy++;
 		c.fill = GridBagConstraints.HORIZONTAL;
@@ -317,7 +335,7 @@ public class WMNTPanel {
 		c.gridheight = 1;
 		c.gridwidth = 3;
 		commentField = new PamTextField(textLength);
-		commentField.setDocument(new JTextFieldLimit(400).getDocument());
+		commentField.setDocument(new JTextFieldLimit(WMNTSQLLogging.COMMENT_NVARCHAR_LENGTH).getDocument());
 		commentField.addActionListener(commentListener);
 		memPanel.add(commentField, c);
 		
@@ -330,6 +348,127 @@ public class WMNTPanel {
 		mainPanel.add(memPanel);
 		
 		this.marker = new WMNTMarkControl("WMNT Contour Selector", this);
+		
+		updateHotkeys();
+	}
+	
+	public void updateHotkeys() {
+		//Kudos: https://stackoverflow.com/questions/15313469/java-keyboard-keycodes-list
+		mainPanel.getInputMap(mainPanel.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke(81, java.awt.event.InputEvent.ALT_DOWN_MASK), "altQ");
+		mainPanel.getActionMap().put("altQ", new SelectFirstUnlabelledHotkey());
+		mainPanel.getInputMap(mainPanel.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke(87, java.awt.event.InputEvent.ALT_DOWN_MASK), "altW");
+		mainPanel.getActionMap().put("altW", new ScrollHotkey());
+		mainPanel.getInputMap(mainPanel.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke(69, java.awt.event.InputEvent.ALT_DOWN_MASK), "altE");
+		mainPanel.getActionMap().put("altE", new SelectWithinViewHotkey());
+		mainPanel.getInputMap(mainPanel.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke(90, java.awt.event.InputEvent.CTRL_DOWN_MASK), "ctrlZ");
+		mainPanel.getActionMap().put("ctrlZ", new UndoHotkey());
+		for (int i = 0; i < 10; i++) {
+			mainPanel.getInputMap(mainPanel.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke(48+i, java.awt.event.InputEvent.ALT_DOWN_MASK), "alt"+String.valueOf(i));
+			mainPanel.getActionMap().put("alt"+String.valueOf(i), new NumHotkey(i));
+		}
+	}
+	
+	interface HotkeyAction extends Action {
+		@Override
+		public default Object getValue(String key) {return null;}
+		@Override
+		public default void putValue(String key, Object value) {}
+		@Override
+		public default void setEnabled(boolean b) {}
+		@Override
+		public default void addPropertyChangeListener(PropertyChangeListener listener) {}
+		@Override
+		public default void removePropertyChangeListener(PropertyChangeListener listener) {}
+	}
+	
+	public void stopCellEditing() {
+		speciesCellEditor.publicFireEditingStopped();
+		callTypeCellEditor.publicFireEditingStopped();
+		commentCellEditor.publicFireEditingStopped();
+	}
+	
+	class SelectFirstUnlabelledHotkey implements HotkeyAction {
+		@Override
+		public void actionPerformed(ActionEvent e) {
+			stopCellEditing();
+			selectFirstUnlabelledButton.doClick();
+		}
+		@Override
+		public boolean isEnabled() {
+			return wmntControl.getParams().hotkeyQEnabled;
+		}
+	}
+	
+	class ScrollHotkey implements HotkeyAction {
+		@Override
+		public void actionPerformed(ActionEvent e) {
+			stopCellEditing();
+			scrollButton.doClick();
+		}
+		@Override
+		public boolean isEnabled() {
+			return wmntControl.getParams().hotkeyWEnabled;
+		}
+	}
+	
+	class SelectWithinViewHotkey implements HotkeyAction {
+		@Override
+		public void actionPerformed(ActionEvent e) {
+			stopCellEditing();
+			selectWithinViewButton.doClick();
+		}
+		@Override
+		public boolean isEnabled() {
+			return wmntControl.getParams().hotkeyEEnabled;
+		}
+	}
+	
+	class UndoHotkey implements HotkeyAction {
+		@Override
+		public void actionPerformed(ActionEvent e) {
+			stopCellEditing();
+			undoButton.doClick();
+		}
+		@Override
+		public boolean isEnabled() {
+			return wmntControl.getParams().hotkeyZEnabled;
+		}
+	}
+	
+	class NumHotkey implements HotkeyAction {
+		
+		int num;
+		
+		public NumHotkey(int num) {
+			this.num = num;
+		}
+		
+		@Override
+		public void actionPerformed(ActionEvent e) {
+			stopCellEditing();
+			String[] vals = wmntControl.getParams().hotkeyNumLabels[num];
+			if (vals[0].equals("<clear>")) {
+				speciesBox.setSelectedItem("");
+			} else if (!vals[0].equals("<skip>")) {
+				speciesBox.setSelectedItem(vals[0]);
+			}
+			if (vals[1].equals("<clear>")) {
+				calltypeBox.setSelectedItem("");
+			} else if (!vals[1].equals("<skip>")) {
+				calltypeBox.setSelectedItem(vals[1]);
+			}
+			if ((vals[0].equals((String) speciesBox.getSelectedItem()) || vals[0].equals("<skip>") || vals[0].equals("<clear>")) &&
+					(vals[1].equals((String) calltypeBox.getSelectedItem()) || vals[1].equals("<skip>") || vals[1].equals("<clear>"))) {
+				if (!vals[0].equals("<skip>")) speciesButton.doClick();
+				if (!vals[1].equals("<skip>")) calltypeButton.doClick();
+				return;
+			}
+			wmntControl.SimpleErrorDialog("Label(s) assigned to hotkey are no longer in list(s).");
+		}
+		@Override
+		public boolean isEnabled() {
+			return wmntControl.getParams().hotkeyNumEnabled[num];
+		}
 	}
 	
 	/**
@@ -342,9 +481,29 @@ public class WMNTPanel {
 	/**
 	 * The listener for the 'Select all' button.
 	 */
-	class SelectAllListener implements ActionListener{
+/*	class SelectAllListener implements ActionListener{
 		public void actionPerformed(ActionEvent e) {
 			ttable.selectAll();
+		}
+	} */
+	
+	class SelectFirstUnlabelledListener implements ActionListener {
+		@Override
+		public void actionPerformed(ActionEvent e) {
+			for (int i = 0; i < ttable.getRowCount(); i++) {
+				String val = (String) ttable.getValueAt(i, 6);
+				if (val.length() == 0) {
+					ttable.clearSelection();
+					ttable.addRowSelectionInterval(i, i);
+					//ttable.scrollRectToVisible(ttable.getCellRect(ttable.getSelectedRowCount()-1, 0, true));
+					ttable.scrollRectToVisible(ttable.getCellRect(i, 0, true));
+					return;
+				}
+			}
+			JOptionPane.showMessageDialog(wmntControl.getGuiFrame(),
+				    "All detections in table have been labelled.",
+				    wmntControl.getUnitName(),
+				    JOptionPane.WARNING_MESSAGE);
 		}
 	}
 	
@@ -357,7 +516,7 @@ public class WMNTPanel {
 		}
 	} */
 	
-	class SelectWithinViewListener implements ActionListener{
+	class SelectWithinViewListener implements ActionListener {
 		public void actionPerformed(ActionEvent e) {
 			ViewerScrollerManager vsm = (ViewerScrollerManager) AbstractScrollManager.getScrollManager();
 			if (vsm.getPamScrollers().size() == 0) {
@@ -384,10 +543,19 @@ public class WMNTPanel {
 			//System.out.println("endTime: "+endTime);
 			
 			ttable.clearSelection();
+			int firstScroll = -1;
+			int lastScroll = -1;
 			for (int i = 0; i < ttable.getRowCount(); i++) {
 				String val = ttable.getValueAt(i, 1).toString();
-				if (startTime.compareTo(val) <= 0 && endTime.compareTo(val) > 0)
+				if (startTime.compareTo(val) <= 0 && endTime.compareTo(val) > 0) {
 					ttable.addRowSelectionInterval(i, i);
+					if (firstScroll == -1) firstScroll = i;
+					lastScroll = i;
+				}
+			}
+			if (firstScroll != -1) {
+				ttable.scrollRectToVisible(ttable.getCellRect(lastScroll, 0, true));
+				ttable.scrollRectToVisible(ttable.getCellRect(firstScroll, 0, true));
 			}
 		}
 	}
@@ -1064,6 +1232,14 @@ public class WMNTPanel {
 		}
 	}
 	
+	class CountListener implements ActionListener {
+		@Override
+		public void actionPerformed(ActionEvent e) {
+			WMNTCountDialog countDialog = new WMNTCountDialog(wmntControl.getGuiFrame(), wmntControl, ttable);
+			countDialog.setVisible(true);
+		}
+	}
+	
 	protected class UpdateThread extends Thread {
 		protected UpdateThread() {}
 		@Override
@@ -1265,6 +1441,10 @@ public class WMNTPanel {
 
 		public BackupCellEditor(JTextField textField) {
 			super(textField);
+		}
+		
+		public void publicFireEditingStopped() {
+			fireEditingStopped();
 		}
 		
 		@Override

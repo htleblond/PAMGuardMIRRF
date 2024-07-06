@@ -28,6 +28,14 @@ public class WMNTParameters implements Serializable, Cloneable, ManagedParameter
 	
 	public String sqlTableName;
 	
+	//public boolean hotkeyCtrlRequired;
+	public boolean hotkeyQEnabled;
+	public boolean hotkeyWEnabled;
+	public boolean hotkeyEEnabled;
+	public boolean hotkeyZEnabled;
+	public boolean[] hotkeyNumEnabled;
+	public String[][] hotkeyNumLabels;
+	
 	public WMNTParameters() {
 		inputProcessName = "";
 		
@@ -58,6 +66,18 @@ public class WMNTParameters implements Serializable, Cloneable, ManagedParameter
 		databaseUTCColumnIsInLocalTime = false;
 		
 		sqlTableName = "whistle_and_moan_detector";
+		
+		//hotkeyCtrlRequired = true;
+		hotkeyQEnabled = true;
+		hotkeyWEnabled = true;
+		hotkeyEEnabled = true;
+		hotkeyZEnabled = true;
+		hotkeyNumEnabled = new boolean[10];
+		for (int i = 0; i < hotkeyNumEnabled.length; i++)
+			hotkeyNumEnabled[i] = false;
+		hotkeyNumLabels = new String[10][2];
+		for (int i = 0; i < hotkeyNumLabels.length; i++)
+			hotkeyNumLabels[i] = new String[] {"<skip>", "<skip>"};
 	}
 	
 	@Override

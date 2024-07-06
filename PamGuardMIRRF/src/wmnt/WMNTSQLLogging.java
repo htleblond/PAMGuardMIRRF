@@ -40,6 +40,10 @@ import mirrf.MIRRFControlledUnit;
  */
 public class WMNTSQLLogging {
 	
+	public static final int SPECIES_CHAR_LENGTH = 20;
+	public static final int CALLTYPE_CHAR_LENGTH = 20;
+	public static final int COMMENT_NVARCHAR_LENGTH = 400;
+	
 	protected WMNTControl wmntControl;
 	
 	protected Set<String> tableSet;
@@ -116,11 +120,11 @@ public class WMNTSQLLogging {
 					else if (rsColumns.getString(1).equals("comment")) createCommentColumn = true;
 				}
 				if (!createSpeciesColumn)
-					stmt.executeUpdate("ALTER TABLE "+wmntControl.getParams().sqlTableName+"\r\nADD COLUMN species CHAR(20);");
+					stmt.executeUpdate("ALTER TABLE "+wmntControl.getParams().sqlTableName+"\r\nADD COLUMN species CHAR("+String.valueOf(SPECIES_CHAR_LENGTH)+");");
 				if (!createCallTypeColumn)
-					stmt.executeUpdate("ALTER TABLE "+wmntControl.getParams().sqlTableName+"\r\nADD COLUMN callType CHAR(20);");
+					stmt.executeUpdate("ALTER TABLE "+wmntControl.getParams().sqlTableName+"\r\nADD COLUMN callType CHAR("+String.valueOf(CALLTYPE_CHAR_LENGTH)+");");
 				if (!createCommentColumn)
-					stmt.executeUpdate("ALTER TABLE "+wmntControl.getParams().sqlTableName+"\r\nADD COLUMN comment NVARCHAR(400);");
+					stmt.executeUpdate("ALTER TABLE "+wmntControl.getParams().sqlTableName+"\r\nADD COLUMN comment NVARCHAR("+String.valueOf(COMMENT_NVARCHAR_LENGTH)+");");
 				rsColumns.close();
 				stmt.close();
 			} catch (SQLException e) {
@@ -150,9 +154,9 @@ public class WMNTSQLLogging {
 				return false;
 			}
 			EmptyTableDefinition edt = new EmptyTableDefinition(wmntControl.getParams().sqlTableName);
-			if (!getDBProcess().checkColumn(edt, new PamTableItem("species", Types.CHAR, 20)) ||
-					!getDBProcess().checkColumn(edt, new PamTableItem("callType", Types.CHAR, 20)) ||
-					!getDBProcess().checkColumn(edt, new PamTableItem("comment", Types.VARCHAR, 400))) {
+			if (!getDBProcess().checkColumn(edt, new PamTableItem("species", Types.CHAR, SPECIES_CHAR_LENGTH)) ||
+					!getDBProcess().checkColumn(edt, new PamTableItem("callType", Types.CHAR, CALLTYPE_CHAR_LENGTH)) ||
+					!getDBProcess().checkColumn(edt, new PamTableItem("comment", Types.VARCHAR, COMMENT_NVARCHAR_LENGTH))) {
 				databaseLoadingBarWindow.setVisible(false);
 				JOptionPane.showMessageDialog(wmntControl.getGuiFrame(),
 						"Could not create new columns - see console for details.",
