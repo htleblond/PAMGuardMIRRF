@@ -234,7 +234,7 @@ public class LCExportDialog extends PamDialog {
 					sb.append(cc.location+",");
 				else
 					sb.append("n/a,");
-				sb.append(lcControl.convertLocalLongToUTC(cc.datetimes[j])+",");
+				sb.append(lcControl.convertDateLongToString(lcControl.convertFromLocalToUTC(cc.datetimes[j]))+",");
 				sb.append(String.valueOf(cc.durations[j])+",");
 				sb.append(String.valueOf(cc.lfs[j])+",");
 				sb.append(String.valueOf(cc.hfs[j])+",");
@@ -277,7 +277,7 @@ public class LCExportDialog extends PamDialog {
 		for (int i = 0; i < matrix.length; i++) {
 			sb = new StringBuilder();
 			for (int j = 0; j < matrix[i].length; j++) {
-				System.out.println(matrix[i][j].getText());
+				//System.out.println(matrix[i][j].getText());
 				if (matrix[i][j].getText().equals("Precision")) sb.append("Prcsn.");
 				else sb.append(matrix[i][j].getText());
 				if (j < matrix[i].length-1) {
@@ -681,13 +681,13 @@ public class LCExportDialog extends PamDialog {
 					sb.append(cc.location+"\n");
 				else
 					sb.append("n/a\n");
-				sb.append("Date/Time (UTC): "+lcControl.convertLocalLongToUTC(cc.getStartAndEnd()[0])+"\n");
-				sb.append("Duration: "+String.valueOf(cc.getStartAndEnd()[1]-cc.getStartAndEnd()[0])+" ms\n");
+				sb.append("Date/Time (UTC): "+lcControl.convertDateLongToString(cc.getStartAndEnd(false)[0])+"\n");
+				sb.append("Duration: "+String.valueOf(cc.getStartAndEnd(false)[1]-cc.getStartAndEnd(false)[0])+" ms\n");
 				sb.append("Size: "+String.valueOf(cc.getSize())+" contour(s)\n");
 				ArrayList<String> contourInfo = new ArrayList<String>();
 				for (int j = 0; j < cc.getSize(); j++) {
 					String contour = "\t"+String.valueOf(cc.uids[j])+"  ";
-					contour += lcControl.convertLocalLongToUTC(cc.datetimes[j])+"  ";
+					contour += lcControl.convertDateLongToString(lcControl.convertFromLocalToUTC(cc.datetimes[j]))+"  ";
 					contour += "[";
 					for (int k = 0; k < cc.probaList[j].length; k++) {
 						contour += String.format("%.2f", (float) cc.probaList[j][k]);

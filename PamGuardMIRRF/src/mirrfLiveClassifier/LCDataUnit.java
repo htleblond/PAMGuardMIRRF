@@ -12,7 +12,7 @@ public class LCDataUnit extends PamDataUnit {
 	protected LCCallCluster cluster;
 	
 	public LCDataUnit(LCControl lcControl, LCCallCluster cluster) {
-		super(cluster.getStartAndEnd()[0], 0, -1, cluster.getStartAndEnd()[1] - cluster.getStartAndEnd()[0]);
+		super(cluster.getStartAndEnd(true)[0], 0, -1, cluster.getStartAndEnd(true)[1] - cluster.getStartAndEnd(true)[0]);
 		this.lcControl = lcControl;
 		this.cluster = cluster;
 		this.getBasicData().setFrequency(getFreqsHz());
@@ -30,10 +30,10 @@ public class LCDataUnit extends PamDataUnit {
 	/**
 	 * @return Size-2 array of doubles containing the cluster's start and end times in seconds, respectively.
 	 */
-	public double[] getTimesInSeconds() {
+	public double[] getTimesInSeconds(boolean useLocalTZ) {
 		double[] outp = new double[2];
-		outp[0] = Double.valueOf(String.valueOf(cluster.getStartAndEnd()[0]));
-		outp[1] = Double.valueOf(String.valueOf(cluster.getStartAndEnd()[1]));
+		outp[0] = Double.valueOf(String.valueOf(cluster.getStartAndEnd(useLocalTZ)[0]));
+		outp[1] = Double.valueOf(String.valueOf(cluster.getStartAndEnd(useLocalTZ)[1]));
 		return outp;
 	}
 	

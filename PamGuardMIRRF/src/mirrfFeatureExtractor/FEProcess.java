@@ -17,8 +17,6 @@ import java.util.concurrent.TimeUnit;
 import javax.sound.sampled.AudioFormat;
 import javax.swing.JOptionPane;
 
-import org.docx4j.org.apache.poi.poifs.storage.RawDataBlock;
-
 import Acquisition.AcquisitionControl;
 import Acquisition.filedate.StandardFileDate;
 import warnings.PamWarning;
@@ -74,7 +72,6 @@ public class FEProcess extends PamProcess {
 	protected FEDataBlock vectorDataBlock;
 
 	public FEProcess(FEControl feControl) {
-		//super(feControl);
 		super(feControl, null);
 		this.feControl = feControl;
 		clipRequestQueue = new LinkedList<ClipRequest>();
@@ -156,9 +153,8 @@ public class FEProcess extends PamProcess {
 
 	@Override
 	public void pamStart() {
-		if (feControl.getParams().miscPrintJavaChecked)
-			System.out.println("REACHED pamStart().");
-		//super.pamStart();
+		//if (feControl.getParams().miscPrintJavaChecked)
+		//	System.out.println("REACHED pamStart().");
 		clipRequestQueue.clear(); // just in case anything hanging around from previously. 
 		// if there is it may crash since the ClipblockProcess will probably have been replaced anyway.
 		
@@ -175,34 +171,25 @@ public class FEProcess extends PamProcess {
 		rdbct.start();
 		
 		feControl.getThreadManager().checkThreads(); // TODO MAKE SURE THIS DOESN'T MESS THINGS UP !!!!!
+		
+		feControl.getThreadManager().signalPAMHasStarted();
 	}
 	
 	@Override
 	public void pamStop() {
-		//if (feControl.getParams().miscPrintJavaChecked)
-		//	System.out.println("Went through pamStop().");
-	/*	boolean shouldWait = false;
-		StorageParameters storageParams = StorageOptions.getInstance().getStorageParameters();
-		if (storageParams.isStoreBinary(vectorDataBlock, false)) shouldWait = true;
-		if (storageParams.isStoreDatabase(vectorDataBlock, false)) shouldWait = true;
-		if (vectorDataBlock.countObservers() > 0) shouldWait = true;
-		System.out.println("countObservers: "+String.valueOf(vectorDataBlock.countObservers())); */
 		FEPythonThreadManager threadManager = feControl.getThreadManager();
+		threadManager.signalPAMHasStopped();
 		int waitNum = 0;
-		//System.out.println(String.valueOf(threadManager.getWaitlistSize() > 0)+
-		//		String.valueOf(threadManager.clipsLeft() > 0)+
-		//		String.valueOf(threadManager.vectorsLeft() > 0)+
-		//		String.valueOf(feControl.getParams().miscPrintJavaChecked));
 		int currWaitlistSize = threadManager.getWaitlistSize();
 		int currClipsLeft = threadManager.clipsLeft();
 		int currVectorsLeft = threadManager.vectorsLeft();
 		while (vectorDataBlock.countObservers() > 0
 				&& (threadManager.getWaitlistSize() > 0 || threadManager.clipsLeft() > 0 || threadManager.vectorsLeft() > 0)) {
 			if (!(threadManager.getWaitlistSize() > 0 || threadManager.clipsLeft() > 0)) {
-				threadManager.resetActiveThread();
+				threadManager.resetActiveThreads();
 			}
 			if (feControl.getParams().miscPrintJavaChecked) {
-				System.out.println("Waited "+String.valueOf(waitNum)+"/90 seconds: "+
+				System.out.println("Waited "+String.valueOf(waitNum)+"/60 seconds: "+
 						"waitlistSize: "+String.valueOf(threadManager.getWaitlistSize())+
 						", clipsLeft: "+String.valueOf(threadManager.clipsLeft())+
 						", vectorsLeft: "+String.valueOf(threadManager.vectorsLeft()));
@@ -215,15 +202,15 @@ public class FEProcess extends PamProcess {
 				currVectorsLeft = threadManager.vectorsLeft();
 				waitNum = 0;
 			} else waitNum++;
-			if (waitNum >= 90) { // Brings up warning dialog if caught in a loop for 90 seconds.
+			if (waitNum >= 60) { // Brings up warning dialog if caught in a loop for 60 seconds.
 				int res = JOptionPane.showOptionDialog(feControl.getGuiFrame(),
 						feControl.makeHTML("Python is not responding. What would you like to do?", 300),
 						feControl.getUnitName(),
 						JOptionPane.YES_NO_CANCEL_OPTION,
 						JOptionPane.WARNING_MESSAGE,
 						null, 
-						new Object[] {"Stop processing", "Clear queues", "Wait 90 more seconds"},
-						"Wait 90 more seconds");
+						new Object[] {"Stop processing", "Clear queues", "Wait 60 more seconds"},
+						"Wait 60 more seconds");
 				if (res == JOptionPane.CANCEL_OPTION) {
 					waitNum = 0;
 				} else {
@@ -235,7 +222,6 @@ public class FEProcess extends PamProcess {
 				}
 			}
 			try {
-				//TimeUnit.MILLISECONDS.sleep(200);
 				TimeUnit.MILLISECONDS.sleep(1000);
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -393,15 +379,22 @@ public class FEProcess extends PamProcess {
 			
 			boolean countUp = false;
 			if (prevDU == null || !params.miscClusterChecked || (params.audioNRChecked && nrData == null)) countUp = true;
-			else if (prevDU.getEndTimeInMilliseconds() + params.miscJoinDistance < dataUnit.getTimeMilliseconds()) countUp = true;
+			else {
+				long endTime = prevDU.getEndTimeInMilliseconds();
+				if (!params.inputFromCSV)
+					endTime = feControl.convertFromLocalToUTC(endTime);
+				if (endTime + params.miscJoinDistance 
+					< feControl.convertFromLocalToUTC(dataUnit.getTimeMilliseconds())) countUp = true;
+			}
 			
 			if (params.audioNRChecked && countUp) {
 				try {
 					nrData = rawDataBlock.getSamples(rawStart - convertMsToSamples(params.audioNRStart), convertMsToSamples(params.audioNRLength), channelMap);
 				} catch (RawDataUnavailableException e) {
-					System.out.println("Start sample in block: "+String.valueOf(rawDataBlock.getLastUnit().getStartSample()));
-					System.out.println("Start sample of NR clip: "+String.valueOf(rawStart-convertMsToSamples(params.audioNRStart)));
-					e.printStackTrace(); // TODO Remove?
+					// TODO Make the print statements a troubleshooting option at some point.
+					//System.out.println("Start sample in block: "+String.valueOf(rawDataBlock.getLastUnit().getStartSample()));
+					//System.out.println("Start sample of NR clip: "+String.valueOf(rawStart-convertMsToSamples(params.audioNRStart)));
+					//e.printStackTrace(); // TODO Remove?
 					return e.getDataCause();
 				}
 				
@@ -417,9 +410,10 @@ public class FEProcess extends PamProcess {
 				else rawData = rawDataBlock.getSamples(rawStart, convertMsToSamples(params.audioClipLength), channelMap);
 			}
 			catch (RawDataUnavailableException e) {
-				System.out.println("Start sample in block: "+String.valueOf(rawDataBlock.getLastUnit().getStartSample()));
-				System.out.println("Start sample of raw data: "+String.valueOf(rawStart));
-				e.printStackTrace(); // TODO Remove?
+				// TODO Make the print statements a troubleshooting option at some point.
+				//System.out.println("Start sample in block: "+String.valueOf(rawDataBlock.getLastUnit().getStartSample()));
+				//System.out.println("Start sample of raw data: "+String.valueOf(rawStart));
+				//e.printStackTrace(); // TODO Remove?
 				return e.getDataCause();
 			}
 			if (rawData == null) {
@@ -488,14 +482,14 @@ public class FEProcess extends PamProcess {
 			}
 			String[] extras = new String[8];
 			extras[0] = "uid="+String.valueOf(dataUnit.getUID());
-			extras[1] = "datelong="+String.valueOf(dataUnit.getTimeMilliseconds());
+			if (params.inputFromCSV)
+				extras[1] = "datelong="+String.valueOf(dataUnit.getTimeMilliseconds());
+			else
+				extras[1] = "datelong="+String.valueOf(feControl.convertFromLocalToUTC(dataUnit.getTimeMilliseconds()));
 			extras[2] = "amplitude="+String.valueOf(dataUnit.getAmplitudeDB());
 			extras[3] = "duration="+String.valueOf(dataUnit.getDurationInMilliseconds());
 			extras[4] = "freqhd_min="+String.valueOf(dataUnit.getFrequency()[0]);
 			extras[5] = "freqhd_max="+String.valueOf(dataUnit.getFrequency()[1]);
-			//extras[6] = "frange="+String.valueOf(dataUnit.getFrequency()[1]-dataUnit.getFrequency()[0]);
-			//extras[7] = "fslopehd="+String.valueOf((dataUnit.getFrequency()[1]-dataUnit.getFrequency()[0])
-			//		/ (dataUnit.getDurationInMilliseconds()/1000));
 			extras[6] = "slice_data=[("+String.valueOf(sliceStartSamples[0])+","+String.valueOf(sliceFreqs[0]);
 			for (int i = 1; i < sliceFreqs.length; i++)
 				extras[6] += "),("+String.valueOf(sliceStartSamples[i])+","+String.valueOf(sliceFreqs[i]);
@@ -635,21 +629,13 @@ public class FEProcess extends PamProcess {
 					}
 				}
 				
-				FEPythonThreadManager threadManager = feControl.getThreadManager();
-				if (threadManager.getRDBCTSignal()) continue;
-				if (feControl.getParams().miscClusterChecked) {
-					if (prevDU == null) continue;
-					if (prevDU.getTimeMilliseconds() + prevDU.getDurationInMilliseconds().longValue() + feControl.getParams().miscJoinDistance
-							> currTime) continue;
-				}
-				threadManager.setRDBCTSignal(true);
+				feControl.getThreadManager().setRDBCTTimestamp(currTime);
 			}
 		}
 	}
 	
 	public int convertMsToSamples(int ms) {
 		int samples = (int) (feControl.getParams().sr * ((double) ms/1000));
-		//System.out.println("Samples: "+String.valueOf(samples));
 		return samples;
 	}
 	
@@ -683,7 +669,6 @@ public class FEProcess extends PamProcess {
 	 */
 	public String createClipPath(long uid, int clusterCount, boolean isNR) {
 		String fp = getClipFileFolder();
-		//if (fp.length() > 0 && !fp.substring(fp.length()-1, fp.length()).equals("/")) fp += "/";
 		String cID = createClusterID(uid, clusterCount, true);
 		if (isNR) return fp+"NR_"+cID+".wav";
 		return fp+"FE_"+cID+"_"+String.valueOf(uid)+".wav";

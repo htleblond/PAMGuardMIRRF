@@ -259,11 +259,10 @@ public class WMNTPanel {
 		SearchListener searchListener = new SearchListener();
 		searchButton.addActionListener(searchListener);
 		buttonPanel.add(searchButton);
-		undoButton = new PamButton("Undo");
-		UndoListener undoListener = new UndoListener();
-		undoButton.addActionListener(undoListener);
-		undoButton.setEnabled(false);
-		buttonPanel.add(undoButton);
+		scrollButton = new PamButton("Scroll to selection on spectrogram");
+		ScrollListener scrollListener = new ScrollListener();
+		scrollButton.addActionListener(scrollListener);
+		buttonPanel.add(scrollButton);
 	/*	selectAllButton = new PamButton("Select all");
 		SelectAllListener selectAllListener = new SelectAllListener();
 		selectAllButton.addActionListener(selectAllListener);
@@ -280,10 +279,11 @@ public class WMNTPanel {
 		SelectWithinViewListener selectWithinViewListener = new SelectWithinViewListener();
 		selectWithinViewButton.addActionListener(selectWithinViewListener);
 		buttonPanel.add(selectWithinViewButton);
-		scrollButton = new PamButton("Scroll to selection on spectrogram");
-		ScrollListener scrollListener = new ScrollListener();
-		scrollButton.addActionListener(scrollListener);
-		buttonPanel.add(scrollButton);
+		undoButton = new PamButton("Undo");
+		UndoListener undoListener = new UndoListener();
+		undoButton.addActionListener(undoListener);
+		undoButton.setEnabled(false);
+		buttonPanel.add(undoButton);
 		
 		c.gridy++;
 		c.fill = GridBagConstraints.HORIZONTAL;
@@ -913,8 +913,8 @@ public class WMNTPanel {
 					dubd = curr.getDataUnitBaseData();
 				}
 				if (curr.getObjectType() != -4){
-					long detectionTime = curr.getTimeMilliseconds();
-					long fileTime = reader.bh.getDataDate();
+					long detectionTime = MIRRFControlledUnit.convertFromLocalToUTC(curr.getTimeMilliseconds());
+					long fileTime = MIRRFControlledUnit.convertFromLocalToUTC(reader.bh.getDataDate());
 					Date detectionDate = new Date(detectionTime);
 					Date fileDate = new Date(fileTime);
 					
@@ -923,20 +923,7 @@ public class WMNTPanel {
 					String detectionDateString = currdateformat.format(detectionDate);
 					String fileDateString = currdateformat.format(fileDate);
 					
-					detectionDateString = wmntControl.convertBetweenTimeZones(MIRRFControlledUnit.getLocalTimeZoneName(), "UTC", detectionDateString, true);
-					fileDateString = wmntControl.convertBetweenTimeZones(MIRRFControlledUnit.getLocalTimeZoneName(), "UTC", fileDateString, true);
 					if (detectionDateString == null || fileDateString == null) continue;
-				/*	LocalDateTime ldt = LocalDateTime.parse(currdate, DateTimeFormatter.ofPattern(date_format));
-					LocalDateTime ldt2 = LocalDateTime.parse(datadate, DateTimeFormatter.ofPattern(date_format));
-					ZoneId localZoneId = ZoneId.of(wmntControl.getTimezone());
-					ZoneId utcZoneId = ZoneId.of("UTC");
-					ZonedDateTime localZonedDateTime = ldt.atZone(localZoneId);
-					ZonedDateTime localZonedDateTime2 = ldt2.atZone(localZoneId);
-					ZonedDateTime utcDateTime = localZonedDateTime.withZoneSameInstant(utcZoneId);
-					ZonedDateTime utcDateTime2 = localZonedDateTime2.withZoneSameInstant(utcZoneId);
-					DateTimeFormatter dtformat = DateTimeFormatter.ofPattern(date_format);
-					currdate = dtformat.format(utcDateTime);
-					datadate = dtformat.format(utcDateTime2); */
 					dataDates.add(fileDateString);
 					if (!(dubd.getUID() <= 0 && detectionDateString.equals("1970-01-01 00:00:00+000"))) {
 						if (currformat > 3) {

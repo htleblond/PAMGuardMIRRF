@@ -24,8 +24,8 @@ public class FEDataBlock extends PamDataBlock<FEDataUnit> {
 	@Override
 	public void addPamData(FEDataUnit du) {
 		super.addPamData(du);
-		if (feControl.getParams().miscPrintJavaChecked)
-			System.out.println("REACHED FEDataBlock.addPamData");
+		//if (feControl.getParams().miscPrintJavaChecked)
+		//	System.out.println("REACHED FEDataBlock.addPamData");
 	}
 	
 	// Just use the features specified in FEParameters via getFeatureList() instead.

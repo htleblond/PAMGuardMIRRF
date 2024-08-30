@@ -235,6 +235,8 @@ public class TSBSubsetDialog extends PamDialog {
 		setDialogComponent(mainPanel);
 		
 		if (editing) {
+			featureList = tsbControl.getFeatureList();
+			feSettingsMap = tsbControl.getFEParamsMap();
 			int rowIndex = tsbControl.getTabPanel().getPanel().getSubsetTable().getSelectedRow();
 			if (rowIndex > -1) {
 				String currID = (String) tsbControl.getTabPanel().getPanel().getSubsetTable().getValueAt(rowIndex, 0);

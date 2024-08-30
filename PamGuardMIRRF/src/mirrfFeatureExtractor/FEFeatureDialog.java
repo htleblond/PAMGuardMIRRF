@@ -253,7 +253,7 @@ public class FEFeatureDialog extends PamDialog {
 				false);
 		p_cards.add(p_freq_sd,featureNames[nameIndex++]);
 		
-		formants_box = makeOutputBox(new String[] {"Formant frequency","Valid formant count","Difference between two formants"});
+		formants_box = makeOutputBox(new String[] {"Formant frequency","Valid formant count","Difference between two formants","Formant frequency ratio"});
 		formants_box.addActionListener(new FormantsOptionsBoxListener());
 		formants_text = new JLabel(getFormantsText());
 		formants_num_text = new JLabel(getFormantsNumText());
@@ -262,15 +262,21 @@ public class FEFeatureDialog extends PamDialog {
 		formants_num_field.setDocument(JIntFilter());
 		formants_num_field.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				textIntUpdate(formants_num_field, 1);
+				if (formants_box.getSelectedIndex() == 3)
+					textIntUpdate(formants_num_field, 2);
+				else textIntUpdate(formants_num_field, 1);
 			}
 		});
 		formants_num_field.addFocusListener(new FocusAdapter() {
 		    public void focusLost(FocusEvent e) {
-				textIntUpdate(formants_num_field, 1);
+		    	if (formants_box.getSelectedIndex() == 3)
+					textIntUpdate(formants_num_field, 2);
+				else textIntUpdate(formants_num_field, 1);
 		    }
 		});
 		formants_num_field.setText("1");
+		if (formants_box.getSelectedIndex() == 3)
+			formants_num_field.setText("2");
 		formants_num_field.setVisible(formants_box.getSelectedIndex() != 1);
 		formants_max_exp_freq_field = new JTextField(7);
 		formants_max_exp_freq_field.setDocument(JIntFilter());
@@ -705,13 +711,15 @@ public class FEFeatureDialog extends PamDialog {
 			return makeHTML("The frequency of the specified formant.");
 		else if (formants_box.getSelectedIndex() == 1)
 			return makeHTML("The number of valid formants found.");
-		return makeHTML("The difference in frequency between two formants.");
+		else if (formants_box.getSelectedIndex() == 2)
+			return makeHTML("The difference in frequency between two formants.");
+		return makeHTML("The frequency ratio between the selected formant and the first formant.");
 	}
 	
 	public String getFormantsNumText() {
-		if (formants_box.getSelectedIndex() == 0)
-			return makeHTML("Formant number:");
-		return makeHTML("Between formants n and n+1:");
+		if (formants_box.getSelectedIndex() == 2)
+			return makeHTML("Between formants n and n+1:");
+		return makeHTML("Formant number:");
 	}
 	
 	public String getFormantsDesiredOrderText() {
@@ -728,6 +736,8 @@ public class FEFeatureDialog extends PamDialog {
 			formants_num_text.setText(getFormantsNumText());
 			formants_num_text.setVisible(formants_box.getSelectedIndex() != 1);
 			formants_num_field.setVisible(formants_box.getSelectedIndex() != 1);
+			if (formants_box.getSelectedIndex() == 3 && Integer.valueOf(formants_num_field.getText()) < 2)
+				formants_num_field.setText("2");
 		}
 	}
 	
@@ -839,6 +849,9 @@ public class FEFeatureDialog extends PamDialog {
 						outp = "formantcount"+outp;
 					} else if (formants_box.getSelectedIndex() == 2) {
 						outp = "formantdiff"+outp;
+						outp += "_"+formants_num_field.getText();
+					} else if (formants_box.getSelectedIndex() == 3) {
+						outp = "formantratio"+outp;
 						outp += "_"+formants_num_field.getText();
 					}
 				} else if (selection.equals("Mel-frequency cepstral coefficients")) {

@@ -67,14 +67,14 @@ public class LCMarkControl extends SpectrogramAnnotationModule {
 				for (int i = 0; i < db.getUnitsCount(); i++) {
 					LCDataUnit du = db.getDataUnit(i, db.REFERENCE_CURRENT);
 					LCCallCluster cc = du.getCluster();
-					long start = cc.getStartAndEnd()[0];
-					long end = cc.getStartAndEnd()[1];
+					long start = cc.getStartAndEnd(true)[0];
+					long end = cc.getStartAndEnd(true)[1];
 					double low = cc.getFreqLimits()[0];
 					double high = cc.getFreqLimits()[1];
 					
 					if (((t0 <= start && (t2 > start || t2 >= end)) || (t2 >= end && (t0 < end || t0 <= start)) || (t0 >= start && t2 <= end)) &&
 						((f0 <= low && (f2 > low || f2 >= high)) || (f2 >= high && (f0 < high || f0 <= low)) || (f0 >= low && f2 <= high))) {
-						toHighlight.add(String.valueOf(cc.clusterID)+", "+lcControl.convertLocalLongToUTC(cc.getStartAndEnd()[0]));
+						toHighlight.add(String.valueOf(cc.clusterID)+", "+lcControl.convertDateLongToString(cc.getStartAndEnd(false)[0]));
 					}
 				}
 				for (int i = 0; i < outputPanel.getTable().getRowCount(); i++) {

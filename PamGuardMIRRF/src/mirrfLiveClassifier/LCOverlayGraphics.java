@@ -18,6 +18,7 @@ import PamView.symbol.SymbolData;
 import PamguardMVC.PamDataUnit;
 import PamguardMVC.PamProcess;
 import fftManager.FFTDataBlock;
+import mirrfFeatureExtractor.FEControl;
 import mirrfFeatureExtractor.FEDataBlock;
 import whistlesAndMoans.WhistleMoanControl;
 
@@ -107,10 +108,12 @@ public class LCOverlayGraphics extends PamDetectionOverlayGraphics {
 		try {
 			LCCallCluster cc = dataUnit.getCluster();
 			
-			long first = cc.getStartAndEnd()[0];
-			long last = cc.getStartAndEnd()[1];
+			long first = cc.getStartAndEnd(true)[0];
+			long last = cc.getStartAndEnd(true)[1];
 			int lowest = cc.getFreqLimits()[0];
 			int highest = cc.getFreqLimits()[1];
+			
+			//System.out.println("first: "+FEControl.convertDateLongToString(first));
 			
 			FFTDataBlock fftDB = retrieveFFTDataBlock();
 			

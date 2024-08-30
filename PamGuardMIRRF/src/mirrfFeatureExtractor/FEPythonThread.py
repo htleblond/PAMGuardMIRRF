@@ -171,7 +171,7 @@ class FEThread():
                 curr = tokens[0]+"_"+tokens[1]
             elif tokens[0] in ["bandwidth","specmag","praat"]:
                 curr = tokens[0]+"_"+tokens[1]+"_"+tokens[2]
-            elif tokens[0] in ["formantfreq","formantcount","formantdiff","contrast"]:
+            elif tokens[0] in ["formantfreq","formantcount","formantdiff","formantratio","contrast"]:
                 curr = tokens[0]+"_"+tokens[1]+"_"+tokens[2]+"_"+tokens[3]
             elif tokens[0] in ["thd","hbr","hcentroid","hfr"]:
                 curr = "harms_"+tokens[1]+"_"+tokens[2]+"_"+tokens[3]
@@ -196,7 +196,7 @@ class FEThread():
     # to calculate it more than once.
     def preCalculateFeature(self, feature: str, y, y_stft):
         tokens = feature.split("_")
-        if tokens[0] in ["formantfreq","formantcount","formantdiff"]:
+        if tokens[0] in ["formantfreq","formantcount","formantdiff","formantratio"]:
             # Kudos: https://www.mathworks.com/help/signal/ug/formant-estimation-with-lpc-coefficients.html
             # and also: https://support.ircam.fr/docs/AudioSculpt/3.0/co/LPC_1.html
             order = int(np.ceil(self.sr/(int(tokens[1])*0.25)))
@@ -360,6 +360,11 @@ class FEThread():
             if num+1 < len(featureArray):
                 return featureArray[num+1] - featureArray[num]
             return 0.0
+        elif tokens[0] == "formantratio":
+            num = int(tokens[4])
+            if num <= len(featureArray):
+                return featureArray[num-1] / featureArray[0]
+            return 1.0
         #elif tokens[0] in ["mfcc","poly"]:
         elif tokens[0] == "mfcc":
             if tokens[2] == "all":

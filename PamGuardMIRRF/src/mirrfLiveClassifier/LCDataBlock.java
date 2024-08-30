@@ -42,33 +42,20 @@ public class LCDataBlock extends PamDataBlock<LCDataUnit> implements AlarmDataSo
 	
 	@Override
 	public void addPamData(LCDataUnit du, Long uid) {
-		LCCallCluster cc = du.getCluster();
-	/*	if (lcControl.getParams().shouldIgnoreCluster(cc)) {
-			if (lcControl.getParams().displayIgnored) {
-				lcControl.getTabPanel().getPanel().addResultToTable(du);
-			}
-		} else {
-			super.addPamData(du, uid);
-			lcControl.getTabPanel().getPanel().addResultToTable(du);
-		} */
-		super.addPamData(du, uid);
+		// REMEMBER THAT THE TIME ZONE IS LOCAL - GRAPHICS DON'T WORK OTHERWISE !!!!!
 		lcControl.getTabPanel().getPanel().addResultToTable(du);
+		super.addPamData(du, uid);
 	}
 	
 	@Override
 	synchronized public boolean loadViewerData(OfflineDataLoadInfo offlineDataLoadInfo, ViewLoadObserver loadObserver) {
-		//if (lcControl.getParams().printJava)
-		//	System.out.println("REACHED loadViewerData");
 		for (int i = 0; i < lcControl.getPamController().getNumControlledUnits(); i++) {
 			PamControlledUnit pcu = lcControl.getPamController().getControlledUnit(i);
-			//System.out.println(pcu.getUnitName()+" : "+pcu.getUnitType());
 			if (pcu.getUnitName().equals("Binary Store")) {
 				BinaryStore bs = (BinaryStore) pcu;
 				BinaryOfflineDataMap dataMap = (BinaryOfflineDataMap) this.getOfflineDataMap(bs);
 				for (int j = 0; j < dataMap.getMapPoints().size(); j++) {
 					BinaryOfflineDataMapPoint mp = dataMap.getMapPoints().get(j);
-					//System.out.println("mp: "+mp.getBinaryFile(bs).getPath()+", "+
-					//		String.valueOf(mp.getStartTime())+" -> "+String.valueOf(mp.getEndTime()));
 					if (offlineDataLoadInfo.getStartMillis() > mp.getStartTime()) {
 						offlineDataLoadInfo.setStartMillis(mp.getStartTime());
 					}
@@ -78,8 +65,6 @@ public class LCDataBlock extends PamDataBlock<LCDataUnit> implements AlarmDataSo
 				}
 			}
 		}
-		//if (lcControl.getParams().printJava)
-		//	System.out.println(String.valueOf(offlineDataLoadInfo.getStartMillis())+" -> "+String.valueOf(offlineDataLoadInfo.getEndMillis()));
 		boolean loadOk = super.loadViewerData(offlineDataLoadInfo, loadObserver);
 		return loadOk;
 	}
@@ -97,7 +82,8 @@ public class LCDataBlock extends PamDataBlock<LCDataUnit> implements AlarmDataSo
 		for (int i = 0; i < this.getUnitsCount(); i++) {
 			LCDataUnit du = this.getDataUnit(i, this.REFERENCE_CURRENT);
 			LCCallCluster cc = du.getCluster();
-			if (clusterID.equals(cc.clusterID) && datetime.equals(lcControl.convertLocalLongToUTC(cc.getStartAndEnd()[0]))) {
+			if (clusterID.equals(cc.clusterID) && 
+					datetime.equals(lcControl.convertDateLongToString(cc.getStartAndEnd(false)[0]))) {
 				return du;
 			}
 		}
@@ -113,9 +99,9 @@ public class LCDataBlock extends PamDataBlock<LCDataUnit> implements AlarmDataSo
 	 * @param datetime - Start date and time of cluster in UTC as a long.
 	 * @return LCDataUnit
 	 */
-	public LCDataUnit retrieveDataUnit(String clusterID, Long datetime) {
+/*	public LCDataUnit retrieveDataUnit(String clusterID, Long datetime) {
 		return retrieveDataUnit(clusterID, lcControl.convertLocalLongToUTC(datetime));
-	}
+	} */
 	
 	/**
 	 * Returns a HashMap containing each LCDataUnit that matches a clusterID and date/time
@@ -131,7 +117,7 @@ public class LCDataBlock extends PamDataBlock<LCDataUnit> implements AlarmDataSo
 			LCDataUnit du = this.getDataUnit(i, this.REFERENCE_CURRENT);
 			if (du != null) {
 				LCCallCluster cc = du.getCluster();
-				String key = cc.clusterID+", "+lcControl.convertLocalLongToUTC(cc.getStartAndEnd()[0]);
+				String key = cc.clusterID+", "+lcControl.convertDateLongToString(cc.getStartAndEnd(false)[0]);
 				if (idsAndDates.contains(key)) {
 					outp.put(key, du);
 				}
@@ -158,7 +144,7 @@ public class LCDataBlock extends PamDataBlock<LCDataUnit> implements AlarmDataSo
 				currList.add(cc.uids[j]);
 			}
 			Collections.sort(currList);
-			outp.put(cc.clusterID+", "+lcControl.convertLocalLongToUTC(cc.getStartAndEnd()[0]), currList);
+			outp.put(cc.clusterID+", "+lcControl.convertDateLongToString(cc.getStartAndEnd(false)[0]), currList);
 		}
 		return outp;
 	}

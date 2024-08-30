@@ -26,3 +26,17 @@ WMNT:
 - "Select all in spectrogram view" button now scrolls to the selected detections in the table when pressed.
 - Condensed settings dialog into tabs.
 - Buttons slightly re-arranged in the GUI again.
+
+1.06c (August 30th, 2024)
+Feature Extractor:
+- Added "formant frequency ratio" as a feature.
+- Tentatively fixed bug where unfinished clusters are pushed to the block too early in live streaming setups, resulting in multiple clusters with the same ID being sent to the Live Classifier.
+- Changed means through which the FEProcess signals FEThreadManager that vectors can be pushed to the block.
+- Added threading options to a new "experimental" tab in the settings dialog.
+Classifiers:
+- Feature usefulness analysis now checks for correlation between features and displays the most correlated feature for each respective feature and its absolute correlation score.
+- Fixed significant time zone issues in the Live Classifier.
+Training Set Builder:
+- Fixed bug where editing a subset would delete the loaded feature list.
+WMNT:
+- Swapped positions of "Undo" and "Scroll" buttons.

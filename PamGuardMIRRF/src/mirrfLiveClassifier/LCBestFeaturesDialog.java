@@ -33,10 +33,10 @@ public class LCBestFeaturesDialog extends PamDialog {
 		
 		PamPanel mainPanel = new PamPanel(new FlowLayout());
 		
-		String[] columnNames = {"Feature name", "F", "p"};
+		String[] columnNames = {"Feature name", "F", "p", "Most corr. feat.", "Abs. correlation"};
 		dtm = new DefaultTableModel(columnNames,0) {
-			Class[] types = {String.class, Double.class, Double.class};
-			boolean[] canEdit = {false, false, false};
+			Class[] types = {String.class, Double.class, Double.class, String.class, Double.class};
+			boolean[] canEdit = {false, false, false, false, false};
 			
 			@Override
 			public Class getColumnClass(int index) {
@@ -50,15 +50,19 @@ public class LCBestFeaturesDialog extends PamDialog {
 		};
 		featureTable = new PamTable(dtm);
 		featureTable.getTableHeader().setReorderingAllowed(false);
+		featureTable.setCellSelectionEnabled(true);
 		featureTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 		featureTable.setAutoCreateRowSorter(true);
 		featureTable.setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);
 		featureTable.getColumnModel().getColumn(0).setPreferredWidth(200);
-		featureTable.getColumnModel().getColumn(1).setPreferredWidth(100);
+		featureTable.getColumnModel().getColumn(1).setPreferredWidth(50);
+		featureTable.getColumnModel().getColumn(2).setPreferredWidth(50);
+		featureTable.getColumnModel().getColumn(3).setPreferredWidth(200);
+		featureTable.getColumnModel().getColumn(4).setPreferredWidth(50);
 		featureTable.getRowSorter().toggleSortOrder(1);
 		featureTable.getRowSorter().toggleSortOrder(1); // Doing this twice to make it sort descending.
 		JScrollPane sp = new JScrollPane(featureTable);
-		sp.setPreferredSize(new Dimension(300,300));
+		sp.setPreferredSize(new Dimension(550,350));
 		
 		mainPanel.add(sp);
 		
@@ -68,7 +72,7 @@ public class LCBestFeaturesDialog extends PamDialog {
 		for (int i = 0; i < tokens.length; i++) {
 			String[] subtokens = tokens[i].split(", ");
 			dtm.addRow(new Object[] {subtokens[0], Double.valueOf(String.format("%.1f", Double.valueOf(subtokens[1]))),
-					Double.valueOf(subtokens[2])});
+					Double.valueOf(subtokens[2]), subtokens[3], Double.valueOf(String.format("%.3f", Double.valueOf(subtokens[4])))});
 		}
 	}
 

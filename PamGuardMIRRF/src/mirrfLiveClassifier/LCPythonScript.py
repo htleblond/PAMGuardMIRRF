@@ -244,10 +244,23 @@ class LCModel():
         scores = skb.scores_
         p_values = skb.pvalues_
         currIndices = skb.get_support(indices=True).tolist()
+        X_T = np.transpose(X)
+        corr_scores = {}
+        for i in np.arange(len(currIndices)):
+            score_arr = []
+            for j in np.arange(len(currIndices)):
+                if i == j:
+                    score_arr.append(0.0)
+                else:
+                    score_arr.append(np.abs(np.corrcoef(X_T[currIndices[i]], X_T[currIndices[j]])[0][1]))
+            corr_scores[self.featureList[currIndices[i]]] = score_arr
         outp = "BESTFEATUREORDER: "
         for i in np.arange(len(currIndices)):
-            #outp += "("+self.featureList[currIndices[i]]+", "+str(scores[i]/len(X))+")"
-            outp += "("+self.featureList[currIndices[i]]+", "+str(scores[i])+", "+str(p_values[i])+")"
+            feature_name = self.featureList[currIndices[i]]
+            score_arr = corr_scores[feature_name]
+            corr_feat = self.featureList[currIndices[np.argmax(score_arr)]]
+            max_corr = np.max(score_arr)
+            outp += "("+self.featureList[currIndices[i]]+", "+str(scores[i])+", "+str(p_values[i])+", "+corr_feat+", "+str(max_corr)+")"
             if (i < len(currIndices)-1):
                 outp += ", "
         print(outp, flush=True)

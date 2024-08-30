@@ -189,6 +189,7 @@ public class LCPythonThreadManager{
 			lcControl.getTabPanel().getPanel().addErrorToTable(info[0], info[1], Integer.valueOf(info[2]));
 		}
 		if (outpstr.substring(0,6).equals("RESULT")) {
+			//System.out.println("parseIPTOutput: "+outpstr);
 			lcControl.getProcess().addResultsData(outpstr.substring(10));
 		}
 		if (outpstr.equals("RUNLAST")) {

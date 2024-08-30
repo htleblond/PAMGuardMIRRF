@@ -277,7 +277,7 @@ public class LCCallCluster implements Serializable, Cloneable {
 	/**
 	 * @return Size-2 array of longs containing the overall start and end times of the cluster, respectively.
 	 */
-	public long[] getStartAndEnd() {
+	public long[] getStartAndEnd(boolean useLocalTZ) {
 		long[] outp = new long[2];
 		outp[0] = datetimes[0];
 		outp[1] = datetimes[0] + durations[0];
@@ -289,6 +289,10 @@ public class LCCallCluster implements Serializable, Cloneable {
 			if (datetimes[i] + durations[i] > outp[1]) {
 				outp[1] = datetimes[i] + durations[i];
 			}
+		}
+		if (!useLocalTZ) {
+			outp[0] = LCControl.convertFromLocalToUTC(outp[0]);
+			outp[1] = LCControl.convertFromLocalToUTC(outp[1]);
 		}
 		return outp;
 	}

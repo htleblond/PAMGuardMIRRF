@@ -82,10 +82,11 @@ public abstract class MIRRFControlledUnit extends PamControlledUnit {
 		String date_format = "yyyy-MM-dd HH:mm:ss+SSS";
 		SimpleDateFormat currdateformat = new SimpleDateFormat(date_format);
 		String currdate = currdateformat.format(date);
-		LocalDateTime ldt = LocalDateTime.parse(currdate, DateTimeFormatter.ofPattern(date_format));
-		DateTimeFormatter dtformat = DateTimeFormatter.ofPattern(date_format);
+		//LocalDateTime ldt = LocalDateTime.parse(currdate, DateTimeFormatter.ofPattern(date_format));
+		//DateTimeFormatter dtformat = DateTimeFormatter.ofPattern(date_format);
 		//System.out.println(dtformat.format(ldt));
-		return dtformat.format(ldt);
+		//return dtformat.format(ldt);
+		return currdate;
 	}
 	
 	/**
@@ -95,17 +96,26 @@ public abstract class MIRRFControlledUnit extends PamControlledUnit {
 	 */
 	public static long convertBetweenTimeZones(long inp, String fromTZ, String toTZ) {
 		try {
-			ZonedDateTime fromZonedDateTime = ZonedDateTime.ofInstant(Instant.ofEpochMilli(inp), ZoneId.of(fromTZ));
-			ZonedDateTime toZonedDateTime = fromZonedDateTime.withZoneSameInstant(ZoneId.of(toTZ));
+			// Kudos: https://stackoverflow.com/questions/12487125/java-how-do-you-convert-a-utc-timestamp-to-local-time
 			String date_format = "yyyy-MM-dd HH:mm:ss+SSS";
-			DateTimeFormatter dtformat = DateTimeFormatter.ofPattern(date_format);
-			//System.out.println("From: "+dtformat.format(fromZonedDateTime)+" "+fromTZ);
-			//System.out.println("To:   "+dtformat.format(toZonedDateTime)+" "+toTZ);
-			return convertDateStringToLong(dtformat.format(toZonedDateTime));
+			SimpleDateFormat fromFormat = new SimpleDateFormat(date_format);
+			fromFormat.setTimeZone(TimeZone.getTimeZone(fromTZ));
+			Date date = fromFormat.parse(convertDateLongToString(inp));
+			SimpleDateFormat toFormat = new SimpleDateFormat(date_format);
+			toFormat.setTimeZone(TimeZone.getTimeZone(toTZ));
+			return convertDateStringToLong(toFormat.format(date));
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		return -1;
+	}
+	
+	public static long convertFromLocalToUTC(long inp) {
+		return convertBetweenTimeZones(inp, getLocalTimeZoneName(), "UTC");
+	}
+	
+	public static long convertFromUTCToLocal(long inp) {
+		return convertBetweenTimeZones(inp, "UTC", getLocalTimeZoneName());
 	}
 	
 	public static String getLocalTimeZoneName() {

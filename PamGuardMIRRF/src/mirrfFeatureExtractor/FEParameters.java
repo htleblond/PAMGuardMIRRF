@@ -76,6 +76,10 @@ public class FEParameters extends MIRRFParameters {
 	public boolean miscPrintInputChecked;
 	public boolean miscPrintOutputChecked;
 	
+	public int expMaxThreads;
+	public int expMaxClipsAtOnce;
+	public int expBlockPushTriggerBuffer;
+	
 	public FEParameters() {
 		
 		this.sr = 0;
@@ -136,6 +140,11 @@ public class FEParameters extends MIRRFParameters {
 		this.miscPrintJavaChecked = false;
 		this.miscPrintInputChecked = false;
 		this.miscPrintOutputChecked = false;
+		
+		this.expMaxThreads = 2;
+		this.expMaxClipsAtOnce = 25;
+		this.expBlockPushTriggerBuffer = 1000;
+		
 	}
 	
 	public String getFeatureAbbrsAsString() {

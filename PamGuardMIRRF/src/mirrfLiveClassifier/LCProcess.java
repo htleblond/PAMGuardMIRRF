@@ -50,8 +50,8 @@ public class LCProcess extends PamProcess {
 			return;
 		}
 		super.newData(o, arg);
-		if (lcControl.getParams().printJava)
-			System.out.println("REACHED lcProcess.newData");
+		//if (lcControl.getParams().printJava)
+		//	System.out.println("REACHED lcProcess.newData");
 		FEDataUnit vectorDataUnit = (FEDataUnit) arg;
 		FECallCluster cc = vectorDataUnit.getCluster();
 		//String outp = "tcm.predictCluster([";
@@ -61,7 +61,8 @@ public class LCProcess extends PamProcess {
 			outp += String.valueOf(cc.uids[i])+",";
 			//outp += String.valueOf(cc.datetimes[i])+",";
 			outp += "\"\","; // Live Classifier doesn't record location.
-			outp += "\""+lcControl.convertLocalLongToUTC(cc.datetimes[i])+"\",";
+			// Note that the data time here should be in UTC, but it has to be converted to local when added to the block or the graphics won't work.
+			outp += "\""+lcControl.convertDateLongToString(cc.datetimes[i])+"\",";
 			outp += String.valueOf(cc.durations[i])+",";
 			outp += String.valueOf(cc.lfs[i])+",";
 			outp += String.valueOf(cc.hfs[i])+",";
@@ -79,6 +80,7 @@ public class LCProcess extends PamProcess {
 				outp += "]]])";
 			}
 		}
+		//System.out.println("LCProcess newData: "+outp);
 		lcControl.getThreadManager().addCommand(outp);
 	}
 	
@@ -104,7 +106,8 @@ public class LCProcess extends PamProcess {
 			cc.location = locations[0]; // Only really used by Test Classifier.
 			for (int i = 0; i < cc.getSize(); i++) {
 				cc.uids[i] = Long.valueOf(uids[i]);
-				cc.datetimes[i] = lcControl.convertDateStringToLong(datetimes[i]);
+				// TZ needs to be local for the graphics to work - remember to change this back when necessary.
+				cc.datetimes[i] = lcControl.convertFromUTCToLocal(lcControl.convertDateStringToLong(datetimes[i]));
 				cc.durations[i] = (int) Double.valueOf(durations[i]).doubleValue();
 				cc.lfs[i] = (int) Double.valueOf(lfs[i]).doubleValue();
 				cc.hfs[i] = (int) Double.valueOf(hfs[i]).doubleValue();

@@ -32,10 +32,12 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
+import javax.swing.JSpinner;
 import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
+import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingConstants;
 import javax.swing.border.TitledBorder;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -134,6 +136,10 @@ public class FESettingsDialog extends PamDialog {
 	protected JCheckBox miscPrintOutputCheck;
 	protected JTextField miscTempField;
 	protected JButton miscTempButton;
+	
+	protected JSpinner expMaxThreadsSpinner;
+	protected JSpinner expMaxClipsAtOnceSpinner;
+	protected JTextField expBlockPushTriggerBufferField;
 	
 	//@SuppressWarnings("static-access")
 	public FESettingsDialog(Window parentFrame, FEControl feControl) {
@@ -787,75 +793,67 @@ public class FESettingsDialog extends PamDialog {
 		p5.add(mainPanel5);
 		tabbedPane.add("Miscellaneous", p5);
 		
+		JPanel p6 = new JPanel(new FlowLayout(FlowLayout.CENTER));
+		JPanel mainPanel6 = new JPanel(new GridBagLayout());
+		b = new PamGridBagContraints();
+		b.gridy = 0;
+		b.gridx = 0;
+		b.fill = GridBagConstraints.HORIZONTAL;
+		b.anchor = GridBagConstraints.WEST;
+		
+		mainPanel6.add(new JLabel("Tinker with these settings at your own risk."), b);
+		
+		b.gridy++;
+		JPanel expThreadingPanel = new JPanel(new GridBagLayout());
+		expThreadingPanel.setBorder(new TitledBorder("Threading"));
+		c = new PamGridBagContraints();
+		c.fill = c.HORIZONTAL;
+		c.anchor = c.WEST;
+		expThreadingPanel.add(new JLabel("Max. threads:"), c);
+		c.gridx++;
+		expMaxThreadsSpinner = new JSpinner(new SpinnerNumberModel(feControl.getParams().expMaxThreads, 2, 100, 1));
+		expThreadingPanel.add(expMaxThreadsSpinner, c);
+		c.gridy++;
+		c.gridx = 0;
+		c.gridwidth = 3;
+		expThreadingPanel.add(new JLabel(feControl.makeHTML("The maximum number of Python threads to be used at once for the feature "
+				+ "extraction process. As of now, increasing this number does not necessarily seem to speed things up.\n", 300)), c);
+		c.gridy++;
+		c.gridwidth = 1;
+		expThreadingPanel.add(new JLabel("Max. clips at once:"), c);
+		c.gridx++;
+		expMaxClipsAtOnceSpinner = new JSpinner(new SpinnerNumberModel(feControl.getParams().expMaxClipsAtOnce, 1, 500, 1));
+		expThreadingPanel.add(expMaxClipsAtOnceSpinner, c);
+		c.gridy++;
+		c.gridx = 0;
+		c.gridwidth = 3;
+		expThreadingPanel.add(new JLabel(feControl.makeHTML("The maximum number of clips that can be sent to the Python threads at once. "
+				+ "Increasing this number <i>may</i> speed things up in in cases where the pending backlog is heavily piling up, but "
+				+ "increasing it too much can overload and crash the Python interpreter, so be very cautious.\n", 300)), c);
+		c.gridy++;
+		c.gridwidth = 1;
+		expThreadingPanel.add(new JLabel("Block-push trigger buffer:"), c);
+		c.gridx++;
+		expBlockPushTriggerBufferField = new JTextField(5);
+		expBlockPushTriggerBufferField.setDocument(JIntFilter());
+		expThreadingPanel.add(expBlockPushTriggerBufferField, c);
+		c.gridx++;
+		expThreadingPanel.add(new JLabel("ms"), c);
+		c.gridy++;
+		c.gridx = 0;
+		c.gridwidth = 3;
+		expThreadingPanel.add(new JLabel(feControl.makeHTML("Length of the buffer between the FFT engine has to pass plus the end of the "
+				+ "current cluster's last detection and the cluster join distance before the cluster is pushed to the data block. Bump this "
+				+ "number up if the attached Live Classifier is producing multiple subsequent predictions with the same cluster ID in a "
+				+ "live-streaming setup (although note that this will also delay the process by the specified amount). \n", 300)), c);
+		mainPanel6.add(expThreadingPanel, b);
+		
+		p6.add(mainPanel6);
+		tabbedPane.add("Experimental", p6);
+		
 		setDialogComponent(tabbedPane);
 		
 		actuallyGetParams();
-		
-	/*	if (feControl.isViewer()) {
-			this.getCancelButton().setVisible(false);
-			this.getDefaultButton().setVisible(false);
-			
-			this.inputProcessRB.setEnabled(false);
-			this.inputSourcePanel.setEnabled(false);
-			this.inputDataRB.setEnabled(false);
-			this.inputDataButton.setEnabled(false);
-			this.inputIgnoreBlanksCheck.setEnabled(false);
-			this.inputIgnore2SecondGlitchCheck.setEnabled(false);
-			this.inputIgnoreFalsePositivesCheck.setEnabled(false);
-			this.inputIgnoreUnkCheck.setEnabled(false);
-			
-			this.outputDataCheck.setEnabled(false);
-			this.outputDataButton.setEnabled(false);
-			
-			this.audioSourcePanel.setEnabled(false);
-			this.dynamicRB.setEnabled(false);
-			this.staticRB.setEnabled(false);
-			this.audioLengthField.setEnabled(false);
-			this.audioSTFTBox.setEnabled(false);
-			this.audioHopField.setEnabled(false);
-			this.audioWindowBox.setEnabled(false);
-			this.audioNormalizeCheck.setEnabled(false);
-			this.audioHPFCheck.setEnabled(false);
-			this.audioHPFThresholdField.setEnabled(false);
-			this.audioHPFMagnitudeField.setEnabled(false);
-			this.audioLPFCheck.setEnabled(false);
-			this.audioLPFThresholdField.setEnabled(false);
-			this.audioLPFMagnitudeField.setEnabled(false);
-			this.audioNRCheck.setEnabled(false);
-			this.audioNRStartField.setEnabled(false);
-			this.audioNRLengthField.setEnabled(false);
-			this.audioNRScalarField.setEnabled(false);
-			this.audioSaveCheck.setEnabled(false);
-			
-			this.featureAddButton.setEnabled(false);
-			this.featureDeleteButton.setEnabled(false);
-			this.featureUpButton.setEnabled(false);
-			this.featureDownButton.setEnabled(false);
-			this.featureImportLoadedButton.setEnabled(false);
-			this.featureImportNewButton.setEnabled(false);
-			
-			this.miscClusterCheck.setEnabled(false);
-			this.miscJoinField.setEnabled(false);
-			this.miscFileStartCheck.setEnabled(false);
-			this.miscFileStartField.setEnabled(false);
-			this.miscBelowFreqCheck.setEnabled(false);
-			this.miscBelowFreqField.setEnabled(false);
-			this.miscAboveFreqCheck.setEnabled(false);
-			this.miscAboveFreqField.setEnabled(false);
-			this.miscBelowDurCheck.setEnabled(false);
-			this.miscBelowDurField.setEnabled(false);
-			this.miscAboveDurCheck.setEnabled(false);
-			this.miscAboveDurField.setEnabled(false);
-			this.miscBelowAmpCheck.setEnabled(false);
-			this.miscBelowAmpField.setEnabled(false);
-			this.miscAboveAmpCheck.setEnabled(false);
-			this.miscAboveAmpField.setEnabled(false);
-			//this.miscPrintJavaCheck.setEnabled(false);
-			//this.miscPrintInputCheck.setEnabled(false);
-			//this.miscPrintOutputCheck.setEnabled(false);
-			this.miscTempField.setEnabled(false);
-			this.miscTempButton.setEnabled(false);
-		} */
 	}
 	
 	/**
@@ -1297,9 +1295,9 @@ public class FESettingsDialog extends PamDialog {
 					}
 				}
 			} else if (tokens.length == 5) {
-				ArrayList<String> fivers = new ArrayList<String>(Arrays.asList("formantfreq","formantdiff","contrast","thd","hbr"));
+				ArrayList<String> fivers = new ArrayList<String>(Arrays.asList("formantfreq","formantdiff","formantratio","contrast","thd","hbr"));
 				if (fivers.contains(tokens[0])) {
-					if (tokens[0].equals("formantfreq") || tokens[0].equals("formantdiff")) {
+					if (tokens[0].equals("formantfreq") || tokens[0].equals("formantdiff") || tokens[0].equals("formantratio")) {
 						try {
 							double max_exp_freq = Double.valueOf(tokens[1]);
 							double min_freq = Double.valueOf(tokens[2]);
@@ -1410,6 +1408,7 @@ public class FESettingsDialog extends PamDialog {
 		outp.put("formantfreq","Formant frequency");
 		outp.put("formantcount","Valid formant count");
 		outp.put("formantdiff","Difference between two formants");
+		outp.put("formantratio","Formant frequency ratio");
 		outp.put("mfcc","Mel-frequency cepstral coefficients");
 		outp.put("poly","Polynomial features");
 		outp.put("praat","Praat fundamental frequency");
@@ -1589,6 +1588,9 @@ public class FESettingsDialog extends PamDialog {
 		miscPrintInputCheck.setSelected(params.miscPrintInputChecked);
 		miscPrintOutputCheck.setSelected(params.miscPrintOutputChecked);
 		miscTempField.setText(params.tempFolder);
+		expMaxThreadsSpinner.setValue(params.expMaxThreads);
+		expMaxClipsAtOnceSpinner.setValue(params.expMaxClipsAtOnce);
+		expBlockPushTriggerBufferField.setText(Integer.toString(params.expBlockPushTriggerBuffer));
 		
 		return true;
 	}
@@ -2025,6 +2027,9 @@ public class FESettingsDialog extends PamDialog {
 		newParams.miscPrintJavaChecked = miscPrintJavaCheck.isSelected();
 		newParams.miscPrintInputChecked = miscPrintInputCheck.isSelected();
 		newParams.miscPrintOutputChecked = miscPrintOutputCheck.isSelected();
+		newParams.expMaxThreads = (int) expMaxThreadsSpinner.getValue();
+		newParams.expMaxClipsAtOnce = (int) expMaxClipsAtOnceSpinner.getValue();
+		newParams.expBlockPushTriggerBuffer = Integer.valueOf(expBlockPushTriggerBufferField.getText());
 		
 		//if (outputDataCheck.isSelected()) {
 		if (outputDataBox.getSelectedIndex() > 0) {
@@ -2089,6 +2094,7 @@ public class FESettingsDialog extends PamDialog {
 		
 		if (feControl.getThreadManager().isActive()) {
 			feControl.getThreadManager().resetTxtParams();
+			feControl.getThreadManager().resetActiveThreads();
 		}
 		
 		return true;

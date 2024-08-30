@@ -184,20 +184,22 @@ public class LCBinaryDataSource extends BinaryDataSource {
 			LCCallCluster cc = new LCCallCluster(lcControl.getParams().labelOrder, nDetections);
 			cc.clusterID = clusterID;
 			if (currMH.species.length != cc.labelList.size()) {
-				System.out.println("LCBinaryDataSource.sinkData: Cluster at "+String.valueOf(lcControl.convertLocalLongToUTC(bh.getDataDate()))+
-						" does not contain the same species as those specified in the parameters.");
+				System.out.println("LCBinaryDataSource.sinkData: Cluster at "
+						+lcControl.convertDateLongToString(lcControl.convertFromLocalToUTC(bh.getDataDate()))
+						+" does not contain the same species as those specified in the parameters.");
 				return null;
 			}
 			for (int i = 0; i < currMH.species.length; i++) {
 				if (!cc.labelList.contains(currMH.species[i])) {
-					System.out.println("LCBinaryDataSource.sinkData: Cluster at "+String.valueOf(lcControl.convertLocalLongToUTC(bh.getDataDate()))+
-							" does not contain the same species as those specified in the parameters.");
+					System.out.println("LCBinaryDataSource.sinkData: Cluster at "
+							+lcControl.convertDateLongToString(lcControl.convertFromLocalToUTC(bh.getDataDate()))
+							+" does not contain the same species as those specified in the parameters.");
 					return null;
 				}
 			}
 			for (int i = 0; i < nDetections; i++) {
 				cc.uids[i] = dis.readLong();
-				cc.datetimes[i] = dis.readLong();
+				cc.datetimes[i] = dis.readLong(); // NOTE that this is in local time.
 				cc.durations[i] = (int) dis.readFloat();
 				cc.lfs[i] = (int) dis.readFloat();
 				cc.hfs[i] = (int) dis.readFloat();

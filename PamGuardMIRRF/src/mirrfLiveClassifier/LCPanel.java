@@ -45,6 +45,7 @@ public class LCPanel extends PamBorderPanel {
 	protected DefaultTableModel dtm;
 	protected PamTable resultsTable;
 	protected JTextArea resultsTA;
+	protected HashSet<String> tableHashSet;
 	
 	protected volatile boolean running;
 	protected volatile boolean waiting;
@@ -81,6 +82,8 @@ public class LCPanel extends PamBorderPanel {
 		this.ccList = new ArrayList<LCCallCluster>();
 		
 		this.uidToClusterMap = new HashMap<String, String>();
+		
+		this.tableHashSet = new HashSet<String>();
 		
 		this.setLayout(new BorderLayout());
 		
@@ -207,7 +210,7 @@ public class LCPanel extends PamBorderPanel {
 		scrollButton.addActionListener(new ScrollButtonListener());
 		bottomRightPanel.add(scrollButton, c);
 		c.gridy++;
-		bestFeaturesButton = new JButton("List features by usefulness");
+		bestFeaturesButton = new JButton("Feature usefulness analysis");
 		bestFeaturesButton.addActionListener(new BestFeaturesButtonListener());
 		bottomRightPanel.add(bestFeaturesButton, c);
 		c.gridy++;
@@ -340,7 +343,7 @@ public class LCPanel extends PamBorderPanel {
 	        		if (cc.uids[j] < 10000000) {
 	        			outp += "\t";
 	        		}
-	        		outp += control.convertLocalLongToUTC(cc.datetimes[j])+"\t\t";
+	        		outp += control.convertDateLongToString(control.convertFromLocalToUTC(cc.datetimes[j]))+"\t\t";
 	        		outp += "[";
 	        		for (int k = 0; k < cc.labelList.size(); k++) {
 	        			if (k != 0) {
@@ -489,18 +492,25 @@ public class LCPanel extends PamBorderPanel {
 	public void addResultToTable(LCDataUnit du) {
 		LCCallCluster cc = du.getCluster();
 		
-		for (int i = 0; i < dtm.getRowCount(); i++) {
-			if (cc.clusterID.equals((String) dtm.getValueAt(i, 0))) {
+		// This is here because using the scroll button for the first time duplicates every entry in the table for some reason.
+		String idString = cc.clusterID+", "+LCControl.convertDateLongToString(cc.getStartAndEnd(false)[0]);
+		if (tableHashSet.contains(idString))
+			return;
+		tableHashSet.add(idString);
+	/*	for (int i = 0; i < dtm.getRowCount(); i++) {
+			if (cc.clusterID.equals((String) dtm.getValueAt(i, 0)) 
+					&& LCControl.convertDateLongToString(cc.getStartAndEnd(false)[0]).equals((String) dtm.getValueAt(i, 1))) {
 				return;
 			}
-		}
+		} */
 		
 		Object[] newRow = new Object[7];
 		if (dtm.getColumnCount() >= 8) {
 			newRow = new Object[8];
 		}
 		newRow[0] = cc.clusterID;
-		newRow[1] = control.convertLocalLongToUTC(cc.getStartAndEnd()[0]);
+		// NOTE that the time zone is converted from local to UTC in the getStartAndEnd function with the false boolean.
+		newRow[1] = control.convertDateLongToString(cc.getStartAndEnd(false)[0]);
 		newRow[2] = cc.getSize();
 		double[] probaAvgs = new double[cc.labelList.size()];
 		for (int i = 0; i < probaAvgs.length; i++) {
@@ -609,8 +619,8 @@ public class LCPanel extends PamBorderPanel {
 			newRow[7] = cc.getActualSpeciesString();
 		}
 		for (int i = 0; i < cc.getSize(); i++) {
-			uidToClusterMap.put(String.valueOf(cc.uids[i])+", "+control.convertLocalLongToUTC(cc.datetimes[i]),
-					cc.clusterID+", "+control.convertLocalLongToUTC(cc.getStartAndEnd()[0]));
+			uidToClusterMap.put(String.valueOf(cc.uids[i])+", "+control.convertDateLongToString(control.convertFromLocalToUTC(cc.datetimes[i])),
+					cc.clusterID+", "+control.convertDateLongToString(cc.getStartAndEnd(false)[0]));
 		}
 		if (!control.getParams().shouldIgnoreCluster(cc) || control.getParams().displayIgnored)
 			dtm.addRow(newRow);
@@ -943,6 +953,7 @@ public class LCPanel extends PamBorderPanel {
 	
 	public void clearTable() {
 		while (dtm.getRowCount() > 0) dtm.removeRow(0);
+		tableHashSet.clear();
 	}
 	
 	public LCWaitingDialogThread getWaitingDialogThread() {

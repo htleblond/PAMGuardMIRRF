@@ -41,14 +41,19 @@ public class FEPythonThreadManager {
 	public volatile ArrayList<String> commandList;
 	public PythonInterpreterThread pit = null;
 	
-	private final int maxThreads = 2; // TODO ADD THIS TO FEPARAMETERS EVENTUALLY
-	private final int maxClipsAtOnce = 25; // TODO ADD THIS TO FEPARAMETERS EVENTUALLY
+	//private final int maxThreads = 2; // TODO ADD THIS TO FEPARAMETERS EVENTUALLY
+	//private final int maxClipsAtOnce = 25; // TODO ADD THIS TO FEPARAMETERS EVENTUALLY
 	protected volatile ArrayList<ContourClip> waitList;
 	protected volatile ArrayList<String> idList;
 	protected volatile ArrayList<ArrayList<ContourClip>> ccList;
-	protected volatile int activeThread;
+	//protected volatile int activeThread;
+	protected volatile boolean[] activeThreads;
 	private volatile ArrayList<ArrayList<String[]>> pythonOutpList;
-	private volatile boolean rdbctSignal;
+	//private volatile boolean rdbctSignal;
+	//private volatile ArrayList<Integer> rdbctSignalList;
+	//protected int lastClusterPushed;
+	private volatile long rdbctTimestamp;
+	protected volatile boolean pamHasStopped;
 	
 	public volatile ArrayList<String> remainingUIDs; // TODO This is only for testing.
 	
@@ -57,8 +62,13 @@ public class FEPythonThreadManager {
 		//this.activePythonThreads = new ArrayList<String>();
 		this.printThreadsActive = true;
 		this.commandList = new ArrayList<String>();
-		this.rdbctSignal = false;
+		//this.rdbctSignal = false;
+		//this.rdbctSignalList = new ArrayList<Integer>();
+		//this.lastClusterPushed = 0;
+		this.rdbctTimestamp = -1;
 		this.remainingUIDs = new ArrayList<String>();
+		this.activeThreads = new boolean[feControl.getParams().expMaxThreads];
+		this.pamHasStopped = true;
 		
 		String defpathname = feControl.getParams().tempFolder;
 		this.pathname = "";
@@ -107,7 +117,7 @@ public class FEPythonThreadManager {
 		waitList = new ArrayList<ContourClip>();
 		idList = new ArrayList<String>();
 		ccList = new ArrayList<ArrayList<ContourClip>>();
-		resetActiveThread();
+		resetActiveThreads();
 		pythonOutpList = new ArrayList<ArrayList<String[]>>();
 	}
 	
@@ -116,8 +126,10 @@ public class FEPythonThreadManager {
 	 * skip over any slots in pythonOutpList. Don't call this unless FEProcess
 	 * has finished with its current cluster.
 	 */
-	public void resetActiveThread() {
-		activeThread = -1;
+	public void resetActiveThreads() {
+		//for (int i = 0; i < activeThreads.length; i++)
+		//	activeThreads[i] = false;
+		activeThreads = new boolean[feControl.getParams().expMaxThreads];
 	}
 	
 	/**
@@ -305,17 +317,10 @@ public class FEPythonThreadManager {
 	}
 	
 	/**
-	 * Used by the RawDataBlockCheckerThread in FEProcess to signal that the current cluster has been passed.
+	 * Signals to the Python thread manager how far ahead the raw data block has reached in the current file.
 	 */
-	public void setRDBCTSignal(boolean inp) {
-		rdbctSignal = inp;
-	}
-	
-	/**
-	 * Checks if the RawDataBlockCheckerThread in FEProcess is finished with the current cluster.
-	 */
-	public boolean getRDBCTSignal() {
-		return rdbctSignal;
+	public void setRDBCTTimestamp(long inp) {
+		rdbctTimestamp = inp;
 	}
 	
 	/**
@@ -327,7 +332,7 @@ public class FEPythonThreadManager {
 		@Override
 		public void run() {
 			while(printThreadsActive) {
-				if (waitList.size() > 0 && clipsLeft() < maxClipsAtOnce) {
+				if (waitList.size() > 0 && clipsLeft() < feControl.getParams().expMaxClipsAtOnce) {
 					ContourClip cc = waitList.get(0);
 					if (cc == null) { // TODO FIGURE OUT WHAT CAUSES THIS
 						waitList.remove(0);
@@ -344,7 +349,7 @@ public class FEPythonThreadManager {
 						waitList.remove(0);
 					} else {
 						int index = -1;
-						if (idList.size() < maxThreads) {
+						if (idList.size() < feControl.getParams().expMaxThreads) {
 							idList.add(cc.clusterID);
 							ccList.add(new ArrayList<ContourClip>());
 							pythonOutpList.add(new ArrayList<String[]>());
@@ -361,8 +366,6 @@ public class FEPythonThreadManager {
 						}
 						if (index != -1) {
 							if (feControl.getParams().audioNRChecked) {
-								//commandList.add("nr"+String.format("%02d", index)+
-								//		" = librosa.load(r\""+cc.nrName+"\", sr="+String.valueOf(feControl.getParams().sr)+")[0]");
 								commandList.add("nr"+String.format("%02d", index)+
 										" = FEPythonThread.loadAudio(fn=r\""+cc.nrName+"\", sr="+String.valueOf(feControl.getParams().sr)+")");
 								commandList.add("thread"+String.format("%02d", idList.indexOf(cc.clusterID))+
@@ -371,7 +374,7 @@ public class FEPythonThreadManager {
 								commandList.add("thread"+String.format("%02d", idList.indexOf(cc.clusterID))+
 										" = FEPythonThread.FEThread(\"\", [], txtParams)");
 							}
-							activeThread = index;
+							activeThreads[index] = true;
 						}
 						try {
 							TimeUnit.MILLISECONDS.sleep(100);
@@ -390,10 +393,6 @@ public class FEPythonThreadManager {
 				}
 				if (vectorsLeft() > 0) {
 					pushVectorsToDataBlock();
-				}
-				if (rdbctSignal) {
-					rdbctSignal = false;
-					resetActiveThread();
 				}
 			}
 		}
@@ -423,7 +422,7 @@ public class FEPythonThreadManager {
 			}
 			int slot = idList.indexOf(tokens[0].substring(1,tokens[0].length()-1));
 			if (slot < 0) {
-				if (idList.size() < maxThreads) {
+				if (idList.size() < feControl.getParams().expMaxThreads) {
 					slot = idList.size();
 					idList.add(tokens[0].substring(1,tokens[0].length()-1));
 					ccList.add(new ArrayList<ContourClip>());
@@ -459,9 +458,6 @@ public class FEPythonThreadManager {
 						String location = tokens[index++]; // 2 (.mirrfts) - location
 						outp += ","+location.substring(1, location.length()-1);
 					}
-					//SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss+SSS");
-					//df.setTimeZone(TimeZone.getTimeZone("UTC"));
-					//Date date  = new Date(Long.valueOf(tokens[index++])); 
 					outp += ","+FEControl.convertDateLongToString(Long.valueOf(tokens[index++])); // 2 (.mirrffe), 3 (.mirrfts) - date
 					outp += ","+tokens[index++]; // 3 (.mirrffe), 4 (.mirrfts) - duration
 					outp += ","+tokens[index++]; // 4 (.mirrffe), 5 (.mirrfts) - lf
@@ -514,11 +510,58 @@ public class FEPythonThreadManager {
 	private void pushVectorsToDataBlock() {
 		for (int i = 0; i < pythonOutpList.size(); i++) {
 			if (feControl.feProcess.getVectorDataBlock().isFinished() && getWaitlistSize() == 0 && clipsLeft() == 0)
-				resetActiveThread();
+				resetActiveThreads();
 			ArrayList<String[]> currList = new ArrayList<String[]>(pythonOutpList.get(i));
-			if (i == activeThread || ccList.get(i).size() > 0 || currList.size() == 0) {
+			if (ccList.get(i).size() > 0 || currList.size() == 0) {
 				continue;
 			}
+			
+			long startTime = -1;
+			long endTime = -1;
+			for (int j = 0; j < currList.size(); j++) {
+				long datetime;
+				long duration;
+				if (feControl.getParams().inputFromCSV && feControl.getParams().inputFilesAreMIRRFTS()) {
+					datetime = Long.valueOf(currList.get(j)[3]);
+					duration = (long) Double.valueOf(currList.get(j)[4]).doubleValue();
+				} else {
+					datetime = Long.valueOf(currList.get(j)[2]);
+					duration = (long) Double.valueOf(currList.get(j)[3]).doubleValue();
+				}
+				if (startTime == -1 || startTime > datetime)
+					startTime = datetime;
+				if (endTime < datetime + duration)
+					endTime = datetime + duration;
+			}
+			if (feControl.getParams().miscClusterChecked)
+				endTime += feControl.getParams().miscJoinDistance;
+			/*
+			 * Drops the corresponding active thread flag if:
+			 * - RDBCT has passed the end of the active thread plus the join distance and buffer
+			 * - Date/time of following file occurs before file the cluster came from (Sound Acquisition sorts by file creation date, not file name)
+			 * - pamStop has been called (and pamStart hasn't been called since)
+			 */
+			if (activeThreads[i] && 
+					(endTime + feControl.getParams().expBlockPushTriggerBuffer < rdbctTimestamp || startTime > rdbctTimestamp || pamHasStopped))
+				activeThreads[i] = false;
+			if (activeThreads[i])
+				continue;
+			
+			// (Keep this for troubleshooting.)
+		/*	System.out.println("\nCluster "+currList.get(0)[0]);
+			//System.out.println("activeThread: "+String.valueOf(activeThread));
+			for (int j = 0; j < pythonOutpList.size(); j++) {
+				String outp = String.valueOf(j)+": ";
+				if (j == i) outp += "[>] ";
+				else if (activeThreads[j]) outp += "[*] ";
+				else outp += "[ ] ";
+				outp += String.valueOf(pythonOutpList.get(j).size());
+				if (pythonOutpList.get(j).size() > 0)
+					outp += " ("+pythonOutpList.get(j).get(0)[0]+")";
+				System.out.println(outp);
+			}
+			System.out.println(); */
+			
 			if (currList.get(0).length == 0) {
 				pythonOutpList.get(i).clear();
 				continue;
@@ -529,7 +572,7 @@ public class FEPythonThreadManager {
 				for (int j = 0; j < currList.size(); j++) {
 					cc.uids[j] = Long.valueOf(currList.get(j)[1]);
 					int index = 2;
-					if (feControl.getParams().inputFilesAreMIRRFTS()) {
+					if (feControl.getParams().inputFromCSV && feControl.getParams().inputFilesAreMIRRFTS()) {
 						String location = currList.get(j)[index++];
 						cc.locations[j] = location.substring(1, location.length()-1);
 					}
@@ -565,11 +608,14 @@ public class FEPythonThreadManager {
 			deleteFilesAfterProcessing(cc);
 			pythonOutpList.get(i).clear();
 		}
-	/*	String outp = "Remaining:";
-		ArrayList<String> remainingClone = new ArrayList<String>(remainingUIDs);
-		for (int i = 0; i < remainingClone.size(); i++) outp += " "+remainingClone.get(i);
-		outp += ", vectorsLeft: "+String.valueOf(this.vectorsLeft());
-		System.out.println(outp); */
+	}
+	
+	public void signalPAMHasStarted() {
+		pamHasStopped = false;
+	}
+	
+	public void signalPAMHasStopped() {
+		pamHasStopped = true;
 	}
 	
 	protected void deleteFilesAfterProcessing(FECallCluster cc) {

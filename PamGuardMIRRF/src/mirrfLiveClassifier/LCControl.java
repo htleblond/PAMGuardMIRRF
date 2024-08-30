@@ -94,6 +94,7 @@ public class LCControl extends MIRRFControlledUnit implements PamSettings {
 	/**
 	 * Converts a long to a string representing a date/time with the following format: yyyy-MM-dd HH:mm:ss+SSS
 	 */
+/*	@Deprecated
 	public String convertLocalLongToUTC(long inp) {
 		Date date = new Date(inp);
 		String date_format = "yyyy-MM-dd HH:mm:ss+SSS";
@@ -106,7 +107,7 @@ public class LCControl extends MIRRFControlledUnit implements PamSettings {
 		ZonedDateTime utcDateTime = localZonedDateTime.withZoneSameInstant(utcZoneId);
 		DateTimeFormatter dtformat = DateTimeFormatter.ofPattern(date_format);
 		return dtformat.format(utcDateTime);
-	}
+	} */
 		
 	@Override
 	public LCTabPanel getTabPanel() {
