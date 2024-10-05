@@ -18,6 +18,7 @@ public class TCPanel extends LCPanel {
 		super(control, true);
 		
 		bestFeaturesButton.removeActionListener(null);
+		wmntButton.setEnabled(false);
 	}
 	
 	@Override

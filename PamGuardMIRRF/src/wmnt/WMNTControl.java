@@ -18,6 +18,12 @@ import PamController.PamControlledUnit;
 import PamController.PamControlledUnitSettings;
 import PamController.PamSettingManager;
 import PamController.PamSettings;
+import PamView.PamTable;
+import mirrf.MIRRFControlledUnit;
+import mirrfLiveClassifier.LCCallCluster;
+import mirrfLiveClassifier.LCControl;
+import mirrfLiveClassifier.LCDataBlock;
+import mirrfLiveClassifier.LCDataUnit;
 import mirrfLiveClassifier.LCParameters;
 import whistlesAndMoans.*;
 
@@ -92,6 +98,10 @@ public class WMNTControl extends PamControlledUnit implements PamSettings {
 			e.printStackTrace();
 		}
 		return null;
+	}
+	
+	public int importLCPredictions(LCDataBlock lcDB, boolean matchIndividualContours, boolean markComments, double minLead) {
+		return this.getSidePanel().getWMNTPanel().importLCPredictions(lcDB, matchIndividualContours, markComments, minLead);
 	}
 	
 	/**

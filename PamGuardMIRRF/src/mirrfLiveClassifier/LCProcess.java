@@ -119,6 +119,8 @@ public class LCProcess extends PamProcess {
 			}
 			LCDataUnit du = new LCDataUnit(lcControl, cc);
 			resultsDataBlock.addPamData(du);
+			lcControl.idWaitList.remove(cc.clusterID); // DELETE THIS
+			//System.out.println(String.valueOf(resultsDataBlock.getUnitsCount())+" : "+String.valueOf(lcControl.idWaitList.size())); // DELETE THIS TOO
 		} catch (Exception e) {
 			e.printStackTrace();
 			return false;

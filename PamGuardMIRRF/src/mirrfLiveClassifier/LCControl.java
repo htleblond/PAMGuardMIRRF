@@ -9,6 +9,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.TimeZone;
 
@@ -37,6 +38,8 @@ public class LCControl extends MIRRFControlledUnit implements PamSettings {
 	
 	protected volatile boolean trainingSetLoaded;
 	protected volatile boolean modelFittingFinished;
+	
+	public ArrayList<String> idWaitList = new ArrayList<String>(); // DELETE THIS LATER
 	
 	public LCControl(String unitName) {
 		super(UNITTYPE, unitName);

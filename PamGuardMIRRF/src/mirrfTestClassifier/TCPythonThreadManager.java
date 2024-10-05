@@ -323,6 +323,7 @@ public class TCPythonThreadManager extends LCPythonThreadManager {
 					endProcess("Stopped");
 					return;
 				}
+				getControl().idWaitList.add(currList.get(0).clusterID); // TODO DELETE THIS
 				if (currList.size() > 0) addCommand(outp);
 				else {
 					addOneToLoadingBar();

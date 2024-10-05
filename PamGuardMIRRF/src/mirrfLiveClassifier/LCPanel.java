@@ -8,6 +8,8 @@ import java.io.File;
 import javax.swing.*;
 import javax.swing.table.*;
 
+import PamController.PamControlledUnit;
+
 import javax.swing.filechooser.*;
 import java.util.*;
 import java.text.*;
@@ -18,10 +20,12 @@ import javax.swing.event.ListSelectionListener;
 
 import PamView.dialog.PamGridBagContraints;
 import PamView.panel.PamBorderPanel;
+import PamguardMVC.PamDataBlock;
 import pamScrollSystem.AbstractPamScroller;
 import pamScrollSystem.AbstractScrollManager;
 import pamScrollSystem.ViewerScrollerManager;
 import wmnt.WMNTAnnotationInfo;
+import wmnt.WMNTControl;
 import wmnt.WMNTDataUnit;
 import PamView.PamColors;
 import PamView.PamTable;
@@ -66,6 +70,7 @@ public class LCPanel extends PamBorderPanel {
 	protected JButton scrollButton;
 	protected JButton bestFeaturesButton;
 	protected JButton exportButton;
+	protected JButton wmntButton;
 	
 	protected volatile LCLoadingBarWindow loadingBarWindow;
 	protected volatile LoadingBarThread loadingBarThread;
@@ -217,6 +222,10 @@ public class LCPanel extends PamBorderPanel {
 		exportButton = new JButton("Export results");
 		exportButton.addActionListener(new ExportButtonListener());
 		bottomRightPanel.add(exportButton, c);
+		c.gridy++;
+		wmntButton = new JButton("Export predictions to WMNT");
+		wmntButton.addActionListener(new WMNTButtonListener());
+		bottomRightPanel.add(wmntButton, c);
 		b.gridx++;
 		b.fill = b.BOTH;
 		memPanel.add(bottomRightPanel, b);
@@ -306,6 +315,39 @@ public class LCPanel extends PamBorderPanel {
 	protected void exportButtonListenerAction() {
 		LCExportDialog exportDialog = new LCExportDialog(control, control.getPamView().getGuiFrame());
 		exportDialog.setVisible(true);
+	}
+	
+	class WMNTButtonListener implements ActionListener {
+		public void actionPerformed(ActionEvent e) {
+			wmntButtonAction();
+		}
+	}
+	
+	protected void wmntButtonAction() {
+		// DELETE THIS LOOP AFTER TESTING
+	/*	for (int i = 0; i < control.getPamController().getDataBlocks().size(); i++) {
+			PamDataBlock db = control.getPamController().getDataBlocks().get(i);
+			System.out.println(db.getLongDataName()+" -> "+String.valueOf(db.getNumOfflineDataMaps()));
+		} */
+		if (!control.isViewer()) {
+			control.SimpleErrorDialog("This feature is only available in viewer mode.", 250);
+			return;
+		}
+		WMNTControl wmntControl = null;
+		for (int i = 0; i < control.getPamController().getNumControlledUnits(); i++) {
+			PamControlledUnit pcu = control.getPamController().getControlledUnit(i);
+			if (pcu.getUnitType().equals("WMNT")) {
+				wmntControl = (WMNTControl) pcu;
+				break;
+			}
+		}
+		if (wmntControl == null) {
+			control.SimpleErrorDialog("No instance of the Whistle and Moan Navigation Tool has been added to this configuration. To add one, go to "
+					+ "File -> Add Modules -> Utilities.", 300);
+			return;
+		}
+		LCWMNTExportDialog dialog = new LCWMNTExportDialog(control, wmntControl, control.getGuiFrame());
+		dialog.setVisible(true);
 	}
 	
 	/**

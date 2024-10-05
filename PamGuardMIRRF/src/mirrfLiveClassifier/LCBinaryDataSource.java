@@ -43,8 +43,8 @@ public class LCBinaryDataSource extends BinaryDataSource {
 	
 	@Override
 	public BinaryObjectData getPackedData(PamDataUnit pamDataUnit) {
-		//if (lcControl.getParams().printJava)
-		//	System.out.println("REACHED getPackedData");
+		if (lcControl.getParams().printJava)
+			System.out.println("REACHED getPackedData");
 		LCDataUnit du = (LCDataUnit) pamDataUnit;
 		if (dos == null || bos == null) {
 			dos = new DataOutputStream(bos = new ByteArrayOutputStream());
@@ -100,8 +100,8 @@ public class LCBinaryDataSource extends BinaryDataSource {
 
 	@Override
 	public byte[] getModuleHeaderData() {
-		//if (lcControl.getParams().printJava)
-		//	System.out.println("REACHED getModuleHeaderData");
+		if (lcControl.getParams().printJava)
+			System.out.println("REACHED getModuleHeaderData");
 		if (headerOutputStream == null) {
 			headerOutputStream = new DataOutputStream(headerBytes = new ByteArrayOutputStream());
 		}
@@ -131,8 +131,8 @@ public class LCBinaryDataSource extends BinaryDataSource {
 
 	@Override
 	public ModuleHeader sinkModuleHeader(BinaryObjectData binaryObjectData, BinaryHeader bh) {
-		//if (lcControl.getParams().printJava)
-		//	System.out.println("REACHED sinkModuleHeader");
+		if (lcControl.getParams().printJava)
+			System.out.println("REACHED sinkModuleHeader");
 		ByteArrayInputStream bis = new ByteArrayInputStream(binaryObjectData.getData());
 		DataInputStream dis = new DataInputStream(bis);
 		LCBinaryModuleHeader mh = new LCBinaryModuleHeader(binaryObjectData.getVersionNumber());
@@ -154,8 +154,8 @@ public class LCBinaryDataSource extends BinaryDataSource {
 
 	@Override
 	public PamDataUnit sinkData(BinaryObjectData binaryObjectData, BinaryHeader bh, int moduleVersion) {
-		//if (lcControl.getParams().printJava)
-		//	System.out.println("REACHED sinkData");
+		if (lcControl.getParams().printJava)
+			System.out.println("REACHED sinkData");
 		
 		// This doesn't seem to do anything.
 	/*	BinaryStore bs = BinaryStore.findBinaryStoreControl();
@@ -168,7 +168,6 @@ public class LCBinaryDataSource extends BinaryDataSource {
 			lcControl.getTabPanel().getPanel().getTableModel().setRowCount(0);
 			lcControl.getProcess().resultsDataBlock.clearAll();
 		} */
-		
 		if (!lcControl.isViewer()) {
 			currMH = (LCBinaryModuleHeader) sinkModuleHeader(binaryObjectData, bh);
 		}
@@ -218,8 +217,8 @@ public class LCBinaryDataSource extends BinaryDataSource {
 	@Override
 	public ModuleFooter sinkModuleFooter(BinaryObjectData binaryObjectData, BinaryHeader bh,
 			ModuleHeader moduleHeader) {
-		//if (lcControl.getParams().printJava)
-		//	System.out.println("REACHED sinkModuleFooter");
+		if (lcControl.getParams().printJava)
+			System.out.println("REACHED sinkModuleFooter");
 		return null;
 	}
 

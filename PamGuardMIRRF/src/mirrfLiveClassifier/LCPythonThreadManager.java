@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.concurrent.TimeUnit;
 
 import org.docx4j.wml.Br;
@@ -28,11 +29,14 @@ public class LCPythonThreadManager{
 	protected BufferedReader ebr = null;
 	protected InputPrintThread ipt = null;
 	protected ErrorPrintThread ept = null;
-	protected volatile ArrayList<String> commandList;
+	//protected volatile ArrayList<String> commandList;
+	protected volatile LinkedList<String> commandList;
 	protected Process pr;
 	protected volatile boolean active;
 	protected PythonInterpreterThread pit;
 	protected volatile boolean finished;
+	
+	public int commandCount = 0; // DELETE THIS
 	
 	public LCPythonThreadManager(LCControl lcControl) {
 		this.lcControl = lcControl;
@@ -42,7 +46,7 @@ public class LCPythonThreadManager{
 	protected void init() {
 		this.printThreadsActive = false;
 		this.finished = true;
-		this.commandList = new ArrayList<String>();
+		this.commandList = new LinkedList<String>();
 		String defpathname = lcControl.getParams().tempFolder;
 		this.pathname = "";
 		for (int i = 0; i < defpathname.length(); i++) {
@@ -62,7 +66,7 @@ public class LCPythonThreadManager{
 	 */
 	protected void initializePython() throws Exception {
 		try {
-			commandList = new ArrayList<String>();
+			commandList = new LinkedList<String>();
 			ProcessBuilder pb = new ProcessBuilder("python", "-i");
 			pr = pb.start();
 		    br = new BufferedReader(new InputStreamReader(pr.getInputStream()));
@@ -111,8 +115,14 @@ public class LCPythonThreadManager{
 			        pythonCommand("modelManager = LCPythonScript.ModelManager()", getControl().getParams().printInput);
 			        
 			        while (active || commandList.size() > 0) {
-			        	if (commandList.size() > 0)
-			        		pythonCommand(commandList.remove(0), getControl().getParams().printInput);
+			        	synchronized(commandList) {
+				        	if (commandList.size() > 0) {
+				        		String command = commandList.pop();
+				        		//if (command.startsWith("modelManager.predictCluster")) // DELETE THESE
+				        		//	System.out.println("commandCount: "+String.valueOf(++commandCount + commandList.size()));
+				        		pythonCommand(command, getControl().getParams().printInput);
+				        	}
+			        	}
 			        	try {
 							TimeUnit.MILLISECONDS.sleep(50);
 						} catch (Exception e) {
@@ -131,7 +141,9 @@ public class LCPythonThreadManager{
 	 * Adds a command to the queue.
 	 */
 	public void addCommand(String inp) {
-		commandList.add(inp);
+		synchronized(commandList) {
+			commandList.addLast(inp);
+		}
 	}
 	
 	/**

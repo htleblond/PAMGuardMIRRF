@@ -1771,7 +1771,7 @@ public class FESettingsDialog extends PamDialog {
 		
 		FEParameters newParams = feControl.getParams().clone();
 		newParams.inputDataEntries.clear();
-		newParams.inputDataIndexes.clear();
+		//newParams.inputDataIndexes.clear();
 		//FEParameters newParams = new FEParameters();
 		
 		newParams.inputFromCSV = inputDataRB.isSelected();
@@ -1940,11 +1940,11 @@ public class FESettingsDialog extends PamDialog {
 			}
 			newParams.inputDataFiles = inputDataList;
 			newParams.inputDataEntries.sort(Comparator.comparing(a -> a.datetime));
-			ArrayList<Integer> intList = new ArrayList<Integer>();
+		/*	ArrayList<Integer> intList = new ArrayList<Integer>();
 			for (int i = 0; i < newParams.inputDataEntries.size(); i++) {
 				intList.add(i);
 			}
-			newParams.inputDataIndexes = new ArrayList<Integer>(intList);
+			newParams.inputDataIndexes = new ArrayList<Integer>(intList); */
 			newParams.inputDataExpectedFileSize = Integer.valueOf(inputDataFileSizeField.getText());
 			newParams.inputIgnoreBlanks = inputIgnoreBlanksCheck.isSelected();
 			newParams.inputIgnore2SecondGlitch = inputIgnore2SecondGlitchCheck.isSelected();

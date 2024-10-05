@@ -310,8 +310,7 @@ public class TSBPanel extends PamBorderPanel {
 	
 	protected class SettingsButtonListener implements ActionListener {
 		public void actionPerformed(ActionEvent e) {
-			TSBSettingsDialog settingsDialog = new TSBSettingsDialog(tsbControl.getPamView().getGuiFrame(), tsbControl);
-			settingsDialog.setVisible(true);
+			tsbControl.settingsDialog(tsbControl.getPamView().getGuiFrame());
 		}
 	}
 	
@@ -606,6 +605,7 @@ public class TSBPanel extends PamBorderPanel {
 	protected void saveButtonAction() {
 		outputFeatureIndices = new int[0];
 		if (subsetTable.getRowCount() > 0) {
+			TSBParameters params = tsbControl.getParams();
 			TSBLabelSelectionDialog labelDialog = new TSBLabelSelectionDialog(tsbControl.getPamView().getGuiFrame(), tsbControl);
 			labelDialog.setVisible(true);
 			if (outputLabelList.size() == 0) { // Note that selecting OK in TSBLabelSelectionDialog changes the list, so this isn't dead code.
@@ -687,11 +687,11 @@ public class TSBPanel extends PamBorderPanel {
 						//System.out.println(idList.get(j)+" -> "+String.valueOf(clusterMap.get(idList.get(j)).size()));
 						TSBClusterDetectionList currCluster = clusterMap.get(idList.get(j));
 						if (currCluster.size() == 0) continue;
-						if (tsbControl.multilabelOption == tsbControl.MULTILABEL_SKIP_CLUSTER && currCluster.containsMultipleSpecies()) {
+						if (params.multilabelOption == params.MULTILABEL_SKIP_CLUSTER && currCluster.containsMultipleSpecies()) {
 							System.out.println("Skipped cluster "+idList.get(j)+" due to multilabel settings.");
 							continue;
 						}
-						if (tsbControl.overlapOption == tsbControl.OVERLAP_SKIP_BOTH)
+						if (params.overlapOption == params.OVERLAP_SKIP_BOTH)
 							currCluster = currCluster.removeOverlaps(currID);
 						ArrayList<String> outpClasses = new ArrayList<String>();
 						for (int k = 0; k < currSubset.selectionArray.length; k++)
@@ -702,13 +702,23 @@ public class TSBPanel extends PamBorderPanel {
 								k--;
 							}
 						}
-						if (tsbControl.overlapOption == tsbControl.MULTILABEL_KEEP_MOST)
+						if (params.overlapOption == params.MULTILABEL_KEEP_MOST)
 							currCluster = currCluster.removeLessOccuringSpecies(currID);
 						ArrayList<String[]> splitList = new ArrayList<String[]>();
 						for (int k = 0; k < currCluster.size(); k++) {
 							TSBDetection currDetection = currCluster.get(k);
 							if (!tsbControl.getFullClassList().contains(currDetection.species)) continue;
 							if (!outputLabelList.contains(tsbControl.getClassMap().get(currDetection.species))) continue;
+							if ((params.skipLowFreqChecked && currDetection.lf < params.skipLowFreq) ||
+									(params.skipHighFreqChecked && currDetection.hf > params.skipHighFreq)) {
+								System.out.println("Skipped contour "+String.valueOf(currDetection.uid)+" in "+currID+"-"+currDetection.clusterID+" due to specified frequency limits.");
+								continue;
+							}
+							if ((params.skipShortDurChecked && currDetection.duration < params.skipShortDur) ||
+									(params.skipLongDurChecked && currDetection.duration > params.skipLongDur)) {
+								System.out.println("Skipped contour "+String.valueOf(currDetection.uid)+" in "+currID+"-"+currDetection.clusterID+" due to specified duration limits.");
+								continue;
+							}
 							String[] nextLine = new String[8+outputFeatureIndices.length];
 							nextLine[0] = currID+"-"+currDetection.clusterID;
 							nextLine[1] = String.valueOf(currDetection.uid);

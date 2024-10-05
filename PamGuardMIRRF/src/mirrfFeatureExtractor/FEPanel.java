@@ -81,10 +81,10 @@ public class FEPanel {
 		resetButton = new JButton("Reset counters");
 		resetButton.addActionListener(new ResetListener());
 		memPanel.add(resetButton, c);
-		c.gridx += 2;
+	/*	c.gridx += 2;
 		reloadCSVButton = new JButton("Reload .csv");
 		reloadCSVButton.addActionListener(new ReloadCSVListener());
-		reloadCSVButton.setEnabled(false);
+		reloadCSVButton.setEnabled(false); */
 		//memPanel.add(reloadCSVButton, c); // This is useless now.
 		
 		mainPanel.add(memPanel);
@@ -169,7 +169,7 @@ public class FEPanel {
 		return outp;
 	}
 	
-	protected class ReloadCSVListener implements ActionListener{
+/*	protected class ReloadCSVListener implements ActionListener{
 		public void actionPerformed(ActionEvent e) {
 			ArrayList<Integer> intList = new ArrayList<Integer>();
 			int csvSize = feControl.getParams().inputDataEntries.size();
@@ -178,7 +178,7 @@ public class FEPanel {
 			}
 			feControl.getParams().inputDataIndexes = new ArrayList<Integer>(intList);
 		}
-	}
+	} */
 	
 	protected class ResetListener implements ActionListener{
 		public void actionPerformed(ActionEvent e) {
@@ -186,10 +186,10 @@ public class FEPanel {
 		}
 	}
 	
-	@Deprecated
+/*	@Deprecated
 	protected JButton getReloadCSVButton() {
 		return reloadCSVButton;
-	}
+	} */
 	
 	/**
 	 * Streamlined error dialog.

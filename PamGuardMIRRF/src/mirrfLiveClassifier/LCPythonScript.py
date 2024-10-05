@@ -66,7 +66,7 @@ class LCModel():
                 self.printBestFeatureOrder()
             print("Initialization succeeded", flush=True)
         except:
-            print("Initialization failed", flush=True)
+            print("Initialization failed", flush=True, file=sys.stderr)
             traceback.print_exc()
             
     def createXy(self):
@@ -225,7 +225,7 @@ class LCModel():
                     outpStr = outpStr.replace("\n", "")
                     print("RESULT: "+outpStr, flush=True)
                 except:
-                    print("Error encountered while attempting to process cluster "+str(testList[0][0])+".", flush=True)
+                    print("Error encountered while attempting to process cluster "+str(testList[0][0])+".", flush=True, file=sys.stderr)
                     traceback.print_exc()
             else:
                 print("Cluster ignored due to settings: "+str(testList[0][0]), flush=True)
@@ -277,7 +277,7 @@ class ModelManager():
     
     def predictCluster(self, testList):
         if len(self.modelList) == 0:
-            print("ERROR - ModelManager is empty.")
+            print("ERROR - ModelManager is empty.", flush=True, file=sys.stderr)
             return
         for i in np.arange(len(self.modelList)):
             model = self.modelList[i]
@@ -292,11 +292,11 @@ class ModelManager():
             #print("model i: "+str(i))
             model.predictCluster(testList)
             return
-        print("ERROR - Input test entry found in all training sets: "+testList[0][0]+", "+testList[0][2]+", "+str(len(testList)))
+        print("ERROR - Input test entry found in all training sets: "+testList[0][0]+", "+testList[0][2]+", "+str(len(testList)), flush=True, file=sys.stderr)
         
     def printBestFeatureOrder(self):
         if len(self.modelList) == 0:
-            print("ERROR - ModelManager is empty.")
+            print("ERROR - ModelManager is empty.", flush=True, file=sys.stderr)
             return
         self.modelList[0].printBestFeatureOrder()
         

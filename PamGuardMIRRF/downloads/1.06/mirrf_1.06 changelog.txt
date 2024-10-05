@@ -40,3 +40,13 @@ Training Set Builder:
 - Fixed bug where editing a subset would delete the loaded feature list.
 WMNT:
 - Swapped positions of "Undo" and "Scroll" buttons.
+
+1.06d (October 4th, 2024)
+Training Set Builder:
+- Added settings for skipping over detections that are too low or high in frequency or too short or long in duration.
+Classifiers:
+- (Apparently) fixed synchronization bug that caused the classifiers to skip over entries, causing them to get stuck in a perpetual backlog.
+WMNT and Live Classifier:
+- Predictions from the Live Classifier can now exported to the WMNT for automatic annotation.
+Feature Extractor:
+- Improved the time complexity of the algorithm that decides which detections should be processed when the data input is an external .wmnt or .mirrfts file.

@@ -496,7 +496,7 @@ public class TSBSubsetDialog extends PamDialog {
 					Integer.valueOf(nextSplit[3]);
 					Integer.valueOf(nextSplit[4]);
 					Integer.valueOf(nextSplit[5]);
-					if (tsbControl.includeCallType && nextSplit.length > 7) {
+					if (tsbControl.getParams().includeCallType && nextSplit.length > 7) {
 						if (nextSplit[6].length() > 0 || nextSplit[7].length() > 0) {
 							outpWMNTList.add(nextSplit);
 						}
@@ -534,7 +534,7 @@ public class TSBSubsetDialog extends PamDialog {
 		for (int i = 0; i < wmntEntriesList.size(); i++) {
 			String[] curr = wmntEntriesList.get(i);
 			String className = "";
-			if (tsbControl.includeCallType) {
+			if (tsbControl.getParams().includeCallType) {
 				if (curr.length > 7) {
 					if (curr[6].length() > 0 && curr[7].length() > 0) {
 						className = curr[6]+" ("+curr[7]+")";
@@ -567,7 +567,7 @@ public class TSBSubsetDialog extends PamDialog {
 			for (int j = 0; j < wmntEntriesList.size(); j++) {
 				String[] currWMNT = wmntEntriesList.get(j);
 				String className = "";
-				if (tsbControl.includeCallType) {
+				if (tsbControl.getParams().includeCallType) {
 					if (currWMNT.length > 7) {
 						if (currWMNT[6].length() > 0 && currWMNT[7].length() > 0) {
 							className = currWMNT[6]+" ("+currWMNT[7]+")";

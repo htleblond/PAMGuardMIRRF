@@ -35,6 +35,9 @@ import PamView.dialog.PamTextField; //
 import binaryFileStorage.*;
 import fftManager.FFTDataBlock;
 import mirrf.MIRRFControlledUnit;
+import mirrfLiveClassifier.LCCallCluster;
+import mirrfLiveClassifier.LCDataBlock;
+import mirrfLiveClassifier.LCDataUnit;
 import PamguardMVC.DataUnitBaseData;
 import PamguardMVC.PamDataBlock;
 import pamScrollSystem.*;
@@ -606,7 +609,7 @@ public class WMNTPanel {
 	 */
 	class SpeciesListener implements ActionListener{
 		public void actionPerformed(ActionEvent e) {
-			createBackup();
+			createBackup(true);
 			String species = speciesBox.getSelectedItem().toString();
 			int[] selrows = ttable.getSelectedRows();
 			if (selrows.length == 0) {
@@ -625,7 +628,7 @@ public class WMNTPanel {
 	 */
 	class CalltypeListener implements ActionListener{
 		public void actionPerformed(ActionEvent e) {
-			createBackup();
+			createBackup(true);
 			String classification = calltypeBox.getSelectedItem().toString();
 			int[] selrows = ttable.getSelectedRows();
 			if (selrows.length == 0) {
@@ -644,7 +647,7 @@ public class WMNTPanel {
 	 */
 	class CommentListener implements ActionListener{
 		public void actionPerformed(ActionEvent e) {
-			createBackup();
+			createBackup(true);
 			String comment = commentField.getText();
 			int[] selrows = ttable.getSelectedRows();
 			if (selrows.length == 0) {
@@ -663,7 +666,7 @@ public class WMNTPanel {
 	 */
 	class AllListener implements ActionListener{
 		public void actionPerformed(ActionEvent e) {
-			createBackup();
+			createBackup(true);
 			String species = speciesBox.getSelectedItem().toString();
 			String classification = calltypeBox.getSelectedItem().toString();
 			String comment = commentField.getText();
@@ -679,6 +682,46 @@ public class WMNTPanel {
 			}
 			updateFromSelectedRows();
 		}
+	}
+	
+	public int importLCPredictions(LCDataBlock lcDB, boolean matchIndividualContours, boolean markComments, double minLead) {
+		HashMap<String, Integer> tableMap = new HashMap<String, Integer>();
+		Object[][] tableArray = getTableRowsAsArray();
+		if (tableArray.length == 0)
+			return -1;
+		createBackup(false);
+		for (int i = 0; i < tableArray.length; i++) {
+			String key = String.valueOf((long) tableArray[i][0])+", "+String.valueOf(tableArray[i][1]);
+			if (tableMap.containsKey(key))
+				continue;
+			tableMap.put(key, i);
+		}
+		int updateCount = 0;
+		for (int i = 0; i < lcDB.getUnitsCount(); i++) {
+			LCDataUnit du = lcDB.getDataUnit(i, LCDataBlock.REFERENCE_ABSOLUTE);
+			LCCallCluster cc = du.getCluster();
+			for (int j = 0; j < cc.getSize(); j++) {
+				String key = String.valueOf(cc.uids[j])+", "+MIRRFControlledUnit.convertDateLongToString(MIRRFControlledUnit.convertFromLocalToUTC(cc.datetimes[j]));
+				if (!tableMap.containsKey(key))
+					continue;
+				int tableIndex = tableMap.get(key).intValue();
+				if (matchIndividualContours) {
+					if (cc.getIndividualLead(j) < minLead)
+						continue;
+					ttable.getModel().setValueAt(cc.getIndividualPredictedSpeciesString(j), tableIndex, 6);
+				} else {
+					if (cc.getLead() < minLead)
+						break;
+					ttable.getModel().setValueAt(cc.getPredictedSpeciesString(), tableIndex, 6);
+				}
+				if (markComments)
+					ttable.getModel().setValueAt("(Live Classifier prediction)", tableIndex, 8);
+				fixChangeLog(tableIndex, getOriginalIndex(tableIndex));
+				updateCount++;
+			}
+		}
+		updateFromFullTable();
+		return updateCount;
 	}
 	
 	/**
@@ -1312,10 +1355,16 @@ public class WMNTPanel {
 	/**
 	 * Saves the selected values in 'backupIndexes' and their index numbers in 'backupValues'. 
 	 */
-	private void createBackup() {
-		if (ttable.getRowCount() > 0 && ttable.getSelectedRowCount() > 0) {
+	private void createBackup(boolean selectedOnly) {
+		if (ttable.getRowCount() > 0 && !(selectedOnly && ttable.getSelectedRowCount() == 0)) {
 			// NOTE: getSelectedRows() does NOT actually cause any issues if the rows are re-arranged.
-			backupIndexes = ttable.getSelectedRows();
+			if (selectedOnly)
+				backupIndexes = ttable.getSelectedRows();
+			else {
+				backupIndexes = new int[ttable.getRowCount()];
+				for (int i = 0; i < ttable.getRowCount(); i++)
+					backupIndexes[i] = i;
+			}
 			backupValues = new Object[backupIndexes.length][ttable.getModel().getColumnCount()];
 			for (int i = 0; i < backupIndexes.length; i++) {
 				for (int j = 0; j < ttable.getModel().getColumnCount(); j++) {
@@ -1344,7 +1393,7 @@ public class WMNTPanel {
 					}
 				}
 			}
-			createBackup();
+			createBackup(false);
 			ttable.clearSelection();
 			for (int i = 0; i < oldIndexes.length; i++) {
 				ttable.setValueAt(oldValues[i][6], oldIndexes[i], 6);
@@ -1436,7 +1485,7 @@ public class WMNTPanel {
 		
 		@Override
 		public boolean stopCellEditing() {
-			createBackup();
+			createBackup(true);
 			return super.stopCellEditing();
 		}
 		

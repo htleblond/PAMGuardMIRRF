@@ -43,6 +43,8 @@ import PamguardMVC.RawDataUnavailableException;
 import annotation.handler.ManualAnnotationHandler;
 import binaryFileStorage.BinaryStore;
 
+import java.lang.Math;
+
 /**
  * A modified version of clipGenerator.ClipProcess that creates sound clips
  * when Whistle and Moan Detector contours occur and sends them to the
@@ -265,7 +267,34 @@ public class FEProcess extends PamProcess {
 		SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss+SSS");
 		df.setTimeZone(TimeZone.getTimeZone("UTC"));
 		ArrayList<FEInputDataObject> entries = feControl.getParams().inputDataEntries;
-		for (int i = 0; i < entries.size(); i++) {
+		int startPoint; // This is for reducing time complexity.
+		// Basically, it skips over entries at an interval of sqrt(entries.size()) and goes back an instance once it passes the first corresponding timestamp.
+		// Worst-case time complexity per audio file is O(2n^0.5), which is substantially better than the previous O(n).
+		int sqrtVal = (int) Math.ceil(Math.sqrt(entries.size()));
+		for (startPoint = 0; startPoint < entries.size(); startPoint += sqrtVal) {
+			FEInputDataObject curr = entries.get(startPoint);
+			long currTime;
+			try {
+				currTime = df.parse(curr.datetime).getTime();
+			} catch (ParseException e) {
+				e.printStackTrace();
+				startPoint -= sqrtVal - 1; // This shouldn't happen, but we don't want to skip too much if it somehow does.
+				continue;
+			}
+			if (start <= currTime) {
+				if (startPoint == 0 && currTime < end)
+					break;
+				else if (startPoint == 0)
+					return; // Audio ends before any of the detections in the whole list of entries occur.
+				else {
+					startPoint -= sqrtVal;
+					break;
+				}
+			}
+		}
+		if (startPoint >= entries.size())
+			startPoint -= sqrtVal;
+		for (int i = startPoint; i < entries.size(); i++) {
 			FEInputDataObject curr = entries.get(i);
 			long currTime;
 			try {
@@ -274,6 +303,7 @@ public class FEProcess extends PamProcess {
 				e.printStackTrace();
 				continue;
 			}
+			if (currTime >= end) break;
 			if (!(start <= currTime && currTime < end)) continue;
 			try {
 				if (feControl.getParams().inputFilesAreMIRRFTS()) {

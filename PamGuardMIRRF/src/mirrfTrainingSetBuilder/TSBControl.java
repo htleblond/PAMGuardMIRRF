@@ -1,5 +1,8 @@
 package mirrfTrainingSetBuilder;
 
+import java.awt.Frame;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
@@ -13,6 +16,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Scanner;
 
+import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 
 import PamController.PamControlledUnit;
@@ -28,12 +32,7 @@ public class TSBControl extends PamControlledUnit implements PamSettings {
 	
 	public static final String UNITTYPE = "MIRRFTSB";
 	
-	public static final int OVERLAP_SKIP_BOTH = 0;
-	public static final int OVERLAP_KEEP_BOTH = 1;
-	
-	public static final int MULTILABEL_KEEP_MOST = 0;
-	public static final int MULTILABEL_KEEP_ALL = 1;
-	public static final int MULTILABEL_SKIP_CLUSTER = 2;
+	protected TSBParameters tsbParameters = new TSBParameters();
 	
 	protected TSBTabPanel tsbTabPanel;
 	protected ArrayList<String> fullClassList;
@@ -42,9 +41,6 @@ public class TSBControl extends PamControlledUnit implements PamSettings {
 	protected ArrayList<TSBSubset> subsetList;
 	protected ArrayList<String> featureList;
 	protected HashMap<String, String> feParamsMap;
-	public boolean includeCallType;
-	public int overlapOption = OVERLAP_SKIP_BOTH;
-	public int multilabelOption = MULTILABEL_KEEP_MOST;
 
 	public TSBControl(String unitName) {
 		super(UNITTYPE, "MIRRF Training Set Builder");
@@ -57,7 +53,7 @@ public class TSBControl extends PamControlledUnit implements PamSettings {
 		subsetList = new ArrayList<TSBSubset>();
 		featureList = new ArrayList<String>();
 		feParamsMap = new HashMap<String, String>();
-		includeCallType = false;
+		//includeCallType = false;
 	}
 	
 	/**
@@ -216,23 +212,62 @@ public class TSBControl extends PamControlledUnit implements PamSettings {
 	public TSBTabPanel getTabPanel() {
 		return tsbTabPanel;
 	}
+	
+	public TSBParameters getParams() {
+		return tsbParameters;
+	}
+	
+	public void setParams(TSBParameters inp) {
+		tsbParameters = inp;
+	}
 
 	@Override
 	public Serializable getSettingsReference() {
-		// TODO Auto-generated method stub
-		return null;
+		return tsbParameters;
 	}
 
 	@Override
 	public long getSettingsVersion() {
-		// TODO Auto-generated method stub
+		// TODO
 		return 0;
 	}
 
 	@Override
 	public boolean restoreSettings(PamControlledUnitSettings pamControlledUnitSettings) {
-		// TODO Auto-generated method stub
-		return false;
+		tsbParameters = ((TSBParameters) pamControlledUnitSettings.getSettings()).clone();
+		return true;
+	}	
+
+
+	@Override
+	public JMenuItem createDetectionMenu(Frame parentFrame) {
+		JMenuItem menuItem = new JMenuItem(getUnitName());
+		menuItem.addActionListener(new DetectionSettings(parentFrame));
+		return menuItem;
+	}
+
+	class DetectionSettings implements ActionListener {
+
+		private Frame parentFrame;
+
+		public DetectionSettings(Frame parentFrame) {
+			super();
+			this.parentFrame = parentFrame;
+		}
+
+		@Override
+		public void actionPerformed(ActionEvent arg0) {
+			settingsDialog(parentFrame);	
+		}
+	}
+
+	/**
+	 * Opens the settings dialog.
+	 * @param parentFrame
+	 */
+	protected void settingsDialog(Frame parentFrame) {
+		TSBSettingsDialog settingsDialog = new TSBSettingsDialog(parentFrame, this);
+		settingsDialog.setVisible(true);
 	}
 	
 }
