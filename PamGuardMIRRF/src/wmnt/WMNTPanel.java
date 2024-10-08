@@ -684,7 +684,7 @@ public class WMNTPanel {
 		}
 	}
 	
-	public int importLCPredictions(LCDataBlock lcDB, boolean matchIndividualContours, boolean markComments, double minLead) {
+	public int importLCPredictions(LCDataBlock lcDB, boolean matchIndividualContours, boolean markComments, boolean overwrite, double minLead) {
 		HashMap<String, Integer> tableMap = new HashMap<String, Integer>();
 		Object[][] tableArray = getTableRowsAsArray();
 		if (tableArray.length == 0)
@@ -705,17 +705,28 @@ public class WMNTPanel {
 				if (!tableMap.containsKey(key))
 					continue;
 				int tableIndex = tableMap.get(key).intValue();
+				if (!overwrite) {
+					if (!ttable.getModel().getValueAt(tableIndex, 6).equals("") ||
+						!ttable.getModel().getValueAt(tableIndex, 7).equals("") ||
+						!ttable.getModel().getValueAt(tableIndex, 8).equals(""))
+						continue;
+				}
 				if (matchIndividualContours) {
 					if (cc.getIndividualLead(j) < minLead)
 						continue;
 					ttable.getModel().setValueAt(cc.getIndividualPredictedSpeciesString(j), tableIndex, 6);
+					ttable.getModel().setValueAt("", tableIndex, 7);
+					if (markComments)
+						ttable.getModel().setValueAt("LC individual prediction (lead = "+String.format("%.2f", cc.getIndividualLead(j))+")", tableIndex, 8);
 				} else {
 					if (cc.getLead() < minLead)
 						break;
 					ttable.getModel().setValueAt(cc.getPredictedSpeciesString(), tableIndex, 6);
+					ttable.getModel().setValueAt("", tableIndex, 7);
+					if (markComments)
+						ttable.getModel().setValueAt("LC cluster prediction (lead = "+String.format("%.2f", cc.getLead())+")", tableIndex, 8);
 				}
-				if (markComments)
-					ttable.getModel().setValueAt("(Live Classifier prediction)", tableIndex, 8);
+				
 				fixChangeLog(tableIndex, getOriginalIndex(tableIndex));
 				updateCount++;
 			}

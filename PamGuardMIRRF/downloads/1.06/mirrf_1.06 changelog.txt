@@ -50,3 +50,8 @@ WMNT and Live Classifier:
 - Predictions from the Live Classifier can now exported to the WMNT for automatic annotation.
 Feature Extractor:
 - Improved the time complexity of the algorithm that decides which detections should be processed when the data input is an external .wmnt or .mirrfts file.
+
+1.06e (October 8th, 2024)
+WMNT and Live Classifier:
+- Added option to not overwrite pre-existing WMNT annotations when importing predictions from the Live Classifier.
+- Live Classifier adds prediction score lead value to WMNT comment column when exporting predictions.

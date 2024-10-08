@@ -100,8 +100,8 @@ public class WMNTControl extends PamControlledUnit implements PamSettings {
 		return null;
 	}
 	
-	public int importLCPredictions(LCDataBlock lcDB, boolean matchIndividualContours, boolean markComments, double minLead) {
-		return this.getSidePanel().getWMNTPanel().importLCPredictions(lcDB, matchIndividualContours, markComments, minLead);
+	public int importLCPredictions(LCDataBlock lcDB, boolean matchIndividualContours, boolean markComments, boolean overwrite, double minLead) {
+		return this.getSidePanel().getWMNTPanel().importLCPredictions(lcDB, matchIndividualContours, markComments, overwrite, minLead);
 	}
 	
 	/**

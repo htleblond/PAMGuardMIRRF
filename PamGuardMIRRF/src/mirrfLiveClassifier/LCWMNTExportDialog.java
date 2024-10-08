@@ -14,11 +14,13 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.TimeZone;
 
+import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.border.TitledBorder;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 import org.tensorflow.proto.example.FeatureList;
@@ -46,6 +48,7 @@ public class LCWMNTExportDialog extends PamDialog {
 	protected WMNTControl wmntControl;
 	protected JComboBox<String> exportOptionBox;
 	protected JComboBox<String> minLeadBox;
+	protected JCheckBox overwriteCheck;
 	
 	public LCWMNTExportDialog(LCControl lcControl, WMNTControl wmntControl, Window parentFrame) {
 		super(parentFrame, "MIRRF Live Classifier", false);
@@ -54,11 +57,12 @@ public class LCWMNTExportDialog extends PamDialog {
 		
 		JPanel mainPanel = new JPanel(new GridBagLayout());
 		GridBagConstraints b = new PamGridBagContraints();
+		mainPanel.setBorder(new TitledBorder("Export what?"));
 		b.anchor = b.NORTHWEST;
 		b.fill = b.HORIZONTAL;
 		b.gridwidth = 2;
-		mainPanel.add(new JLabel("Export what?"), b);
-		b.gridy++;
+		//mainPanel.add(new JLabel("Export what?"), b);
+		//b.gridy++;
 		exportOptionBox = new JComboBox<String>(new String[] {"Overall cluster predictions", "Individual contour predictions"});
 		mainPanel.add(exportOptionBox, b);
 		b.gridy++;
@@ -68,6 +72,12 @@ public class LCWMNTExportDialog extends PamDialog {
 		minLeadBox = new JComboBox<String>(new String[] {"Very low", "Low", "Average", "High", "Very high"});
 		minLeadBox.setSelectedItem(lcControl.getParams().worstLead);
 		mainPanel.add(minLeadBox, b);
+		b.gridy++;
+		b.gridx = 0;
+		b.gridwidth = 2;
+		overwriteCheck = new JCheckBox("Overwrite non-blank annotations");
+		overwriteCheck.setSelected(false);
+		mainPanel.add(overwriteCheck, b);
 		this.setDialogComponent(mainPanel);
 		
 	}
@@ -86,19 +96,21 @@ public class LCWMNTExportDialog extends PamDialog {
 				"Yes, mark in comments");
 		if (res == JOptionPane.CANCEL_OPTION)
 			return false;
-		String message;
-		if (res == JOptionPane.YES_OPTION)
-			message = "Are you sure? Pre-existing annotations in the species and comments columns will be overwritten. This can be undone with the Undo button.";
-		else
-			message = "Are you sure? Pre-existing annotations in the species column will be overwritten. This can be undone with the Undo button.";
-		int res2 = JOptionPane.showConfirmDialog(
-				this,
-				lcControl.makeHTML(message, 300),
-				"MIRRF Live Classifier",
-				JOptionPane.YES_NO_OPTION,
-				JOptionPane.WARNING_MESSAGE);
-		if (res2 == JOptionPane.NO_OPTION)
-			return false;
+		if (overwriteCheck.isSelected()) {
+			String message;
+			if (res == JOptionPane.YES_OPTION)
+				message = "Are you sure? Pre-existing annotations in the species and comments columns will be overwritten. This can be undone with the Undo button.";
+			else
+				message = "Are you sure? Pre-existing annotations in the species column will be overwritten. This can be undone with the Undo button.";
+			int res2 = JOptionPane.showConfirmDialog(
+					this,
+					lcControl.makeHTML(message, 300),
+					"MIRRF Live Classifier",
+					JOptionPane.YES_NO_OPTION,
+					JOptionPane.WARNING_MESSAGE);
+			if (res2 == JOptionPane.NO_OPTION)
+				return false;
+		}
 		double minLead = 0.0; // Very low
 		if (minLeadBox.getSelectedIndex() == 1) // Low
 			minLead = lcControl.getParams().veryLow;
@@ -108,7 +120,8 @@ public class LCWMNTExportDialog extends PamDialog {
 			minLead = lcControl.getParams().average;
 		if (minLeadBox.getSelectedIndex() == 4) // Very high
 			minLead = lcControl.getParams().high;
-		int updateCount = wmntControl.importLCPredictions(lcControl.getProcess().resultsDataBlock, exportOptionBox.getSelectedIndex() == 1, res == JOptionPane.YES_OPTION, minLead);
+		int updateCount = wmntControl.importLCPredictions(lcControl.getProcess().resultsDataBlock, exportOptionBox.getSelectedIndex() == 1,
+															res == JOptionPane.YES_OPTION, overwriteCheck.isSelected(), minLead);
 		if (updateCount == -1) {
 			lcControl.SimpleErrorDialog("No data has been loaded into the WMNT.");
 		} else if (updateCount == 0) {
