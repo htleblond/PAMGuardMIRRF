@@ -1,0 +1,32 @@
+mirfee_1.07 CHANGELOG
+Holly LeBlond
+Fisheries and Oceans Canada
+
+1.07a (March 13th, 2025)
+General:
+- Plugin renamed to MIRFEE (Music Information Retrieval Feature-Extracting Ensemble [Classifier]).
+- WMNT renamed to WMAT (Whistle and Moan Annotation Tool). Associated files also renamed to ".wmat", but .wmnt files are still compatible.
+- .mirrffe and .mirrfts files renamed to .mfe and .mtsf, respectively, although files with the old extensions are still compatible.
+- Added warning message for when required Python libraries are not found.
+Feature Extractor:
+- For spectral contrast, individual bands can be selected as opposed to calculating a value from all bands at once.
+- Formants are now extracted from STFT frames, although the option to extract them from the full clip as one frame is still available.
+- Fixed significant synchronization issues.
+- Fixed bug where the clustering algorithm wouldn't work if .wmat files were used as input data, resulting in all detections being in single-detection clusters.
+- Fixed bug where pressing the OK button in the settings dialog in Viewer Mode would cause an exception by attempting to start the Python interpreter.
+Classifiers:
+- "Aliases" call now be applied to class labels in the Live Classifier, in order for detections included under a training set's label that are labelled differently in the WMAT to be counted correctly (e.g. "SRKW", "NRKW", etc. when the training set includes all killer whale detections under "KW"). 
+- Certainty metric has been changed from "lead" score (first-place score minus second-place score) to just the first-place score and renamed the "certainty" score.
+- "Export predictions to WMAT" button removed, as it was a temporary workaround before adding the "prediction" column to the WMAT.
+- Default classifier model changed to HistGradientBoostingClassifier.
+- Table is now sorted by cluster ID column in viewer mode by default.
+- Fixed bug in Live Classifier where accuracy matrix would be cleared when selecting to take input from the WMAT in Viewer Mode.
+- Fixed oversight in Live Classifier where the overlay graphics couldn't be created if the Feature Extractor's input data source was not from the detector.
+WMAT:
+- Added "prediction" and "score" columns for easy viewing of corresponding Live Classifier predictions. 
+- Undo button becomes "redo" button when pressed.
+- "Select first unlabelled detection" button changed to "select next unlabelled detection".
+- Table columns can now be widened.
+- Table height can now be adjusted in the settings.
+- Some minor GUI changes to the settings dialog.
+- Fixed bug that caused the wrong rows to be selected when pressing the "select within start interval" button after sorting by a column.
