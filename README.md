@@ -30,7 +30,7 @@ Under "Utilities" (Viewer-mode only):
 - **How do you use this?** - I'll get to that - a helpset will be added in a future update.
 - **Can you provide any training sets here?** - Uhhhhhh, not yet, and no guarantees that I will be allowed to. I would eventually like to though.
 - **Why does this plugin use Python? Why not just Java?** - The Feature Extractor extensively uses the Librosa Python library, which provides a good chunk of the calculations in the feature extraction process. While there are some Java libraries that could apparently provide some of the necessary functions, there just aren't any equivalent Java libraries that could totally replace Librosa. Additionally, the classifier models are provided by the Scikit-Learn Python library.
-- **Will the WMNT eventually be compatible with SQLite?** - It is now! (As of 1.03a.)
+- **Will the WMAT eventually be compatible with SQLite?** - It is now! (As of 1.03a.)
 
 ![alt text](https://github.com/htleblond/PamGuardMIRRF/blob/main/screenshots/Feature%20Extractor%20example.png?raw=true)
 <p align="center">
