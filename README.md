@@ -1,4 +1,4 @@
-# Music Information Retrieval Feature Extraction Ensemble (MIRFEE) Classifier for PAMGuard
+# Music Information Retrieval Feature-Extracting Ensemble (MIRFEE) Classifier for PAMGuard
 
 This is an external PAMGuard plugin for classifying Whistle and Moan Detector (WMD) contours using music information retrieval (MIR) techniques and contour header and slice data in conjunction with an ensemble classifier model. While the primary goal of this project is to create a classifier that can discriminate between killer whale, humpback whale and vessel noise in high-traffic areas of the Salish Sea, the classifier should theoretically work with any sound source that produces WMD detections.
 
