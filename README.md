@@ -1,10 +1,10 @@
-# Music Information Retrieval Random Forest (MIRRF) Classifier for PAMGuard
+# Music Information Retrieval Feature Extraction Ensemble (MIRFEE) Classifier for PAMGuard
 
 This is an external PAMGuard plugin for classifying Whistle and Moan Detector (WMD) contours using music information retrieval (MIR) techniques and contour header and slice data in conjunction with an ensemble classifier model. While the primary goal of this project is to create a classifier that can discriminate between killer whale, humpback whale and vessel noise in high-traffic areas of the Salish Sea, the classifier should theoretically work with any sound source that produces WMD detections.
 
 ![alt text](https://github.com/htleblond/PamGuardMIRRF/blob/main/screenshots/Live%20Classifier%20and%20WMNT%20example.png?raw=true)
 <p align="center">
-  <em>Whistle and Moan Navigation Tool (left) with MIRRF Live Classifier overlay markings in the spectrogram (right)</em>
+  <em>Whistle and Moan Annotation Tool (left) with MIRFEE Live Classifier overlay markings in the spectrogram (right)</em>
 </p>
 
 ## Includes the following modules:
@@ -16,10 +16,10 @@ Under "Classifiers":
 - **Test Classifier** - Performs cross-validation on pre-existing training sets.
 
 Under "Utilities" (Viewer-mode only):
-- **Whistle and Moan Navigation Tool (WMNT)** - Tool for annotating WMD detections and for easier navigation of the spectrogram after processing.
+- **Whistle and Moan Annotation Tool (WMAT)** - Tool for annotating WMD detections and for easier navigation of the spectrogram after processing.
 
 ## Installation
-(You can skip steps 1 and 2 if you're ONLY using the WMNT.)
+(You can skip steps 1 and 2 if you're ONLY using the WMAT.)
 1. Install Python 3 and ensure that pip works.
 2. Run the .bat file from the latest release. (Note to Python developers: Check the .bat file first in case it creates any conflicts!)
 3. Place the .jar file from the latest release into your version of PAMGuard's "plugins" folder.
@@ -34,10 +34,10 @@ Under "Utilities" (Viewer-mode only):
 
 ![alt text](https://github.com/htleblond/PamGuardMIRRF/blob/main/screenshots/Feature%20Extractor%20example.png?raw=true)
 <p align="center">
-  <em>Selecting features in the MIRRF Feature Extractor</em>
+  <em>Selecting features in the MIRFEE Feature Extractor</em>
 </p>
 
 ![alt text](https://github.com/htleblond/PamGuardMIRRF/blob/main/screenshots/Test%20Classifier%20example.png?raw=true)
 <p align="center">
-  <em>MIRRF Test Classifier results table and confusion matrices</em>
+  <em>MIRFEE Test Classifier results table and confusion matrices</em>
 </p>
