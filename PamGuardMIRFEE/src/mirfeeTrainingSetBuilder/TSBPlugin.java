@@ -69,7 +69,7 @@ public class TSBPlugin implements PamPluginInterface {
 
 	@Override
 	public String getToolTip() {
-		return "Combines Feature Extractor data with Whistle and Moan Navigation Tool "
+		return "Combines Feature Extractor data with Whistle and Moan Annotation Tool "
 				+ "annotations to create training sets for the Live and Test Classifiers.";
 	}
 
@@ -106,7 +106,7 @@ public class TSBPlugin implements PamPluginInterface {
 	@Override
 	public String getAboutText() {
 		return "A tool for combining feature vectors output by the Feature Extractor with annotations "
-				+ "exported from the Whistle and Moan Navigation Tool to make training sets for the "
+				+ "exported from the Whistle and Moan Annotation Tool to make training sets for the "
 				+ "Live and Test Classifiers. Also has a feature for making smaller batches of "
 				+ "detection-containing audio for faster test runs.";
 	}

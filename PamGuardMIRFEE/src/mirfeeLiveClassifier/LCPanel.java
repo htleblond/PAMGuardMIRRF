@@ -345,7 +345,7 @@ public class LCPanel extends PamBorderPanel {
 			}
 		}
 		if (wmatControl == null) {
-			control.SimpleErrorDialog("No instance of the Whistle and Moan Navigation Tool has been added to this configuration. To add one, go to "
+			control.SimpleErrorDialog("No instance of the Whistle and Moan Annotation Tool has been added to this configuration. To add one, go to "
 					+ "File -> Add Modules -> Utilities.", 300);
 			return;
 		}

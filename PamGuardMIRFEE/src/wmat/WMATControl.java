@@ -62,7 +62,7 @@ public class WMATControl extends PamControlledUnit implements PamSettings {
 	public void SimpleErrorDialog() {
 		JOptionPane.showMessageDialog(this.getGuiFrame(),
 			"An error has occured.\nSee console for details.",
-			"Whistle and Moan Navigation Tool",
+			"Whistle and Moan Annotation Tool",
 			JOptionPane.ERROR_MESSAGE);
 	}
 	
@@ -72,7 +72,7 @@ public class WMATControl extends PamControlledUnit implements PamSettings {
 	public void SimpleErrorDialog(String inptext) {
 		JOptionPane.showMessageDialog(this.getGuiFrame(),
 			inptext,
-			"Whistle and Moan Navigation Tool",
+			"Whistle and Moan Annotation Tool",
 			JOptionPane.ERROR_MESSAGE);
 	}
 	
@@ -123,7 +123,7 @@ public class WMATControl extends PamControlledUnit implements PamSettings {
 	
 	@Override
 	public JMenuItem createDetectionMenu(Frame parentFrame) {
-		JMenuItem menuItem = new JMenuItem("Whistle and Moan Navigation Tool");
+		JMenuItem menuItem = new JMenuItem("Whistle and Moan Annotation Tool");
 		menuItem.addActionListener(new DetectionSettings(parentFrame));
 		return menuItem;
 	}

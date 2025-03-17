@@ -30,3 +30,10 @@ WMAT:
 - Table height can now be adjusted in the settings.
 - Some minor GUI changes to the settings dialog.
 - Fixed bug that caused the wrong rows to be selected when pressing the "select within start interval" button after sorting by a column.
+
+1.07b (March 17th, 2025)
+WMAT:
+- Fixed bug that caused an exception when pressing OK on the settings dialog when an instance of the Live Classifier wasn't in the configuration.
+- Fixed bug that caused an exception when exporting to a .wmat or .txt file due to a misconfiguration with the new table columns.
+- Fixed bug where attempting to export a .csv file does nothing.
+- Fixed some minor mislabellings.

@@ -133,7 +133,7 @@ public class LCControl extends MIRFEEControlledUnit implements PamSettings {
 	
 	/**
 	 * @return The Live Classifier's process for updating table values in conjunction with
-	 * an instance of the Whistle and Moan Navigation Tool (WMAT).
+	 * an instance of the Whistle and Moan Annotation Tool (WMAT).
 	 */
 	public LCUpdateProcess getUpdateProcess() {
 		return updateProcess;

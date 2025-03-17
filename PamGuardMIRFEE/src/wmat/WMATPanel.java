@@ -150,7 +150,7 @@ public class WMATPanel {
 		
 		PamPanel memPanel = new PamPanel(new GridBagLayout());
 		GridBagConstraints c = new PamGridBagContraints();
-		memPanel.setBorder(new TitledBorder("Whistle and Moan Navigation Tool"));
+		memPanel.setBorder(new TitledBorder("Whistle and Moan Annotation Tool"));
 		
 		fileField = new PamTextField(textLength);
 		fileField.setEditable(false);
@@ -852,7 +852,7 @@ public class WMATPanel {
 			
 			try {
 				WhistleToneConnectProcess wmDetector = null;
-				if (wmatControl.getParams().slicedataSourceName.length() != 0) {
+				if (wmatControl.getParams().slicedataSourceName != null) {
 					PamDataBlock db = wmatControl.getPamController().getDetectorDataBlock(wmatControl.getParams().slicedataSourceName);
 					if (db != null) wmDetector = (WhistleToneConnectProcess) db.getParentProcess();
 				} else {
@@ -1063,7 +1063,7 @@ public class WMATPanel {
 					+ "and will overwrite species, call type and comment data in the matched table entries. "
 					+ "It will have no effect on any entries in the table that aren't present in the selected file."
 					+ "\nProceed?"),
-					"Whistle and Moan Navigation Tool",
+					"Whistle and Moan Annotation Tool",
 					JOptionPane.YES_NO_OPTION);
 			if (res == JOptionPane.NO_OPTION) {
 				return;
@@ -1141,7 +1141,7 @@ public class WMATPanel {
 					+"\nUnmatched entries in table: "+String.valueOf(ttable.getRowCount()-matched)
 					+"\nUnmatched entries in file: "+String.valueOf(notInTable)
 					+"\nInvalid entries in file: "+String.valueOf(invalids)),
-					"Whistle and Moan Navigation Tool",
+					"Whistle and Moan Annotation Tool",
 					JOptionPane.INFORMATION_MESSAGE);
 		}	
 	}
@@ -1159,7 +1159,7 @@ public class WMATPanel {
 			fc.setMultiSelectionEnabled(false);
 			fc.addChoosableFileFilter(new FileNameExtensionFilter("WMAT table export file (*.wmat)","wmat","wmnt"));
 			fc.addChoosableFileFilter(new FileNameExtensionFilter("Comma-separated values file (*.csv)","csv"));
-			fc.addChoosableFileFilter(new FileNameExtensionFilter("Text file (*.txt)","txt"));
+			//fc.addChoosableFileFilter(new FileNameExtensionFilter("Text file (*.txt)","txt"));
 			int returnVal = fc.showSaveDialog(wmatControl.getGuiFrame());
 			if (returnVal != JFileChooser.APPROVE_OPTION) return;
 			File f = getSelectedFileWithExtension(fc);
@@ -1167,7 +1167,7 @@ public class WMATPanel {
 			if (f.exists()) {
 				int res = JOptionPane.showConfirmDialog(wmatControl.getGuiFrame(),
 						"Overwrite selected file?",
-						"Whistle and Moan Navigation Tool",
+						"Whistle and Moan Annotation Tool",
 						JOptionPane.YES_NO_OPTION);
 				if (res == JOptionPane.YES_OPTION) {
 					f.setExecutable(true);
@@ -1192,9 +1192,9 @@ public class WMATPanel {
 					pw.write(sb.toString());
 					for (int i = 0; i < ttable.getRowCount(); i++) {
 						sb = new StringBuilder();
-						for (int j = 0; j < ttable.getColumnCount(); j++) {
+						for (int j = 0; j < 9; j++) {
 							sb.append(ttable.getValueAt(i, j).toString());
-							if (j < ttable.getColumnCount() - 1) {
+							if (j < 8) {
 								sb.append(",");
 								continue;
 							}
@@ -1202,7 +1202,7 @@ public class WMATPanel {
 									crduMap.get(ttable.getValueAt(i, 0).toString()+", "
 											+ttable.getValueAt(i, 1).toString());
 							WhistleToneConnectProcess wmDetector = null;
-							if (wmatControl.getParams().slicedataSourceName.length() != 0) {
+							if (wmatControl.getParams().slicedataSourceName != null) {
 								PamDataBlock db = 
 										wmatControl.getPamController().getDetectorDataBlock(
 												wmatControl.getParams().slicedataSourceName);
@@ -1249,39 +1249,44 @@ public class WMATPanel {
 					}
 					pw.close();
 					JOptionPane.showMessageDialog(wmatControl.getGuiFrame(),
-							"Table successfully written to file.",
-							"Whistle and Moan Navigation Tool",
+							"Table successfully written to .wmat file.",
+							"Whistle and Moan Annotation Tool",
 							JOptionPane.INFORMATION_MESSAGE);
 				} catch (Exception e2) {
 					e2.printStackTrace();
 					SimpleErrorDialog();
 					return;
 				}
-			} else if (fn.endsWith(".txt")) {
+			} else if (fn.endsWith(".csv")) {
 				try {
 					PrintWriter pw = new PrintWriter(f);
 					StringBuilder sb = new StringBuilder();
+					sb.append("uid,datetime,lf,hf,duration,amplitude,species,calltype,comment,prediction,score\n");
+					pw.write(sb.toString());
 					for (int i = 0; i < ttable.getRowCount(); i++) {
 						sb = new StringBuilder();
 						for (int j = 0; j < ttable.getColumnCount(); j++) {
-							sb.append(ttable.getValueAt(i, j).toString());
-							if (j < ttable.getColumnCount() - 1) {
-								sb.append("\t");
-							} else if (i < ttable.getRowCount() - 1) {
+							if (ttable.getValueAt(i, j) != null)
+								sb.append(ttable.getValueAt(i, j).toString());
+							else
+								sb.append("");
+							if (j < ttable.getColumnCount()-1)
+								sb.append(",");
+							else
 								sb.append("\n");
-							}
 						}
 						pw.write(sb.toString());
 						pw.flush();
 					}
 					pw.close();
 					JOptionPane.showMessageDialog(wmatControl.getGuiFrame(),
-							"Table successfully written to file.",
-							"Whistle and Moan Navigation Tool",
+							"Table successfully written to .csv file.",
+							"Whistle and Moan Annotation Tool",
 							JOptionPane.INFORMATION_MESSAGE);
 				} catch (Exception e2) {
-					System.out.println(e2);
+					e2.printStackTrace();
 					SimpleErrorDialog();
+					return;
 				}
 			}
 		}
@@ -1374,7 +1379,7 @@ public class WMATPanel {
 			}
 			JOptionPane.showMessageDialog(wmatControl.getGuiFrame(),
 					"No contour has been selected from the table.",
-				    "Whistle and Moan Navigation Tool",
+				    "Whistle and Moan Annotation Tool",
 				    JOptionPane.ERROR_MESSAGE);
 		}
 	}
@@ -1674,7 +1679,7 @@ public class WMATPanel {
 	
 	public void updateLCPredictions() {
 		WMATParameters params = wmatControl.getParams();
-		if (params.predictionSourceName.length() == 0 || ttable.getRowCount() == 0)
+		if (params.predictionSourceName == null || ttable.getRowCount() == 0)
 			return;
 		LCDataBlock db = null;
 		for (int i = 0; i < wmatControl.getPamController().getDataBlocks().size(); i++) {
@@ -1730,7 +1735,7 @@ public class WMATPanel {
 				WMATParameters wmatParams = wmatControl.getParams();
 				c.setBackground(PamColors.getInstance().getBorderColour());
 				c.setForeground(Color.BLACK);
-				if (wmatParams.predictionSourceName.length() > 0) {
+				if (wmatParams.predictionSourceName != null) {
 					LCDataBlock db = null;
 					for (int i = 0; i < wmatControl.getPamController().getDataBlocks().size(); i++) {
 						PamDataBlock curr = wmatControl.getPamController().getDataBlocks().get(i);

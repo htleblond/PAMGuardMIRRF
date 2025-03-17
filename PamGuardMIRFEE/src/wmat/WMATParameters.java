@@ -61,9 +61,9 @@ public class WMATParameters implements Serializable, Cloneable, ManagedParameter
 		scrollBuffer = 1000;
 		tableHeight = 300;
 		
-		predictionSourceName = "";
+		predictionSourceName = null;
 		predictionContext = USE_CLUSTER_PREDICTIONS;
-		slicedataSourceName = "";
+		slicedataSourceName = null;
 		binaryIsInLocalTime = true;
 		databaseUTCColumnIsInLocalTime = false;
 		

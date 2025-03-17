@@ -24,7 +24,7 @@ public class WMATDatabaseLoadingBarWindow extends PamDialog {
 	protected JProgressBar loadingBar;
 
 	public WMATDatabaseLoadingBarWindow(Window parentFrame) {
-		super(parentFrame, "Whistle and Moan Navigation Tool", false);
+		super(parentFrame, "Whistle and Moan Annotation Tool", false);
 		//this.totalToUpdate = totalToUpdate;
 		totalCounted = 0;
 
